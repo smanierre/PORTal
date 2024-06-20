@@ -1,0 +1,9 @@
+node_modules
+
+# Test DB that may not have been cleaned up
+*.Db
+
+# IDE Settings that change constantly
+.idea
+
+.direnv
