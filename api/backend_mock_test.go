@@ -6,40 +6,51 @@ import (
 
 func newMockBackend() *mockBackend {
 	return &mockBackend{
-		addMemberOverride:            func(m types.Member) error { return nil },
-		getMemberOverride:            func(id string) (types.Member, error) { return types.Member{}, nil },
-		getAllMembersOverride:        func() ([]types.Member, error) { return []types.Member{}, nil },
-		updateMemberOverride:         func(m types.Member) error { return nil },
-		deleteMemberOverride:         func(id string) error { return nil },
-		addQualificationOverride:     func(q types.Qualification) error { return nil },
-		getQualificationOverride:     func(id string) (types.Qualification, error) { return types.Qualification{}, nil },
-		getAllQualificationsOverride: func() ([]types.Qualification, error) { return []types.Qualification{}, nil },
-		updateQualificationOverride:  func(q types.Qualification) error { return nil },
-		getRequirementOverride:       func(id string) (types.Requirement, error) { return types.Requirement{}, nil },
-		deleteQualificationOverride:  func(id string) error { return nil },
-		addRequirementOverride:       func(r types.Requirement) error { return nil },
-		getAllRequirementsOverride:   func() ([]types.Requirement, error) { return []types.Requirement{}, nil },
-		updateRequirementOverride:    func(r types.Requirement) error { return nil },
-		deleteRequirementOverride:    func(id string) error { return nil },
+		addMemberOverride:                 func(m types.Member) error { return nil },
+		getMemberOverride:                 func(id string) (types.Member, error) { return types.Member{}, nil },
+		getAllMembersOverride:             func() ([]types.Member, error) { return []types.Member{}, nil },
+		updateMemberOverride:              func(m types.Member) error { return nil },
+		deleteMemberOverride:              func(id string) error { return nil },
+		addQualificationOverride:          func(q types.Qualification) error { return nil },
+		getQualificationOverride:          func(id string) (types.Qualification, error) { return types.Qualification{}, nil },
+		getAllQualificationsOverride:      func() ([]types.Qualification, error) { return []types.Qualification{}, nil },
+		updateQualificationOverride:       func(q types.Qualification) error { return nil },
+		getRequirementOverride:            func(id string) (types.Requirement, error) { return types.Requirement{}, nil },
+		deleteQualificationOverride:       func(id string) error { return nil },
+		addRequirementOverride:            func(r types.Requirement) error { return nil },
+		getAllRequirementsOverride:        func() ([]types.Requirement, error) { return []types.Requirement{}, nil },
+		updateRequirementOverride:         func(r types.Requirement) error { return nil },
+		deleteRequirementOverride:         func(id string) error { return nil },
+		addMemberQualificationOverride:    func(qualID, memberID string) error { return nil },
+		getMemberQualificationsOverride:   func(memberID string) ([]types.MemberQualification, error) { return []types.MemberQualification{}, nil },
+		updateMemberQualificationOverride: func(mq types.MemberQualification) error { return nil },
+		deleteMemberQualificationOverride: func(qualID, memberID string) error { return nil },
 	}
 }
 
 type mockBackend struct {
-	addMemberOverride            func(m types.Member) error
-	getMemberOverride            func(id string) (types.Member, error)
-	getAllMembersOverride        func() ([]types.Member, error)
-	updateMemberOverride         func(m types.Member) error
-	deleteMemberOverride         func(id string) error
+	addMemberOverride     func(m types.Member) error
+	getMemberOverride     func(id string) (types.Member, error)
+	getAllMembersOverride func() ([]types.Member, error)
+	updateMemberOverride  func(m types.Member) error
+	deleteMemberOverride  func(id string) error
+
 	addQualificationOverride     func(q types.Qualification) error
 	getQualificationOverride     func(id string) (types.Qualification, error)
 	getAllQualificationsOverride func() ([]types.Qualification, error)
 	updateQualificationOverride  func(q types.Qualification) error
 	deleteQualificationOverride  func(id string) error
-	addRequirementOverride       func(r types.Requirement) error
-	getRequirementOverride       func(id string) (types.Requirement, error)
-	getAllRequirementsOverride   func() ([]types.Requirement, error)
-	updateRequirementOverride    func(r types.Requirement) error
-	deleteRequirementOverride    func(id string) error
+
+	addRequirementOverride     func(r types.Requirement) error
+	getRequirementOverride     func(id string) (types.Requirement, error)
+	getAllRequirementsOverride func() ([]types.Requirement, error)
+	updateRequirementOverride  func(r types.Requirement) error
+	deleteRequirementOverride  func(id string) error
+
+	addMemberQualificationOverride    func(qualID, memberID string) error
+	getMemberQualificationsOverride   func(memberID string) ([]types.MemberQualification, error)
+	updateMemberQualificationOverride func(mq types.MemberQualification) error
+	deleteMemberQualificationOverride func(qualID, memberID string) error
 }
 
 func (m *mockBackend) AddMember(me types.Member) error {
@@ -103,21 +114,17 @@ func (m *mockBackend) DeleteRequirement(id string) error {
 }
 
 func (m *mockBackend) AddMemberQualification(qualID, memberID string) error {
-	//TODO implement me
-	panic("implement me")
+	return m.addMemberQualificationOverride(qualID, memberID)
 }
 
 func (m *mockBackend) GetMemberQualifications(memberID string) ([]types.MemberQualification, error) {
-	//TODO implement me
-	panic("implement me")
+	return m.getMemberQualificationsOverride(memberID)
 }
 
 func (m *mockBackend) UpdateMemberQualification(mq types.MemberQualification) error {
-	//TODO implement me
-	panic("implement me")
+	return m.updateMemberQualificationOverride(mq)
 }
 
 func (m *mockBackend) DeleteMemberQualification(qualID, memberID string) error {
-	//TODO implement me
-	panic("implement me")
+	return m.deleteMemberQualificationOverride(qualID, memberID)
 }

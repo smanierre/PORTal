@@ -46,10 +46,10 @@ func (q Qualification) CheckForMissingArgs() error {
 }
 
 type MemberQualification struct {
-	MemberID string `json:"member_id"`
-	Qualification
-	Active     bool      `json:"active"`
-	ActiveDate time.Time `json:"active_date"`
+	MemberID      string `json:"member_id"`
+	Qualification `json:"qualification"`
+	Active        bool      `json:"active"`
+	ActiveDate    time.Time `json:"active_date"`
 }
 
 func (m MemberQualification) LogValue() slog.Value {
@@ -89,8 +89,8 @@ func (r Requirement) CheckForMissingArgs() error {
 }
 
 type MemberRequirement struct {
-	MemberID string `json:"member_id"`
-	Requirement
+	MemberID      string `json:"member_id"`
+	Requirement   `json:"requirement"`
 	Completed     bool      `json:"completed"`
 	CompletedDate time.Time `json:"completed_date,omitempty"`
 }

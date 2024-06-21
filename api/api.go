@@ -62,6 +62,8 @@ func New(logger *slog.Logger, backend Backend) Server {
 
 	// Member-Qualification routes
 	s.mux.Handle("POST /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.addMemberQualification))
+	s.mux.Handle("GET /api/member/{id}/qualifications", http.HandlerFunc(s.getMemberQualifications))
+	s.mux.Handle("PUT /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.updateMemberQualification))
 	s.mux.Handle("DELETE /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.deleteMemberQualification))
 
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
