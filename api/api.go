@@ -29,13 +29,14 @@ type Backend interface {
 	DeleteMemberQualification(qualID, memberID string) error
 }
 
-func New(logger *slog.Logger, backend Backend) Server {
+func New(logger *slog.Logger, backend Backend, dev bool) Server {
 	logger = logger.With(slog.String("source", "api_server"))
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Creating new api server")
 	s := Server{
 		logger:  logger,
 		backend: backend,
 		mux:     http.NewServeMux(),
+		dev:     dev,
 	}
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering routes...")
 
@@ -67,6 +68,11 @@ func New(logger *slog.Logger, backend Backend) Server {
 	s.mux.Handle("DELETE /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.deleteMemberQualification))
 
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
+
+	if dev {
+		logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from build folder")
+		s.mux.Handle("/", http.FileServer(http.Dir("ui/build")))
+	}
 	return s
 }
 
@@ -74,8 +80,13 @@ type Server struct {
 	logger  *slog.Logger
 	backend Backend
 	mux     *http.ServeMux
+	dev     bool
 }
 
 func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if s.dev {
+		s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Development mode, setting CORS to *")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+	}
 	s.mux.ServeHTTP(w, r)
 }
