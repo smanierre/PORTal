@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"log/slog"
+	"time"
 )
 
 type Rank string
@@ -26,7 +27,7 @@ type Member struct {
 }
 
 func (m Member) LogValue() slog.Value {
-	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Supervisor ID: %s Qualifications: %v", m.ID, m.Rank, m.FirstName, m.LastName, m.SupervisorID, m.Qualifications))
+	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s Qualifications: %v", m.ID, m.Rank, m.FirstName, m.LastName, m.Username, m.SupervisorID, m.Qualifications))
 }
 
 func (m Member) ToApiMember() ApiMember {
@@ -47,17 +48,46 @@ func (m Member) CheckForMissingArgs() error {
 	if m.Rank == "" {
 		errors = append(errors, "Rank")
 	}
+	if m.Username == "" {
+		errors = append(errors, "Username")
+	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%w: %s", ErrMissingArgs, errors)
 	}
 	return nil
 }
 
+func (m Member) MergeIn(new Member) Member {
+	if new.FirstName != "" {
+		m.FirstName = new.FirstName
+	}
+	if new.LastName != "" {
+		m.LastName = new.LastName
+	}
+	if new.Rank != "" {
+		m.Rank = new.Rank
+	}
+	if new.SupervisorID != "" {
+		m.SupervisorID = new.SupervisorID
+	}
+	if new.Hash != "" {
+		m.Hash = new.Hash
+	}
+	return m
+}
+
 type ApiMember struct {
 	ID             string                `json:"id"`
 	FirstName      string                `json:"first_name"`
 	LastName       string                `json:"last_name"`
+	Username       string                `json:"username"`
 	Rank           Rank                  `json:"rank"`
 	Qualifications []MemberQualification `json:"qualifications,omitempty"`
 	SupervisorID   string                `json:"supervisor_id,omitempty"`
+}
+
+type Session struct {
+	SessionID string
+	IPAddress string
+	Expires   time.Time
 }

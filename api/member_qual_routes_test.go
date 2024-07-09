@@ -36,7 +36,7 @@ func TestAddMemberQualification(t *testing.T) {
 		}
 		return errors.New("unexpected case")
 	}
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name            string
@@ -123,7 +123,7 @@ func TestGetMemberQualifications(t *testing.T) {
 			return nil, errors.New("unexpected case")
 		}
 	}
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name             string
@@ -212,7 +212,7 @@ func TestUpdateMemberQualification(t *testing.T) {
 			return errors.New("unexpected case")
 		}
 	}
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name            string
@@ -302,7 +302,7 @@ func TestDeleteMemberQualification(t *testing.T) {
 		return errors.New("unexpected case")
 	}
 
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name       string

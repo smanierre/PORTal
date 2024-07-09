@@ -3,8 +3,10 @@ package api
 import (
 	"PORTal/types"
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
 type Backend interface {
@@ -27,6 +29,9 @@ type Backend interface {
 	GetMemberQualifications(memberID string) ([]types.MemberQualification, error)
 	UpdateMemberQualification(mq types.MemberQualification) error
 	DeleteMemberQualification(qualID, memberID string) error
+	AddSession(ipAddress, memberID string) (string, error)
+	ValidateSession(sessionID, memberID, ipAddress string) error
+	Login(username, password string) (types.Member, error)
 }
 
 func New(logger *slog.Logger, backend Backend, dev bool) Server {
@@ -67,11 +72,14 @@ func New(logger *slog.Logger, backend Backend, dev bool) Server {
 	s.mux.Handle("PUT /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.updateMemberQualification))
 	s.mux.Handle("DELETE /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.deleteMemberQualification))
 
-	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
+	// Authentication routes
+	s.mux.Handle("POST /api/login", http.HandlerFunc(s.login))
+	s.mux.Handle("POST /api/validateSession", http.HandlerFunc(s.validateSession))
 
+	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	if dev {
 		logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from build folder")
-		s.mux.Handle("/", http.FileServer(http.Dir("ui/build")))
+		s.mux.Handle("/", http.FileServer(http.Dir("ui/dist")))
 	}
 	return s
 }
@@ -85,8 +93,20 @@ type Server struct {
 
 func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if s.dev {
-		s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Development mode, setting CORS to *")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
+		s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Development mode, setting CORS to http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
 	s.mux.ServeHTTP(w, r)
+}
+
+func parseIPFromRemoteAddr(logger *slog.Logger, remoteAddr string) string {
+	fmt.Println(remoteAddr)
+	if strings.Count(remoteAddr, ":") > 1 {
+		logger.LogAttrs(context.Background(), slog.LevelInfo, "Parsing IPV6 address")
+	} else {
+		logger.LogAttrs(context.Background(), slog.LevelInfo, "Parsing IPV4 address")
+		return strings.Split(remoteAddr, ":")[0]
+	}
+	return ""
 }

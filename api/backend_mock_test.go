@@ -25,6 +25,9 @@ func newMockBackend() *mockBackend {
 		getMemberQualificationsOverride:   func(memberID string) ([]types.MemberQualification, error) { return []types.MemberQualification{}, nil },
 		updateMemberQualificationOverride: func(mq types.MemberQualification) error { return nil },
 		deleteMemberQualificationOverride: func(qualID, memberID string) error { return nil },
+		addSessionOverride:                func(ipAddress, memberID string) (string, error) { return "", nil },
+		validateSessionOverride:           func(sessionID, memberID, ipAddress string) error { return nil },
+		loginOverride:                     func(username, password string) (types.Member, error) { return types.Member{}, nil },
 	}
 }
 
@@ -51,6 +54,10 @@ type mockBackend struct {
 	getMemberQualificationsOverride   func(memberID string) ([]types.MemberQualification, error)
 	updateMemberQualificationOverride func(mq types.MemberQualification) error
 	deleteMemberQualificationOverride func(qualID, memberID string) error
+
+	addSessionOverride      func(ipAddress, memberID string) (string, error)
+	validateSessionOverride func(sessionID, memberID, ipAddress string) error
+	loginOverride           func(username, password string) (types.Member, error)
 }
 
 func (m *mockBackend) AddMember(me types.Member) error {
@@ -127,4 +134,16 @@ func (m *mockBackend) UpdateMemberQualification(mq types.MemberQualification) er
 
 func (m *mockBackend) DeleteMemberQualification(qualID, memberID string) error {
 	return m.deleteMemberQualificationOverride(qualID, memberID)
+}
+
+func (m *mockBackend) AddSession(ipAddress, memberID string) (string, error) {
+	return m.addSessionOverride(ipAddress, memberID)
+}
+
+func (m *mockBackend) ValidateSession(sessionID, memberID, ipAddress string) error {
+	return m.validateSessionOverride(sessionID, memberID, ipAddress)
+}
+
+func (m *mockBackend) Login(username, password string) (types.Member, error) {
+	return m.loginOverride(username, password)
 }

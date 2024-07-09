@@ -26,7 +26,7 @@ func TestAddMember(t *testing.T) {
 		return nil
 	}
 
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name       string
@@ -79,10 +79,10 @@ func TestAddMember(t *testing.T) {
 				t.Errorf("Expected status code %d, got %d", tt.statusCode, w.Code)
 			}
 			if tt.statusCode == http.StatusCreated {
-				var res types.IDResponse
+				var res types.IdJson
 				err := json.NewDecoder(w.Body).Decode(&res)
 				if err != nil {
-					t.Errorf("Error when deserializing response into IDResponse for TestAddMember: %s", err.Error())
+					t.Errorf("Error when deserializing response into IdJson for TestAddMember: %s", err.Error())
 				}
 				if _, err := uuid.Parse(res.ID); err != nil {
 					t.Errorf("Invalid UUID returned from server")
@@ -122,7 +122,7 @@ func TestGetMember(t *testing.T) {
 		}
 
 	}
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name             string
@@ -209,7 +209,7 @@ func TestGetAllMembers(t *testing.T) {
 			return nil, errors.New("generic error")
 		}
 	}
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name            string
@@ -282,7 +282,7 @@ func TestUpdateMember(t *testing.T) {
 		}, nil
 	}
 
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name       string
@@ -348,7 +348,7 @@ func TestDeleteMember(t *testing.T) {
 			return errors.New("unexpected case")
 		}
 	}
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name       string
