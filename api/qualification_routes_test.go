@@ -29,7 +29,7 @@ func TestAddQualification(t *testing.T) {
 		}
 	}
 
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name       string
@@ -110,7 +110,7 @@ func TestGetQualification(t *testing.T) {
 			return types.Qualification{}, errors.New("unexpected case")
 		}
 	}
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name             string
@@ -187,7 +187,7 @@ func TestGetAllQualifications(t *testing.T) {
 		}
 		return nil, errors.New("generic error")
 	}
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name             string
@@ -275,7 +275,7 @@ func TestUpdateQualification(t *testing.T) {
 		return originalQualification, nil
 	}
 
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name       string
@@ -350,7 +350,7 @@ func TestDeleteQualification(t *testing.T) {
 		}
 	}
 
-	s := api.New(slog.Default(), b)
+	s := api.New(slog.Default(), b, false)
 
 	tc := []struct {
 		name       string

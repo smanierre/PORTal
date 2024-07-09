@@ -1,7 +1,8 @@
 node_modules
 
-# Test DB that may not have been cleaned up
+# Root DB that may not have been cleaned up
 *.Db
+*.db
 
 # IDE Settings that change constantly
 .idea

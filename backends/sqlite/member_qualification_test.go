@@ -31,10 +31,11 @@ func TestAddQualificationToMember(t *testing.T) {
 			FirstName:      "Test",
 			LastName:       "Member",
 			Rank:           types.E9,
+			Username:       "username",
 			Qualifications: nil,
 			SupervisorID:   "",
 		},
-		Password: "",
+		Password: "password",
 		Hash:     "",
 	}
 	qualification := types.Qualification{
@@ -132,7 +133,9 @@ func TestGetQualificationsForMember(t *testing.T) {
 			FirstName: "Test",
 			LastName:  "Member",
 			Rank:      types.E1,
+			Username:  "username",
 		},
+		Password: "password",
 	}
 	if err = backend.AddMember(m); err != nil {
 		t.Fatalf("Error adding member for TestGetQualificationsForMember: %s", err.Error())
@@ -261,7 +264,9 @@ func TestUpdateMemberQualification(t *testing.T) {
 			FirstName: "Test",
 			LastName:  "User",
 			Rank:      types.E5,
+			Username:  "username",
 		},
+		Password: "password",
 	}
 	if err := backend.AddMember(member); err != nil {
 		t.Fatalf("Error adding member for TestUpdateMemberQualification: %s", err.Error())
@@ -368,7 +373,9 @@ func TestDeleteMemberQualification(t *testing.T) {
 			FirstName: "Test",
 			LastName:  "Member",
 			Rank:      types.E7,
+			Username:  "username",
 		},
+		Password: "password",
 	}
 	if err := backend.AddMember(member); err != nil {
 		t.Fatalf("Error adding member for TestDeleteMemberQualification: %s", err.Error())

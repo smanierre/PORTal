@@ -11,4 +11,8 @@ var (
 	ErrBadUpdate                    = errors.New("invalid update")
 	ErrQualificationAlreadyAssigned = errors.New("member is already assigned qualification")
 	ErrMemberQualificationNotFound  = errors.New("could not find given qualification for member")
+	ErrInvalidIP                    = errors.New("invalid IP address provided")
+	ErrSessionValidationFailed      = errors.New("failed to validate session")
+	ErrUsernameAlreadyExists        = errors.New("that username already exists in the database")
+	ErrPasswordAuthenticationFailed = errors.New("unable to validate password")
 )

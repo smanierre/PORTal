@@ -5,6 +5,7 @@ import (
 	"PORTal/backends/sqlite"
 	"context"
 	"flag"
+	"golang.org/x/crypto/bcrypt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -21,6 +22,13 @@ func main() {
 		os.Exit(1)
 	}
 	s := api.New(l, b, *dev)
-	l.LogAttrs(context.Background(), slog.LevelInfo, "Listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", s))
+	if *dev {
+		l.LogAttrs(context.Background(), slog.LevelInfo, "Setting bcrypt cost to minimum for dev mode")
+		sqlite.BcryptCost = bcrypt.MinCost
+		l.LogAttrs(context.Background(), slog.LevelInfo, "Listening on localhost:8080 for dev mode")
+		log.Fatal(http.ListenAndServe("localhost:8080", s))
+	} else {
+		l.LogAttrs(context.Background(), slog.LevelInfo, "Listening on :8080")
+		log.Fatal(http.ListenAndServe(":8080", s))
+	}
 }

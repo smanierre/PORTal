@@ -38,10 +38,10 @@ func (s Server) addMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	res := types.IDResponse{ID: id}
+	res := types.IdJson{ID: id}
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
-		l.LogAttrs(r.Context(), slog.LevelError, "Error serializing IDResponse to client", slog.String("error", err.Error()))
+		l.LogAttrs(r.Context(), slog.LevelError, "Error serializing IdJson to client", slog.String("error", err.Error()))
 	}
 }
 
