@@ -4,8 +4,8 @@ module.exports = {
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
-    './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+    './index.html'
   ],
   prefix: "",
   theme: {
@@ -72,6 +72,9 @@ module.exports = {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
+    gridTemplateRows: {
+      "main": "50px 1fr",
+    }
   },
   plugins: [require("tailwindcss-animate")],
 }
