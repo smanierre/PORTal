@@ -1,26 +1,26 @@
 package api
 
 import (
-	"PORTal/types"
+	"PORTal/backend"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
 )
 
-func (s Server) addMemberQualification(w http.ResponseWriter, r *http.Request) {
+func (s Server) assignMemberQualification(w http.ResponseWriter, r *http.Request) {
 	memberID := r.PathValue("id")
 	qualID := r.PathValue("qualID")
-	err := s.backend.AddMemberQualification(qualID, memberID)
-	if errors.Is(err, types.ErrMemberNotFound) {
+	err := s.backend.AssignMemberQualification(memberID, qualID)
+	if errors.Is(err, backend.ErrMemberNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	if errors.Is(err, types.ErrQualificationNotFound) {
+	if errors.Is(err, backend.ErrQualificationNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	if errors.Is(err, types.ErrQualificationAlreadyAssigned) {
+	if errors.Is(err, backend.ErrQualificationAlreadyAssigned) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -31,10 +31,24 @@ func (s Server) addMemberQualification(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func (s Server) getMemberQualification(w http.ResponseWriter, r *http.Request) {
+	memberID := r.PathValue("id")
+	qualID := r.PathValue("qualID")
+	qual, err := s.backend.GetMemberQualification(memberID, qualID)
+	if errors.Is(err, backend.ErrMemberNotFound) || errors.Is(err, backend.ErrQualificationNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err = json.NewEncoder(w).Encode(qual); err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error serializing qualification to client", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
 func (s Server) getMemberQualifications(w http.ResponseWriter, r *http.Request) {
 	memberID := r.PathValue("id")
 	reqs, err := s.backend.GetMemberQualifications(memberID)
-	if errors.Is(err, types.ErrMemberNotFound) {
+	if errors.Is(err, backend.ErrMemberNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -49,43 +63,11 @@ func (s Server) getMemberQualifications(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (s Server) updateMemberQualification(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	qualID := r.PathValue("qualID")
-	var mq types.MemberQualification
-	err := json.NewDecoder(r.Body).Decode(&mq)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error deserializing request into MemberQualification struct", slog.String("error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if id != mq.MemberID {
-		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Member ID doesn't match ID in provided member qualification", slog.String("path_id", id), slog.String("provided_id", mq.MemberID))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	if qualID != mq.Qualification.ID {
-		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Qualification ID doesn't match ID in provided member qualification", slog.String("path_id", qualID), slog.String("provided_id", mq.Qualification.ID))
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	err = s.backend.UpdateMemberQualification(mq)
-	if errors.Is(err, types.ErrMemberNotFound) || errors.Is(err, types.ErrQualificationNotFound) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-}
-
-func (s Server) deleteMemberQualification(w http.ResponseWriter, r *http.Request) {
+func (s Server) removeMemberQualification(w http.ResponseWriter, r *http.Request) {
 	memberID := r.PathValue("id")
 	qualID := r.PathValue("qualID")
-	err := s.backend.DeleteMemberQualification(qualID, memberID)
-	if errors.Is(err, types.ErrMemberNotFound) || errors.Is(err, types.ErrMemberQualificationNotFound) {
+	err := s.backend.RemoveMemberQualification(memberID, qualID)
+	if errors.Is(err, backend.ErrMemberNotFound) || errors.Is(err, backend.ErrMemberQualificationNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}

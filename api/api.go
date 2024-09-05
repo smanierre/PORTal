@@ -10,32 +10,41 @@ import (
 )
 
 type Backend interface {
-	AddMember(m types.Member) error
-	GetMember(id string) (types.Member, error)
+	AddMember(m types.Member) (types.Member, error)
+	GetMember(identifier string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
-	UpdateMember(m types.Member) error
+	UpdateMember(m types.Member) (types.Member, error)
 	DeleteMember(id string) error
-	AddQualification(q types.Qualification) error
+
+	AddQualification(q types.Qualification) (types.Qualification, error)
 	GetQualification(id string) (types.Qualification, error)
 	GetAllQualifications() ([]types.Qualification, error)
-	UpdateQualification(q types.Qualification) error
+	UpdateQualification(q types.Qualification, forceExpirationUpdate bool) (types.Qualification, error)
 	DeleteQualification(id string) error
-	AddRequirement(r types.Requirement) error
+
+	AssignMemberQualification(qualID, memberID string) error
+	GetMemberQualification(memberID string, qualificationID string) (types.Qualification, error)
+	GetMemberQualifications(memberID string) ([]types.Qualification, error)
+	RemoveMemberQualification(memberID, qualificationID string) error
+
+	AddRequirement(r types.Requirement) (types.Requirement, error)
 	GetRequirement(id string) (types.Requirement, error)
 	GetAllRequirements() ([]types.Requirement, error)
-	UpdateRequirement(r types.Requirement) error
+	UpdateRequirement(r types.Requirement) (types.Requirement, error)
 	DeleteRequirement(id string) error
-	AddMemberQualification(qualID, memberID string) error
-	GetMemberQualifications(memberID string) ([]types.MemberQualification, error)
-	UpdateMemberQualification(mq types.MemberQualification) error
-	DeleteMemberQualification(qualID, memberID string) error
-	AddSession(ipAddress, memberID string) (string, error)
-	ValidateSession(sessionID, memberID, ipAddress string) error
+
+	AddReference(r types.Reference) (types.Reference, error)
+	GetReference(id string) (types.Reference, error)
+	GetReferences() ([]types.Reference, error)
+	UpdateReference(reference types.Reference, overrideNoVolume bool) (types.Reference, error)
+	DeleteReference(id string) error
+
+	AddSession(memberID, userAgent string) (types.Session, error)
+	ValidateSession(sessionID, memberID, userAgent string) error
 	Login(username, password string) (types.Member, error)
 }
 
 func New(logger *slog.Logger, backend Backend, dev bool) Server {
-	logger = logger.With(slog.String("source", "api_server"))
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Creating new api server")
 	s := Server{
 		logger:  logger,
@@ -67,10 +76,10 @@ func New(logger *slog.Logger, backend Backend, dev bool) Server {
 	s.mux.Handle("DELETE /api/requirement/{id}", http.HandlerFunc(s.deleteRequirement))
 
 	// Member-Qualification routes
-	s.mux.Handle("POST /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.addMemberQualification))
+	s.mux.Handle("POST /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.assignMemberQualification))
 	s.mux.Handle("GET /api/member/{id}/qualifications", http.HandlerFunc(s.getMemberQualifications))
-	s.mux.Handle("PUT /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.updateMemberQualification))
-	s.mux.Handle("DELETE /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.deleteMemberQualification))
+	s.mux.Handle("GET /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.getMemberQualification))
+	s.mux.Handle("DELETE /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.removeMemberQualification))
 
 	// Authentication routes
 	s.mux.Handle("POST /api/login", http.HandlerFunc(s.login))

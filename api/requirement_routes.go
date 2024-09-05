@@ -1,6 +1,7 @@
 package api
 
 import (
+	"PORTal/backend"
 	"PORTal/types"
 	"encoding/json"
 	"errors"
@@ -20,12 +21,16 @@ func (s Server) addRequirement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
-	err = s.backend.AddRequirement(req)
+	req, err = s.backend.AddRequirement(req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
+	if err = json.NewEncoder(w).Encode(req); err != nil {
+		l.LogAttrs(r.Context(), slog.LevelError, "Error serializing requirement to client", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func (s Server) getRequirement(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +42,7 @@ func (s Server) getRequirement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	requirement, err := s.backend.GetRequirement(id)
-	if errors.Is(err, types.ErrRequirementNotFound) {
+	if errors.Is(err, backend.ErrRequirementNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {
@@ -74,7 +79,7 @@ func (s Server) updateRequirement(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 	originalRequirement, err := s.backend.GetRequirement(req.ID)
-	if errors.Is(err, types.ErrRequirementNotFound) {
+	if errors.Is(err, backend.ErrRequirementNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {
@@ -87,22 +92,25 @@ func (s Server) updateRequirement(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = s.backend.UpdateRequirement(req)
-	if errors.Is(err, types.ErrRequirementNotFound) {
+	qualification, err := s.backend.UpdateRequirement(req)
+	if errors.Is(err, backend.ErrRequirementNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(qualification)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error serializing qualification to client", slog.String("error", err.Error()))
+	}
 }
 
 func (s Server) deleteRequirement(w http.ResponseWriter, r *http.Request) {
 	//l := s.logger.With(slog.String("path", fmt.Sprintf("%s %s", r.Method, r.URL.Path)))
 	id := r.PathValue("id")
 	err := s.backend.DeleteRequirement(id)
-	if errors.Is(err, types.ErrRequirementNotFound) {
+	if errors.Is(err, backend.ErrRequirementNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {

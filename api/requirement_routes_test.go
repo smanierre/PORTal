@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"PORTal/api"
+	"PORTal/backend"
 	"PORTal/types"
 	"bytes"
 	"encoding/json"
@@ -17,15 +18,15 @@ import (
 
 func TestAddRequirement(t *testing.T) {
 	b := newMockBackend()
-	b.addRequirementOverride = func(r types.Requirement) error {
+	b.addRequirementOverride = func(r types.Requirement) (types.Requirement, error) {
 		switch r.Name {
 		case "test":
-			return nil
+			return r, nil
 		case "error":
-			return errors.New("generic error")
+			return types.Requirement{}, errors.New("generic error")
 		default:
 			t.Error("unexpected case")
-			return errors.New("unexpected case")
+			return types.Requirement{}, errors.New("unexpected case")
 		}
 	}
 
@@ -39,7 +40,7 @@ func TestAddRequirement(t *testing.T) {
 		{
 			name:       "Successful create",
 			body:       `{"name":"test", "notes":"test notes","description":"test description","days_valid_for": 365}`,
-			statusCode: http.StatusOK,
+			statusCode: http.StatusCreated,
 		},
 		{
 			name:       "Invalid JSON",
@@ -82,7 +83,7 @@ func TestGetRequirement(t *testing.T) {
 		case testRequirement.ID:
 			return testRequirement, nil
 		case notFoundId:
-			return types.Requirement{}, types.ErrRequirementNotFound
+			return types.Requirement{}, backend.ErrRequirementNotFound
 		case badId:
 			return types.Requirement{}, errors.New("generic error")
 		default:
@@ -219,18 +220,18 @@ func TestUpdateRequirement(t *testing.T) {
 		DaysValidFor: 100,
 	}
 	b := newMockBackend()
-	b.updateRequirementOverride = func(r types.Requirement) error {
+	b.updateRequirementOverride = func(r types.Requirement) (types.Requirement, error) {
 		switch r.Name {
 		case "error":
-			return errors.New("generic error")
+			return types.Requirement{}, errors.New("generic error")
 		default:
-			return nil
+			return r, nil
 		}
 	}
 	b.getRequirementOverride = func(id string) (types.Requirement, error) {
 		switch id {
 		case "not found":
-			return types.Requirement{}, types.ErrRequirementNotFound
+			return types.Requirement{}, backend.ErrRequirementNotFound
 		default:
 			return originalRequirement, nil
 		}
@@ -300,7 +301,7 @@ func TestDeleteRequirement(t *testing.T) {
 		case badId:
 			return errors.New("generic error")
 		case notFoundId:
-			return types.ErrRequirementNotFound
+			return backend.ErrRequirementNotFound
 		default:
 			t.Error("unexpected case")
 			return errors.New("unexpected case")

@@ -27,34 +27,11 @@ type Member struct {
 }
 
 func (m Member) LogValue() slog.Value {
-	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s Qualifications: %v", m.ID, m.Rank, m.FirstName, m.LastName, m.Username, m.SupervisorID, m.Qualifications))
+	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s", m.ID, m.Rank, m.FirstName, m.LastName, m.Username, m.SupervisorID))
 }
 
 func (m Member) ToApiMember() ApiMember {
 	return m.ApiMember
-}
-
-func (m Member) CheckForMissingArgs() error {
-	errors := []string{}
-	if m.ID == "" {
-		errors = append(errors, "ID")
-	}
-	if m.FirstName == "" {
-		errors = append(errors, "FirstName")
-	}
-	if m.LastName == "" {
-		errors = append(errors, "LastName")
-	}
-	if m.Rank == "" {
-		errors = append(errors, "Rank")
-	}
-	if m.Username == "" {
-		errors = append(errors, "Username")
-	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%w: %s", ErrMissingArgs, errors)
-	}
-	return nil
 }
 
 func (m Member) MergeIn(new Member) Member {
@@ -70,24 +47,26 @@ func (m Member) MergeIn(new Member) Member {
 	if new.SupervisorID != "" {
 		m.SupervisorID = new.SupervisorID
 	}
-	if new.Hash != "" {
-		m.Hash = new.Hash
+	if new.Username != "" {
+		m.Username = new.Username
+	}
+	if new.Password != "" {
+		m.Password = new.Password
 	}
 	return m
 }
 
 type ApiMember struct {
-	ID             string                `json:"id"`
-	FirstName      string                `json:"first_name"`
-	LastName       string                `json:"last_name"`
-	Username       string                `json:"username"`
-	Rank           Rank                  `json:"rank"`
-	Qualifications []MemberQualification `json:"qualifications,omitempty"`
-	SupervisorID   string                `json:"supervisor_id,omitempty"`
+	ID           string `json:"id"`
+	FirstName    string `json:"first_name"`
+	LastName     string `json:"last_name"`
+	Username     string `json:"username"`
+	Rank         Rank   `json:"rank"`
+	SupervisorID string `json:"supervisor_id,omitempty"`
 }
 
 type Session struct {
 	SessionID string
-	IPAddress string
+	UserAgent string
 	Expires   time.Time
 }

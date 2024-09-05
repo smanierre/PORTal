@@ -1,6 +1,7 @@
 package api
 
 import (
+	"PORTal/backend"
 	"PORTal/types"
 	"context"
 	"encoding/json"
@@ -26,10 +27,8 @@ func (s Server) addMember(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	id := uuid.NewString()
-	m.ID = id
-	err = s.backend.AddMember(m)
-	if errors.Is(err, types.ErrSupervisorNotFound) {
+	insertedMember, err := s.backend.AddMember(m)
+	if errors.Is(err, backend.ErrSupervisorNotFound) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -38,8 +37,7 @@ func (s Server) addMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
-	res := types.IdJson{ID: id}
-	err = json.NewEncoder(w).Encode(res)
+	err = json.NewEncoder(w).Encode(insertedMember)
 	if err != nil {
 		l.LogAttrs(r.Context(), slog.LevelError, "Error serializing IdJson to client", slog.String("error", err.Error()))
 	}
@@ -54,7 +52,7 @@ func (s Server) getMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m, err := s.backend.GetMember(id)
-	if errors.Is(err, types.ErrMemberNotFound) {
+	if errors.Is(err, backend.ErrMemberNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {
@@ -64,6 +62,7 @@ func (s Server) getMember(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(m.ToApiMember())
 	if err != nil {
 		l.LogAttrs(context.Background(), slog.LevelError, "Error serializing ApiMember to client", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
 
@@ -94,7 +93,7 @@ func (s Server) updateMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	existingMember, err := s.backend.GetMember(m.ID)
-	if errors.Is(err, types.ErrMemberNotFound) {
+	if errors.Is(err, backend.ErrMemberNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {
@@ -107,18 +106,21 @@ func (s Server) updateMember(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = s.backend.UpdateMember(m)
-	if errors.Is(err, types.ErrMemberNotFound) {
+	member, err := s.backend.UpdateMember(m)
+	if errors.Is(err, backend.ErrMemberNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
-	} else if errors.Is(err, types.ErrSupervisorNotFound) {
+	} else if errors.Is(err, backend.ErrSupervisorNotFound) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(member)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error encoding member to client", slog.String("error", err.Error()))
+	}
 }
 
 func (s Server) deleteMember(w http.ResponseWriter, r *http.Request) {
