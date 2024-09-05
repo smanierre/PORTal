@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"PORTal/api"
+	"PORTal/backend"
 	"PORTal/types"
 	"bytes"
 	"encoding/json"
@@ -17,15 +18,15 @@ import (
 
 func TestAddQualification(t *testing.T) {
 	b := newMockBackend()
-	b.addQualificationOverride = func(q types.Qualification) error {
+	b.addQualificationOverride = func(q types.Qualification) (types.Qualification, error) {
 		switch q.Name {
 		case "test":
-			return nil
+			return q, nil
 		case "error":
-			return errors.New("generic error")
+			return types.Qualification{}, errors.New("generic error")
 		default:
 			t.Error("Unexpected case")
-			return errors.New("unexpected case")
+			return types.Qualification{}, errors.New("unexpected case")
 		}
 	}
 
@@ -91,7 +92,6 @@ func TestGetQualification(t *testing.T) {
 		InitialRequirements:   nil,
 		RecurringRequirements: nil,
 		Notes:                 "these are some test notes",
-		References:            nil,
 		Expires:               true,
 		ExpirationDays:        347,
 	}
@@ -102,7 +102,7 @@ func TestGetQualification(t *testing.T) {
 		case goodId:
 			return testQualification, nil
 		case notFoundId:
-			return types.Qualification{}, types.ErrQualificationNotFound
+			return types.Qualification{}, backend.ErrQualificationNotFound
 		case badId:
 			return types.Qualification{}, errors.New("generic error")
 		default:
@@ -164,7 +164,6 @@ func TestGetAllQualifications(t *testing.T) {
 		InitialRequirements:   nil,
 		RecurringRequirements: nil,
 		Notes:                 "these are some test notes",
-		References:            nil,
 		Expires:               true,
 		ExpirationDays:        347,
 	}
@@ -174,7 +173,6 @@ func TestGetAllQualifications(t *testing.T) {
 		InitialRequirements:   nil,
 		RecurringRequirements: nil,
 		Notes:                 "these are some other test notes",
-		References:            nil,
 		Expires:               false,
 		ExpirationDays:        0,
 	}
@@ -237,29 +235,28 @@ func TestUpdateQualification(t *testing.T) {
 		InitialRequirements:   nil,
 		RecurringRequirements: nil,
 		Notes:                 "old notes",
-		References:            nil,
 		Expires:               false,
 		ExpirationDays:        0,
 	}
 	b := newMockBackend()
-	b.updateQualificationOverride = func(q types.Qualification) error {
+	b.updateQualificationOverride = func(q types.Qualification, forceUpdateExpiration bool) (types.Qualification, error) {
 		switch q.Name {
 		case "test":
-			return nil
+			return q, nil
 		case "bad":
-			return errors.New("generic error")
+			return types.Qualification{}, errors.New("generic error")
 		case "not found":
-			return types.ErrQualificationNotFound
+			return types.Qualification{}, backend.ErrQualificationNotFound
 		default:
 			t.Error("unexpected case")
-			return errors.New("unexpected case")
+			return types.Qualification{}, errors.New("unexpected case")
 		}
 	}
 
 	b.getRequirementOverride = func(id string) (types.Requirement, error) {
 		switch id {
 		case "not found":
-			return types.Requirement{}, types.ErrRequirementNotFound
+			return types.Requirement{}, backend.ErrRequirementNotFound
 		case "found":
 			return types.Requirement{}, nil
 		default:
@@ -270,7 +267,7 @@ func TestUpdateQualification(t *testing.T) {
 
 	b.getQualificationOverride = func(id string) (types.Qualification, error) {
 		if id == "not found" {
-			return types.Qualification{}, types.ErrQualificationNotFound
+			return types.Qualification{}, backend.ErrQualificationNotFound
 		}
 		return originalQualification, nil
 	}
@@ -343,7 +340,7 @@ func TestDeleteQualification(t *testing.T) {
 		case badId:
 			return errors.New("generic error")
 		case notFoundId:
-			return types.ErrQualificationNotFound
+			return backend.ErrQualificationNotFound
 		default:
 			t.Errorf("unexpected case")
 			return errors.New("unexpected case")

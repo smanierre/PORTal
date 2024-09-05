@@ -6,8 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
-	"time"
 )
 
 func (s Server) login(w http.ResponseWriter, r *http.Request) {
@@ -23,17 +21,17 @@ func (s Server) login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	sessionId, err := s.backend.AddSession(parseIPFromRemoteAddr(s.logger, r.RemoteAddr), member.ID)
+	session, err := s.backend.AddSession(member.ID, r.UserAgent())
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Skipping setting session cookie, but still logging in")
 	} else {
 		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Setting session cookie on response")
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session-id",
-			Value:    sessionId,
+			Value:    session.SessionID,
 			Path:     "/api",
 			Domain:   os.Getenv("DOMAIN"),
-			Expires:  time.Now().Add(time.Hour * 24 * 7),
+			Expires:  session.Expires,
 			Secure:   true,
 			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
@@ -63,7 +61,7 @@ func (s Server) validateSession(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = s.backend.ValidateSession(cookie.Value, id.ID, strings.Split(r.RemoteAddr, ":")[0])
+	err = s.backend.ValidateSession(cookie.Value, id.ID, r.UserAgent())
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return

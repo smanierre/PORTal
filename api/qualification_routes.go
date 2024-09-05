@@ -1,6 +1,7 @@
 package api
 
 import (
+	"PORTal/backend"
 	"PORTal/types"
 	"encoding/json"
 	"errors"
@@ -28,19 +29,23 @@ func (s Server) addQualification(w http.ResponseWriter, r *http.Request) {
 	}
 	id := uuid.NewString()
 	q.ID = id
-	err = s.backend.AddQualification(q)
+	qual, err := s.backend.AddQualification(q)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+	if err = json.NewEncoder(w).Encode(qual); err != nil {
+		l.LogAttrs(r.Context(), slog.LevelError, "Error serializing qualification to client", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 func (s Server) getQualification(w http.ResponseWriter, r *http.Request) {
 	l := s.logger.With(slog.String("path", fmt.Sprintf("%s %s", r.Method, r.URL.Path)))
 	id := r.PathValue("id")
 	q, err := s.backend.GetQualification(id)
-	if errors.Is(err, types.ErrQualificationNotFound) {
+	if errors.Is(err, backend.ErrQualificationNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -78,7 +83,7 @@ func (s Server) updateQualification(w http.ResponseWriter, r *http.Request) {
 	}
 	//TODO: Implement authorization so that only the correct user is allowed to update an account
 	existingQualification, err := s.backend.GetQualification(q.ID)
-	if errors.Is(err, types.ErrQualificationNotFound) {
+	if errors.Is(err, backend.ErrQualificationNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {
@@ -90,10 +95,11 @@ func (s Server) updateQualification(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	//TODO: fix this shit
 	for _, req := range q.InitialRequirements {
 		l.LogAttrs(r.Context(), slog.LevelInfo, "Verifying that all provided initial requirements exist...")
 		_, err := s.backend.GetRequirement(req.ID)
-		if errors.Is(err, types.ErrRequirementNotFound) {
+		if errors.Is(err, backend.ErrRequirementNotFound) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else if err != nil {
@@ -104,7 +110,7 @@ func (s Server) updateQualification(w http.ResponseWriter, r *http.Request) {
 	for _, req := range q.RecurringRequirements {
 		l.LogAttrs(r.Context(), slog.LevelInfo, "Verifying that all provided recurring requirements exist...")
 		_, err := s.backend.GetRequirement(req.ID)
-		if errors.Is(err, types.ErrRequirementNotFound) {
+		if errors.Is(err, backend.ErrRequirementNotFound) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else if err != nil {
@@ -112,12 +118,16 @@ func (s Server) updateQualification(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	err = s.backend.UpdateQualification(q)
+	forceExpiration := q.Expires == false
+	qualification, err := s.backend.UpdateQualification(q, forceExpiration)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(qualification)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error serializing qualification to client", slog.String("error", err.Error()))
+	}
 }
 
 func (s Server) deleteQualification(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +139,7 @@ func (s Server) deleteQualification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := s.backend.DeleteQualification(id)
-	if errors.Is(err, types.ErrQualificationNotFound) {
+	if errors.Is(err, backend.ErrQualificationNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if err != nil {

@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"PORTal/api"
+	"PORTal/backend"
 	"PORTal/types"
 	"bytes"
 	"encoding/json"
@@ -17,13 +18,14 @@ import (
 
 func TestAddMember(t *testing.T) {
 	b := newMockBackend()
-	b.addMemberOverride = func(m types.Member) error {
+	b.addMemberOverride = func(m types.Member) (types.Member, error) {
 		if m.FirstName == "bad" {
-			return errors.New("error")
+			return types.Member{}, errors.New("error")
 		} else if m.SupervisorID == "bad" {
-			return types.ErrSupervisorNotFound
+			return types.Member{}, backend.ErrSupervisorNotFound
 		}
-		return nil
+		m.ID = uuid.NewString()
+		return m, nil
 	}
 
 	s := api.New(slog.Default(), b, false)
@@ -79,13 +81,13 @@ func TestAddMember(t *testing.T) {
 				t.Errorf("Expected status code %d, got %d", tt.statusCode, w.Code)
 			}
 			if tt.statusCode == http.StatusCreated {
-				var res types.IdJson
+				var res types.Member
 				err := json.NewDecoder(w.Body).Decode(&res)
 				if err != nil {
 					t.Errorf("Error when deserializing response into IdJson for TestAddMember: %s", err.Error())
 				}
 				if _, err := uuid.Parse(res.ID); err != nil {
-					t.Errorf("Invalid UUID returned from server")
+					t.Errorf("Invalid UUID returned from server: %s", err.Error())
 				}
 			}
 		})
@@ -98,12 +100,11 @@ func TestGetMember(t *testing.T) {
 	notFoundId := uuid.NewString()
 	testMember := types.Member{
 		ApiMember: types.ApiMember{
-			ID:             goodId,
-			FirstName:      "test",
-			LastName:       "member",
-			Rank:           "TSgt",
-			Qualifications: nil,
-			SupervisorID:   "",
+			ID:           goodId,
+			FirstName:    "test",
+			LastName:     "member",
+			Rank:         "TSgt",
+			SupervisorID: "",
 		},
 		Password: "",
 		Hash:     "",
@@ -116,7 +117,7 @@ func TestGetMember(t *testing.T) {
 		case badId:
 			return types.Member{}, errors.New("generic error")
 		case notFoundId:
-			return types.Member{}, types.ErrMemberNotFound
+			return types.Member{}, backend.ErrMemberNotFound
 		default:
 			return types.Member{}, errors.New("unexpected error")
 		}
@@ -178,24 +179,22 @@ func TestGetMember(t *testing.T) {
 func TestGetAllMembers(t *testing.T) {
 	testMember := types.Member{
 		ApiMember: types.ApiMember{
-			ID:             uuid.NewString(),
-			FirstName:      "test",
-			LastName:       "member",
-			Rank:           "TSgt",
-			Qualifications: nil,
-			SupervisorID:   "",
+			ID:           uuid.NewString(),
+			FirstName:    "test",
+			LastName:     "member",
+			Rank:         "TSgt",
+			SupervisorID: "",
 		},
 		Password: "",
 		Hash:     "",
 	}
 	testMember2 := types.Member{
 		ApiMember: types.ApiMember{
-			ID:             uuid.NewString(),
-			FirstName:      "test 2",
-			LastName:       "member 2",
-			Rank:           "MSgt",
-			Qualifications: nil,
-			SupervisorID:   uuid.NewString(),
+			ID:           uuid.NewString(),
+			FirstName:    "test 2",
+			LastName:     "member 2",
+			Rank:         "MSgt",
+			SupervisorID: uuid.NewString(),
 		},
 		Password: "",
 		Hash:     "",
@@ -257,25 +256,24 @@ func TestGetAllMembers(t *testing.T) {
 
 func TestUpdateMember(t *testing.T) {
 	b := newMockBackend()
-	b.updateMemberOverride = func(m types.Member) error {
+	b.updateMemberOverride = func(m types.Member) (types.Member, error) {
 		if m.FirstName == "bad" {
-			return errors.New("generic error")
+			return types.Member{}, errors.New("generic error")
 		} else if m.FirstName == "not found" {
-			return types.ErrMemberNotFound
+			return types.Member{}, backend.ErrMemberNotFound
 		} else if m.SupervisorID == "not found" {
-			return types.ErrSupervisorNotFound
+			return types.Member{}, backend.ErrSupervisorNotFound
 		}
-		return nil
+		return m, nil
 	}
 	b.getMemberOverride = func(id string) (types.Member, error) {
 		return types.Member{
 			ApiMember: types.ApiMember{
-				ID:             "old",
-				FirstName:      "old",
-				LastName:       "old",
-				Rank:           "Old",
-				Qualifications: nil,
-				SupervisorID:   "Old",
+				ID:           "old",
+				FirstName:    "old",
+				LastName:     "old",
+				Rank:         "Old",
+				SupervisorID: "Old",
 			},
 			Password: "Old",
 			Hash:     "Old",

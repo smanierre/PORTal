@@ -4,14 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"log/slog"
 	"strings"
 )
 
-func New(logger *slog.Logger, dbFile string, expectedVersion float64) (*Backend, error) {
+type Provider struct {
+	logger *slog.Logger
+	Db     *sql.DB
+}
+
+func New(logger *slog.Logger, dbFile string, expectedVersion float64) (Provider, error) {
 	l := logger.With(slog.String("source", "sqlite3_backend"))
-	b := &Backend{
+	b := Provider{
 		logger: l,
 		Db:     nil,
 	}
@@ -19,7 +23,7 @@ func New(logger *slog.Logger, dbFile string, expectedVersion float64) (*Backend,
 	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on", dbFile))
 	if err != nil {
 		l.LogAttrs(context.Background(), slog.LevelError, "Error opening sqlite database", slog.String("error", err.Error()))
-		return nil, err
+		return Provider{}, err
 	}
 	l.LogAttrs(context.Background(), slog.LevelInfo, "Successfully connected to database")
 	l.LogAttrs(context.Background(), slog.LevelInfo, "Checking database structure...")
@@ -29,12 +33,12 @@ func New(logger *slog.Logger, dbFile string, expectedVersion float64) (*Backend,
 		err := createDBStructure(db)
 		if err != nil {
 			l.LogAttrs(context.Background(), slog.LevelError, "Error creating database structure", slog.String("error", err.Error()))
-			return nil, err
+			return Provider{}, err
 		}
 		l.LogAttrs(context.Background(), slog.LevelInfo, "Successfully created database structure")
 	} else if err != nil {
 		l.LogAttrs(context.Background(), slog.LevelError, "Error checking database", slog.String("error", err.Error()))
-		return nil, err
+		return Provider{}, err
 	}
 	if version != expectedVersion {
 		l.LogAttrs(context.Background(), slog.LevelWarn, "Different Db version detected vs expected, upgrades not implemented yet")
@@ -44,11 +48,6 @@ func New(logger *slog.Logger, dbFile string, expectedVersion float64) (*Backend,
 	l.LogAttrs(context.Background(), slog.LevelInfo, "Found correct structure and version")
 	b.Db = db
 	return b, nil
-}
-
-type Backend struct {
-	logger *slog.Logger
-	Db     *sql.DB
 }
 
 func checkDB(db *sql.DB) (float64, error) {
