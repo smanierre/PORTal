@@ -1,7 +1,7 @@
 import * as React from "react"
-import {NavigationMenu, NavigationMenuItem,} from "@/components/ui/navigation-menu"
-import {Link} from "react-router-dom";
-import {NavigationMenuList, navigationMenuTriggerStyle} from "./ui/navigation-menu.tsx";
+import { NavigationMenu, NavigationMenuItem, } from "@/components/ui/navigation-menu"
+import { Link } from "react-router-dom";
+import { NavigationMenuList, navigationMenuTriggerStyle } from "./ui/navigation-menu.tsx";
 
 const loggedOutItems = [
     {
@@ -22,14 +22,18 @@ const loggedInItems = [
     {
         text: "Profile",
         to: "/profile"
+    },
+    {
+        text: "Qualifications",
+        to: "/qualifications"
     }
 ]
 
-export default function Nav({loggedIn}: { loggedIn: boolean }) {
+export default function Nav({ loggedIn }: { loggedIn: boolean }) {
     if (loggedIn) {
         return (
             <NavigationMenu className={"items-baseline row-span-1"}>
-                <NavigationMenuList className={"space-x-0"}>
+                <NavigationMenuList className={"space-x-0 h-full"}>
                     {loggedInItems.map(item => (
                         <NavigationMenuItem key={item.text}>
                             <Link to={item.to} className={navigationMenuTriggerStyle()}>

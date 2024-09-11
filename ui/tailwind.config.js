@@ -73,7 +73,7 @@ module.exports = {
       },
     },
     gridTemplateRows: {
-      "main": "50px 1fr",
+      "main": "40px 1fr",
     }
   },
   plugins: [require("tailwindcss-animate")],
