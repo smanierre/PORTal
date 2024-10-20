@@ -1,0 +1,10 @@
+# Example configuration file for application.
+# Any optional values will be labelled as such with the default value displayed.
+backend:
+  DbFile: PORTal.db # Optional path to the database file within the container
+  BcryptCost: 16 # Optional number for cost of hashing password
+api:
+  domain: portal.com # Required domain name the site will be served from. Used for cookies
+  port: 8080 # Optional port for server to listen on
+  JWTExpiration: 168 # Optional number of hours JWT token is valid for
+  JWTSecret: c3VwZXJzZWNyZXR2YWx1ZQo # Required string used to sign JWT tokens

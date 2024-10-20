@@ -27,7 +27,7 @@ type Member struct {
 }
 
 func (m Member) LogValue() slog.Value {
-	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s", m.ID, m.Rank, m.FirstName, m.LastName, m.Username, m.SupervisorID))
+	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s Admin: %t", m.ID, m.Rank, m.FirstName, m.LastName, m.Username, m.SupervisorID, m.Admin))
 }
 
 func (m Member) ToApiMember() ApiMember {
@@ -62,7 +62,8 @@ type ApiMember struct {
 	LastName     string `json:"last_name"`
 	Username     string `json:"username"`
 	Rank         Rank   `json:"rank"`
-	SupervisorID string `json:"supervisor_id,omitempty"`
+	SupervisorID string `json:"supervisor_id"`
+	Admin        bool   `json:"admin"`
 }
 
 type Session struct {

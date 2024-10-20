@@ -36,7 +36,7 @@ func TestAddMemberQualification(t *testing.T) {
 		}
 		return errors.New("unexpected case")
 	}
-	s := api.New(slog.Default(), b, false)
+	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name            string
@@ -113,7 +113,7 @@ func TestGetMemberQualifications(t *testing.T) {
 			return nil, errors.New("unexpected case")
 		}
 	}
-	s := api.New(slog.Default(), b, false)
+	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name             string
@@ -201,7 +201,7 @@ func TestDeleteMemberQualification(t *testing.T) {
 		return errors.New("unexpected case")
 	}
 
-	s := api.New(slog.Default(), b, false)
+	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name       string

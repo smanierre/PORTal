@@ -30,9 +30,9 @@ func TestAddGetMemberQualification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
-	member1, err := b.AddMember(testutils.RandomMember())
+	member1, err := b.AddMember(testutils.RandomMember(false))
 	if err != nil {
 		t.Fatalf("Error adding member for TestAddGetMemberQualification: %s", err.Error())
 	}
@@ -128,13 +128,13 @@ func TestGetMemberQualifications(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
-	member1, err := b.AddMember(testutils.RandomMember())
+	member1, err := b.AddMember(testutils.RandomMember(false))
 	if err != nil {
 		t.Fatalf("Error adding member for TestGetMemberQualifications: %s", err.Error())
 	}
-	member2, err := b.AddMember(testutils.RandomMember())
+	member2, err := b.AddMember(testutils.RandomMember(false))
 	if err != nil {
 		t.Fatalf("Error adding member for TestGetMemberQualifications: %s", err.Error())
 	}
@@ -146,7 +146,7 @@ func TestGetMemberQualifications(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error adding qualification to member for TestGetMemberQualifications: %s", err.Error())
 	}
-	member3, err := b.AddMember(testutils.RandomMember())
+	member3, err := b.AddMember(testutils.RandomMember(false))
 	if err != nil {
 		t.Fatalf("Error adding member for TestGetMemberQualifications: %s", err.Error())
 	}
@@ -235,9 +235,9 @@ func TestRemoveMemberQualification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
-	member1, err := b.AddMember(testutils.RandomMember())
+	member1, err := b.AddMember(testutils.RandomMember(false))
 	if err != nil {
 		t.Fatalf("Error adding member for TestRemoveMemberQualification: %s", err.Error())
 	}
