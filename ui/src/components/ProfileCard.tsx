@@ -1,13 +1,18 @@
-import {cn} from "../lib/utils.ts";
-import {useContext} from "react";
-import {MemberCtx} from "../App.tsx";
+import { Member } from "..";
 
-export default function ProfileCard({className}: {className?:string}) {
-    const ctx = useContext(MemberCtx)
-    return <article className={`${className !== undefined ? className : ""} w-1/2 h-1/2 bg-red-500`}>
-        <p>First Name: {ctx.Member?.first_name}</p>
-        <p>Last Name: {ctx.Member?.last_name}</p>
-        <p>Rank: {ctx.Member?.rank}</p>
-        <p>Qualifications: </p>
+interface ProfileCardProps {
+    className?: string
+    member: Member | null
+    subordinates: Member[]
+}
+
+export default function ProfileCard({ className, member, subordinates }: ProfileCardProps) {
+    return <article className={`${className !== undefined ? className : "p-4"}`}>
+        <p>{member?.rank} {member?.first_name} {member?.last_name}</p>
+        <p className="py-2">Subordinates:</p>
+        <ul className="overflow-scroll">
+            {subordinates && subordinates.map(subordinate => <li>{subordinate.rank} {subordinate.first_name} {subordinate.last_name}</li>)}
+        </ul>
+
     </article>
 }

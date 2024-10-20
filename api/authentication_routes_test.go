@@ -2,8 +2,8 @@ package api_test
 
 import (
 	"PORTal/api"
+	"PORTal/testutils"
 	"PORTal/types"
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,6 +14,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestLogin(t *testing.T) {
@@ -34,7 +35,7 @@ func TestLogin(t *testing.T) {
 		}
 		return types.Member{}, errors.New("generic error")
 	}
-	s := api.New(slog.Default(), m, false)
+	s := api.New(slog.Default(), m, false, api.Config{JWTSecret: "test", JWTExpiration: 1 * time.Hour})
 
 	tc := []struct {
 		name             string
@@ -67,93 +68,146 @@ func TestLogin(t *testing.T) {
 				t.Errorf("Expected response code: %d, got: %d", tt.statusCode, w.Code)
 			}
 			if w.Code == http.StatusOK {
-				var m types.Member
-				err := json.NewDecoder(w.Body).Decode(&m)
+				var res api.LoginResponse
+				err := json.NewDecoder(w.Body).Decode(&res)
 				if err != nil {
 					t.Errorf("Error decoding response into member struct: %s", err.Error())
 				}
-				if !reflect.DeepEqual(tt.expectedResponse, m.ToApiMember()) {
+				if !reflect.DeepEqual(tt.expectedResponse, res.Member) {
 					t.Errorf("Expected response: %+v\nGot: %+v", tt.expectedResponse, m)
 				}
-				if w.Header().Get("Set-Cookie") == "" {
-					t.Errorf("Expected Set-Cookie header, but didn't find one")
+				setCookieHeader := w.Header().Get("Set-Cookie")
+				if setCookieHeader == "" {
+					t.Errorf("Expected Set-Cookie header to be set, but it wasn't")
 				}
 			}
 		})
 	}
 }
 
-func TestValidateSession(t *testing.T) {
-	validMemberID := uuid.NewString()
+func TestLogout(t *testing.T) {
 	m := newMockBackend()
-	m.validateSessionOverride = func(sessionID, id, ipAddress string) error {
-		switch sessionID {
-		case "valid":
-			break
-		case "invalid":
-			return errors.New("invalid session")
-		default:
-			t.Errorf("unexpected case")
-			return errors.New("unexpected case")
-		}
-		switch id {
-		case validMemberID:
-			return nil
-		default:
-			t.Errorf("Unexpected case")
-			return errors.New("unexpected case")
-		}
+	s := api.New(slog.Default(), m, false, api.Config{
+		JWTSecret: "supersecret",
+	})
+
+	member := testutils.RandomMember(false)
+	member.ID = uuid.NewString()
+
+	token, err := api.CreateToken(member, time.Hour, []byte("supersecret"))
+	if err != nil {
+		t.Fatalf("Error creating token for TestLogout: %s", err.Error())
 	}
-	s := api.New(slog.Default(), m, false)
 
 	tc := []struct {
-		name          string
-		sessionCookie *http.Cookie
-		memberID      types.IdJson
-		statusCode    int
+		Name  string
+		Token string
 	}{
 		{
-			name: "Successful Validation",
-			sessionCookie: &http.Cookie{
-				Name:  "session-id",
-				Value: "valid",
-			},
-			memberID:   types.IdJson{ID: validMemberID},
-			statusCode: http.StatusOK,
-		},
-		{
-			name: "Bad cookie name",
-			sessionCookie: &http.Cookie{
-				Name:  "sessionid",
-				Value: "irrelevant",
-			},
-			memberID:   types.IdJson{ID: validMemberID},
-			statusCode: http.StatusUnauthorized,
-		},
-		{
-			name: "Invalid Session",
-			sessionCookie: &http.Cookie{
-				Name:  "session-id",
-				Value: "invalid",
-			},
-			memberID:   types.IdJson{ID: validMemberID},
-			statusCode: http.StatusUnauthorized,
+			Name:  "Successful logout",
+			Token: token,
 		},
 	}
 
 	for _, tt := range tc {
-		t.Run(tt.name, func(t *testing.T) {
-			b := &bytes.Buffer{}
-			err := json.NewEncoder(b).Encode(tt.memberID)
-			if err != nil {
-				t.Fatalf("Error encoding memberID to string: %s", err.Error())
-			}
+		t.Run(tt.Name, func(t *testing.T) {
 			w := httptest.NewRecorder()
-			r := httptest.NewRequest(http.MethodPost, "/api/validateSession", b)
-			r.AddCookie(tt.sessionCookie)
+			r := httptest.NewRequest(http.MethodGet, "/api/logout", nil)
+			r.AddCookie(&http.Cookie{
+				Name:    "identity",
+				Value:   tt.Token,
+				Path:    "/api",
+				Expires: time.Now().Add(time.Hour),
+			})
 			s.ServeHTTP(w, r)
-			if w.Code != tt.statusCode {
-				t.Errorf("Expected response code %d, got %d", tt.statusCode, w.Code)
+			if w.Header().Get("Set-Cookie") == "" {
+				t.Errorf("Expected Set-Cookie header to be set, but it wasn't")
+			}
+			setCookieHeaderParts := strings.Split(w.Header().Get("Set-Cookie"), "=")
+			ti, err := time.Parse(time.RFC1123, setCookieHeaderParts[3])
+			if err != nil {
+				t.Fatalf("Error parsing cookie expiration time: %s", err.Error())
+			}
+			if ti.After(time.Now()) {
+				t.Errorf("Expected cookie to be expired but it isn't")
+			}
+		})
+	}
+}
+
+func TestCheckAdmin(t *testing.T) {
+	m := newMockBackend()
+	s := api.New(slog.Default(), m, false, api.Config{
+		JWTSecret: "supersecret",
+	})
+
+	adminMember := testutils.RandomMember(true)
+	adminMember.ID = uuid.NewString()
+
+	normalMember := testutils.RandomMember(false)
+	normalMember.ID = uuid.NewString()
+
+	adminToken, err := api.CreateToken(adminMember, time.Hour, []byte("supersecret"))
+	if err != nil {
+		t.Fatalf("Error creating adminToken for TestCheckAdmin: %s", err.Error())
+	}
+
+	normalToken, err := api.CreateToken(normalMember, time.Hour, []byte("supersecret"))
+	if err != nil {
+		t.Fatalf("Error creating normalToken for TestCheckAdmin: %s", err.Error())
+	}
+
+	invalidSignatureToken, err := api.CreateToken(adminMember, time.Hour, []byte("differentsecret"))
+	if err != nil {
+		t.Fatalf("Error creating invalidSignatureToken for TestCheckAdmin: %s", err.Error())
+	}
+
+	expiredToken, err := api.CreateToken(adminMember, time.Millisecond, []byte("supersecret"))
+	if err != nil {
+		t.Fatalf("Error creating expiredToken for TestCheckAdmin: %s", err.Error())
+	}
+
+	tc := []struct {
+		Name           string
+		Token          string
+		ExpectedStatus int
+	}{
+		{
+			Name:           "Successful validation",
+			Token:          adminToken,
+			ExpectedStatus: http.StatusOK,
+		},
+		{
+			Name:           "Not admin",
+			Token:          normalToken,
+			ExpectedStatus: http.StatusUnauthorized,
+		},
+		{
+			Name:           "Invalid Signature",
+			Token:          invalidSignatureToken,
+			ExpectedStatus: http.StatusUnauthorized,
+		},
+		{
+			Name:           "Expired Token",
+			Token:          expiredToken,
+			ExpectedStatus: http.StatusUnauthorized,
+		},
+	}
+
+	for _, tt := range tc {
+		t.Run(tt.Name, func(t *testing.T) {
+			w := httptest.NewRecorder()
+			r := httptest.NewRequest(http.MethodGet, "/api/checkAdmin", nil)
+			r.AddCookie(&http.Cookie{
+				Name:    api.JWTCookieName,
+				Value:   tt.Token,
+				Path:    "/api",
+				Domain:  "localhost",
+				Expires: time.Now().Add(time.Hour),
+			})
+			s.ServeHTTP(w, r)
+			if w.Code != tt.ExpectedStatus {
+				t.Errorf("Expected status code: %d, got: %d", tt.ExpectedStatus, w.Code)
 			}
 		})
 	}

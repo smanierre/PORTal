@@ -30,7 +30,7 @@ func TestAddAndGetQualification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	ref1, err := b.AddReference(testutils.RandomReference())
 	if err != nil {
@@ -160,7 +160,7 @@ func TestGetAllQualifications(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	ref1, err := b.AddReference(testutils.RandomReference())
 	if err != nil {
@@ -258,7 +258,7 @@ func TestUpdateQualification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	usedRef1, err := b.AddReference(testutils.RandomReference())
 	if err != nil {
@@ -495,7 +495,7 @@ func TestDeleteQualification(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	ref1, err := b.AddReference(testutils.RandomReference())
 	if err != nil {

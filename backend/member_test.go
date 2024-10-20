@@ -31,9 +31,9 @@ func TestAddAndGetMember(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
-	supervisor, err := b.AddMember(testutils.RandomMember())
+	supervisor, err := b.AddMember(testutils.RandomMember(true))
 	if err != nil {
 		t.Fatalf("Error adding member for TestAddMember_Sqlite: %s", err.Error())
 	}
@@ -164,10 +164,10 @@ func TestGetAllMembers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
-	member1 := testutils.RandomMember()
-	member2 := testutils.RandomMember()
+	member1 := testutils.RandomMember(true)
+	member2 := testutils.RandomMember(false)
 
 	type testCase struct {
 		Name            string
@@ -246,13 +246,13 @@ func TestUpdateMember(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
-	member, err := b.AddMember(testutils.RandomMember())
+	member, err := b.AddMember(testutils.RandomMember(false))
 	if err != nil {
 		t.Fatalf("Error adding member for TestUpdateMember: %s", err.Error())
 	}
-	supervisor, err := b.AddMember(testutils.RandomMember())
+	supervisor, err := b.AddMember(testutils.RandomMember(true))
 	if err != nil {
 		t.Fatalf("Error adding member for TestUpdateMember: %s", err.Error())
 	}
@@ -271,6 +271,7 @@ func TestUpdateMember(t *testing.T) {
 					LastName:     "Schmoe",
 					Username:     "newuser",
 					Rank:         types.E1,
+					Admin:        true,
 					SupervisorID: supervisor.ID,
 				},
 				Password: "newpassword",
@@ -347,17 +348,17 @@ func TestDeleteMember_Sqlite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, &backend.Options{BcryptCost: bcrypt.MinCost})
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
-	m1, err := b.AddMember(testutils.RandomMember())
+	m1, err := b.AddMember(testutils.RandomMember(false))
 	if err != nil {
 		t.Fatalf("Error adding member for TestDeleteMember_Sqlite: %s", err.Error())
 	}
-	supervisor, err := b.AddMember(testutils.RandomMember())
+	supervisor, err := b.AddMember(testutils.RandomMember(true))
 	if err != nil {
 		t.Fatalf("Error adding member for TestDeleteMember_Sqlite: %s", err.Error())
 	}
-	m3 := testutils.RandomMember()
+	m3 := testutils.RandomMember(false)
 	m3.SupervisorID = supervisor.SupervisorID
 	m3, err = b.AddMember(m3)
 	if err != nil {

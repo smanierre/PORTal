@@ -1,4 +1,5 @@
 import { Dispatch, SetStateAction } from "react";
+import "vite/client"
 
 interface LoginRes {
     member: Member
@@ -11,6 +12,9 @@ interface Member {
     first_name: string
     last_name: string
     rank: string
+    admin: boolean
+    username: string
+    supervisor_id: string
 }
 
 interface Qualification {
@@ -37,9 +41,4 @@ interface Reference {
     name: string
     volume: number
     paragraph: string
-}
-
-interface MemberContext {
-    Member: Member | null,
-    SetMember: Dispatch<SetStateAction<Member | null>>
 }

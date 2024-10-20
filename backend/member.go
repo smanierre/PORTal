@@ -25,7 +25,7 @@ func (b Backend) AddMember(m types.Member) (types.Member, error) {
 		return types.Member{}, ErrWeakPassword
 	}
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Hashing password")
-	hash, err := bcrypt.GenerateFromPassword([]byte(m.Password), BcryptCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(m.Password), b.config.BcryptCost)
 	if errors.Is(err, bcrypt.ErrPasswordTooLong) {
 		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Provided password is too long", slog.Int("length", len(m.Password)))
 		return types.Member{}, ErrPasswordTooLong
@@ -63,6 +63,11 @@ func (b Backend) GetAllMembers() ([]types.Member, error) {
 	return b.memberProvider.GetAllMembers()
 }
 
+func (b Backend) GetSubordinates(memberID string) ([]types.Member, error) {
+	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting subordinates for member", slog.String("member_id", memberID))
+	return b.memberProvider.GetSubordinates(memberID)
+}
+
 func (b Backend) UpdateMember(m types.Member) (types.Member, error) {
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Updating member")
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting previous member to determine updates")
@@ -80,7 +85,7 @@ func (b Backend) UpdateMember(m types.Member) (types.Member, error) {
 			return types.Member{}, ErrWeakPassword
 		}
 		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Hashing new password")
-		hash, err := bcrypt.GenerateFromPassword([]byte(updateMember.Password), BcryptCost)
+		hash, err := bcrypt.GenerateFromPassword([]byte(updateMember.Password), b.config.BcryptCost)
 		if err != nil {
 			if errors.Is(err, bcrypt.ErrPasswordTooLong) {
 				b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Provided password is too long", slog.Int("length", len(m.Password)))

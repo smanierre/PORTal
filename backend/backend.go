@@ -18,21 +18,20 @@ const (
 
 const MinimumPwLength = 8
 
-var BcryptCost int
-
 type Backend struct {
-	memberProvider         MemberProvider
-	qualificationProvider  QualificationProvider
-	requirementProvider    RequirementProvider
-	authenticationProvider AuthenticationProvider
-	clock                  Clock
-	logger                 *slog.Logger
+	memberProvider        MemberProvider
+	qualificationProvider QualificationProvider
+	requirementProvider   RequirementProvider
+	clock                 Clock
+	logger                *slog.Logger
+	config                Config
 }
 
 type MemberProvider interface {
 	AddMember(m types.Member) error
 	GetMember(identifier string, method ProviderMethod) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
+	GetSubordinates(memberID string) ([]types.Member, error)
 	UpdateMember(member types.Member) error
 	DeleteMember(identifier string, method ProviderMethod) error
 	AssignMemberQualification(memberID, qualificationID string) error
@@ -63,20 +62,13 @@ type RequirementProvider interface {
 	DeleteReference(id string) error
 }
 
-type AuthenticationProvider interface {
-	AddSession(sessionID, memberID, userAgent string, expiration time.Time) (types.Session, error)
-	GetSession(id string) (types.Session, error)
-	CheckForMemberSession(memberID, sessionID string) error
-	DeleteSession(id string)
-}
-
 type Clock interface {
 	Now() time.Time
 }
 
-type Options struct {
-	BcryptCost int
-	Clock      Clock
+type Config struct {
+	DbFile     string `yaml:"DbFile"`
+	BcryptCost int    `yaml:"BcryptCost"`
 }
 
 type realTime struct{}
@@ -86,25 +78,18 @@ func (r realTime) Now() time.Time {
 }
 
 func New(logger *slog.Logger, memberProvider MemberProvider, qualificationProvider QualificationProvider,
-	requirementProvider RequirementProvider, authenticationProvider AuthenticationProvider, opts *Options) Backend {
-	if opts == nil {
-		opts = &Options{}
+	requirementProvider RequirementProvider, config Config, clock Clock) Backend {
+	if clock == nil {
+		clock = realTime{}
 	}
-	if opts.BcryptCost != 0 {
-		BcryptCost = opts.BcryptCost
-	} else {
-		BcryptCost = 16
-	}
-	if opts.Clock == nil {
-		opts.Clock = realTime{}
-	}
-	logger.LogAttrs(context.Background(), slog.LevelInfo, fmt.Sprintf("Using bcrypt cost: %d", BcryptCost))
+
+	logger.LogAttrs(context.Background(), slog.LevelInfo, fmt.Sprintf("Using bcrypt cost: %d", config.BcryptCost))
 	return Backend{
-		memberProvider:         memberProvider,
-		qualificationProvider:  qualificationProvider,
-		requirementProvider:    requirementProvider,
-		authenticationProvider: authenticationProvider,
-		clock:                  opts.Clock,
-		logger:                 logger,
+		memberProvider:        memberProvider,
+		qualificationProvider: qualificationProvider,
+		requirementProvider:   requirementProvider,
+		clock:                 clock,
+		logger:                logger,
+		config:                config,
 	}
 }

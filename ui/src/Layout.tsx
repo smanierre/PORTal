@@ -1,10 +1,12 @@
-import react from "@vitejs/plugin-react-swc";
-import {JSX} from "react";
+import React from "react"
 
-export default function Layout(props) {
+interface LayoutProps {
+    children: React.JSX.Element[]
+}
+
+export default function Layout(props: LayoutProps) {
     return (
         <div className={"h-screen w-screen grid grid-cols-1 grid-rows-main"}>
-            {props.Nav}
             {props.children}
         </div>
     )

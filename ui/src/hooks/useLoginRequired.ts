@@ -1,21 +1,14 @@
-import {useLocation, useNavigate} from "react-router-dom";
-import useValidateSession from "./useValidateSession.ts";
-import {useContext} from "react";
-import {MemberCtx} from "../App.tsx";
+import { useNavigate } from "react-router-dom";
+import { AppContext } from "../App";
+import { useContext, useEffect } from "react";
 
 export default function useLoginRequired() {
-    const ctx = useContext(MemberCtx)
-    const currentRoute = useLocation()
+    const memberCtx = useContext(AppContext)
     const nav = useNavigate()
-    if(ctx.Member !== null) {
-        if(currentRoute.pathname === "/") {
-            nav("/dashboard")
-        }
+    if (memberCtx.member !== null) {
         return
     }
-    const [member, setMember] = useValidateSession()
-    if(member === null) {
+    useEffect(() => {
         nav("/login")
-    }
-    ctx.SetMember(member)
+    }, [])
 }

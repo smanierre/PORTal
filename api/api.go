@@ -7,12 +7,16 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 )
+
+const JWTCookieName = "identity"
 
 type Backend interface {
 	AddMember(m types.Member) (types.Member, error)
 	GetMember(identifier string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
+	GetSubordinates(memberID string) ([]types.Member, error)
 	UpdateMember(m types.Member) (types.Member, error)
 	DeleteMember(id string) error
 
@@ -22,7 +26,7 @@ type Backend interface {
 	UpdateQualification(q types.Qualification, forceExpirationUpdate bool) (types.Qualification, error)
 	DeleteQualification(id string) error
 
-	AssignMemberQualification(qualID, memberID string) error
+	AssignMemberQualification(memberID, qualID string) error
 	GetMemberQualification(memberID string, qualificationID string) (types.Qualification, error)
 	GetMemberQualifications(memberID string) ([]types.Qualification, error)
 	RemoveMemberQualification(memberID, qualificationID string) error
@@ -39,18 +43,24 @@ type Backend interface {
 	UpdateReference(reference types.Reference, overrideNoVolume bool) (types.Reference, error)
 	DeleteReference(id string) error
 
-	AddSession(memberID, userAgent string) (types.Session, error)
-	ValidateSession(sessionID, memberID, userAgent string) error
 	Login(username, password string) (types.Member, error)
 }
 
-func New(logger *slog.Logger, backend Backend, dev bool) Server {
+type Config struct {
+	Domain        string        `yaml:"domain"`
+	JWTExpiration time.Duration `yaml:"JWTExpiration"`
+	JWTSecret     string        `yaml:"JWTSecret"`
+	Port          int           `yaml:"port"`
+}
+
+func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Creating new api server")
 	s := Server{
 		logger:  logger,
 		backend: backend,
 		mux:     http.NewServeMux(),
 		dev:     dev,
+		config:  config,
 	}
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering routes...")
 
@@ -83,12 +93,16 @@ func New(logger *slog.Logger, backend Backend, dev bool) Server {
 
 	// Authentication routes
 	s.mux.Handle("POST /api/login", http.HandlerFunc(s.login))
-	s.mux.Handle("POST /api/validateSession", http.HandlerFunc(s.validateSession))
+	s.mux.Handle("GET /api/logout", http.HandlerFunc(s.logout))
+	s.mux.Handle("GET /api/checkAdmin", http.HandlerFunc(s.checkAdmin))
 
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	if dev {
 		logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from build folder")
-		s.mux.Handle("/", http.FileServer(http.Dir("ui/dist")))
+		s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("ui/dist")))
+	} else {
+		logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from /app/dist")
+		s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("/app/dist")))
 	}
 	return s
 }
@@ -98,6 +112,7 @@ type Server struct {
 	backend Backend
 	mux     *http.ServeMux
 	dev     bool
+	config  Config
 }
 
 func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -1,49 +1,40 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Root from "./pages/Root.tsx";
 import Login from "./pages/Login.tsx";
 import Layout from "./Layout.tsx";
 import Nav from "./components/Nav.tsx";
-import { createContext, useEffect, useState } from "react";
-import useValidateSession from "./hooks/useValidateSession.ts";
-import { MemberContext } from "./index";
-import { Progress } from "./components/ui/progress.tsx";
+
 import Dashboard from "./pages/Dashboard.tsx";
 import Qualifications from "./pages/Qualifications.tsx";
+import { createContext, useContext, useState } from "react";
+import { Member, Qualification } from "./index";
+import Admin from "./pages/Admin.tsx"
+import Redirect from "./components/Redirect.tsx";
 
-export const MemberCtx = createContext<MemberContext>({ Member: null, SetMember: null })
+
+export interface AppCtx {
+  member: Member | null
+  qualifications: Qualification[]
+  subordinates: Member[]
+}
+export const AppContext = createContext<AppCtx>(Object.create({ member: null }))
 
 export default function App() {
-  const [member, setMember] = useValidateSession()
-  const [progress, setProgress] = useState(0)
-  useEffect(() => {
-
-    const interval = setInterval(() => setProgress((prev) => {
-      return prev + Math.floor(Math.random() * 100) % 25
-    }), 250)
-    return () => {
-      clearInterval(interval)
-    }
-  }, []);
+  const [appCtx, setAppCtx] = useState(useContext(AppContext))
   return (
-    progress <= 100 ?
-      <div className={"h-screen w-screen relative"}>
-        <div className={"w-1/2 absolute top-1/2 left-1/2 -translate-x-1/2"}>
-          <Progress value={progress} />
-        </div>
-      </div>
-      :
-      <BrowserRouter>
-        <MemberCtx.Provider value={{ Member: member, SetMember: setMember }}>
+    <BrowserRouter>
+      <AppContext.Provider value={appCtx}>
+        <Redirect appCtx={appCtx} setAppCtx={setAppCtx}>
           <Layout>
-            <Nav loggedIn={member !== null} />
+            <Nav loggedIn={appCtx.member !== null} admin={appCtx.member ? appCtx.member.admin ? true : false : false} setContext={setAppCtx} />
             <Routes>
-              <Route path="/" element={<Root />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/login" element={<Login setContext={setAppCtx} />} />
+              <Route path="/dashboard" element={<Dashboard member={appCtx.member} qualifications={appCtx.qualifications} subordinates={appCtx.subordinates} />} />
               <Route path="/qualifications" element={<Qualifications />} />
+              <Route path="/admin" element={<Admin />} />
             </Routes>
           </Layout>
-        </MemberCtx.Provider>
-      </BrowserRouter>
+        </Redirect>
+      </AppContext.Provider>
+    </BrowserRouter>
   )
 }

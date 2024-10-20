@@ -20,7 +20,7 @@ func RandomString() string {
 	return s.String()
 }
 
-func RandomMember() types.Member {
+func RandomMember(admin bool) types.Member {
 	return types.Member{
 		ApiMember: types.ApiMember{
 			ID:           "",
@@ -29,6 +29,7 @@ func RandomMember() types.Member {
 			Username:     RandomString(),
 			Rank:         types.E4,
 			SupervisorID: "",
+			Admin:        admin,
 		},
 		Password: RandomString(),
 		Hash:     "",

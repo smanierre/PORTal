@@ -3,7 +3,9 @@
 @tailwind utilities;
 
 :root {
-    --background: 0 50% 75%;
-    --accent: 0 25% 50%;
-    --primary: 0 50% 50%;
+    --background: 229 50% 28%;
+    --background-dark: 229 50% 20%;
+    --foreground: 0 0% 100%;
+    --accent: 0 0% 100%;
+    --primary: 0 0% 100%;
 }

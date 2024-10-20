@@ -4,13 +4,14 @@ const (
 	createStructureQuery = `CREATE TABLE versions(version float PRIMARY KEY);
 CREATE TABLE member(
     id string PRIMARY KEY,
-     first_name string,
-     last_name string,
-     rank string,
-     user_name string UNIQUE,
-     supervisor_id string,
-     hash string,
-     FOREIGN KEY (supervisor_id) REFERENCES member(id) ON DELETE SET NULL
+    first_name string,
+    last_name string,
+    rank string,
+    user_name string UNIQUE,
+    supervisor_id string,
+    admin integer,
+    hash string,
+    FOREIGN KEY (supervisor_id) REFERENCES member(id) ON DELETE SET NULL
 );
 
 CREATE TABLE qualification(
@@ -88,11 +89,12 @@ CREATE TABLE reference(
 
 INSERT INTO versions VALUES(1);`
 
-	insertMemberQuery           = "INSERT INTO member(id, first_name, last_name, rank, user_name, supervisor_id, hash) VALUES($1, $2, $3, $4, $5, $6, $7);"
+	insertMemberQuery           = "INSERT INTO member(id, first_name, last_name, rank, user_name, supervisor_id, admin, hash) VALUES($1, $2, $3, $4, $5, $6, $7, $8);"
 	getMemberQuery              = "SELECT * FROM member WHERE id=$1;"
 	getMemberByUsernameQuery    = "SELECT * FROM member where user_name=$1;"
 	getAllMembersQuery          = "SELECT * FROM member;"
-	updateMemberQuery           = "UPDATE member SET first_name=$1, last_name=$2, rank=$3, supervisor_id=$4, hash=$5 WHERE ID=$6;"
+	getSubordinatesQuery        = "SELECT * FROM member WHERE supervisor_id=$1;"
+	updateMemberQuery           = "UPDATE member SET first_name=$1, last_name=$2, rank=$3, supervisor_id=$4, admin=$5, hash=$6 WHERE ID=$7;"
 	deleteMemberQuery           = "DELETE FROM member WHERE id=$1;"
 	deleteMemberByUsernameQuery = "DELETE FROM member WHERE user_name=$1;"
 

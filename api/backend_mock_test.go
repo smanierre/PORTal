@@ -12,6 +12,7 @@ func newMockBackend() *mockBackend {
 		addMemberOverride:            func(m types.Member) (types.Member, error) { return types.Member{}, nil },
 		getMemberOverride:            func(id string) (types.Member, error) { return types.Member{}, nil },
 		getAllMembersOverride:        func() ([]types.Member, error) { return []types.Member{}, nil },
+		getSubordinatesOverride:      func(id string) ([]types.Member, error) { return nil, nil },
 		updateMemberOverride:         func(m types.Member) (types.Member, error) { return types.Member{}, nil },
 		deleteMemberOverride:         func(id string) error { return nil },
 		addQualificationOverride:     func(q types.Qualification) (types.Qualification, error) { return types.Qualification{}, nil },
@@ -42,11 +43,12 @@ func newMockBackend() *mockBackend {
 }
 
 type mockBackend struct {
-	addMemberOverride     func(m types.Member) (types.Member, error)
-	getMemberOverride     func(id string) (types.Member, error)
-	getAllMembersOverride func() ([]types.Member, error)
-	updateMemberOverride  func(m types.Member) (types.Member, error)
-	deleteMemberOverride  func(id string) error
+	addMemberOverride       func(m types.Member) (types.Member, error)
+	getMemberOverride       func(id string) (types.Member, error)
+	getAllMembersOverride   func() ([]types.Member, error)
+	getSubordinatesOverride func(id string) ([]types.Member, error)
+	updateMemberOverride    func(m types.Member) (types.Member, error)
+	deleteMemberOverride    func(id string) error
 
 	addQualificationOverride     func(q types.Qualification) (types.Qualification, error)
 	getQualificationOverride     func(id string) (types.Qualification, error)
@@ -86,6 +88,10 @@ func (m *mockBackend) GetMember(id string) (types.Member, error) {
 
 func (m *mockBackend) GetAllMembers() ([]types.Member, error) {
 	return m.getAllMembersOverride()
+}
+
+func (m *mockBackend) GetSubordinates(id string) ([]types.Member, error) {
+	return m.getSubordinatesOverride(id)
 }
 
 func (m *mockBackend) UpdateMember(me types.Member) (types.Member, error) {
