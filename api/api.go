@@ -3,10 +3,8 @@ package api
 import (
 	"PORTal/types"
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -99,10 +97,10 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	if dev {
 		logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from build folder")
-		s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("ui/dist")))
+		s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("ui/dist/")))
 	} else {
-		logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from /app/dist")
-		s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("/app/dist")))
+		logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from /app/dist/")
+		s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("/app/dist/")))
 	}
 	return s
 }
@@ -122,15 +120,4 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
 	s.mux.ServeHTTP(w, r)
-}
-
-func parseIPFromRemoteAddr(logger *slog.Logger, remoteAddr string) string {
-	fmt.Println(remoteAddr)
-	if strings.Count(remoteAddr, ":") > 1 {
-		logger.LogAttrs(context.Background(), slog.LevelInfo, "Parsing IPV6 address")
-	} else {
-		logger.LogAttrs(context.Background(), slog.LevelInfo, "Parsing IPV4 address")
-		return strings.Split(remoteAddr, ":")[0]
-	}
-	return ""
 }

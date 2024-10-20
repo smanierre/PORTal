@@ -30,7 +30,7 @@ export default function AdminMemberEditor({ selectedMember, newMember, setAddedM
     const [admin, setAdmin] = useState(selectedMember ? selectedMember.admin : false)
     const [password, setPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
-    const [subordinates, setSubordinates] = useState<Member[]>([])
+    // const [subordinates, setSubordinates] = useState<Member[]>([])
     const [waiting, setWaiting] = useState(false)
     useEffect(() => {
         if (selectedMember !== null) {
