@@ -8,8 +8,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"io"
 	"log/slog"
 	"os"
@@ -17,6 +15,9 @@ import (
 	"slices"
 	"sort"
 	"testing"
+
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestAddAndGetMember(t *testing.T) {
@@ -43,7 +44,7 @@ func TestAddAndGetMember(t *testing.T) {
 		FirstName     string
 		LastName      string
 		UserName      string
-		Rank          types.Rank
+		Rank          types.Grade
 		SupervisorID  string
 		Password      string
 		ExpectedError error

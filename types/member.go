@@ -6,18 +6,18 @@ import (
 	"time"
 )
 
-type Rank string
+type Grade string
 
 const (
-	E1 Rank = "AB"
-	E2 Rank = "Amn"
-	E3 Rank = "A1C"
-	E4 Rank = "SrA"
-	E5 Rank = "SSgt"
-	E6 Rank = "TSgt"
-	E7 Rank = "MSgt"
-	E8 Rank = "SMSgt"
-	E9 Rank = "CMSgt"
+	E1 Grade = "E1"
+	E2 Grade = "E2"
+	E3 Grade = "E3"
+	E4 Grade = "E4"
+	E5 Grade = "E5"
+	E6 Grade = "E6"
+	E7 Grade = "E7"
+	E8 Grade = "E8"
+	E9 Grade = "E9"
 )
 
 type Member struct {
@@ -61,7 +61,7 @@ type ApiMember struct {
 	FirstName    string `json:"first_name"`
 	LastName     string `json:"last_name"`
 	Username     string `json:"username"`
-	Rank         Rank   `json:"rank"`
+	Rank         Grade  `json:"rank"`
 	SupervisorID string `json:"supervisor_id"`
 	Admin        bool   `json:"admin"`
 }

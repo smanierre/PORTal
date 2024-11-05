@@ -4,7 +4,6 @@ import (
 	"PORTal/types"
 	"context"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"log/slog"
 	"time"
 )

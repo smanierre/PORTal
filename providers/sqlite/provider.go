@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Provider struct {
