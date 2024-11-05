@@ -38,16 +38,31 @@ const AirForceRanks = [
   "SMSgt",
   "CMSgt",
 ];
+const ArmyRanks = [
+  "PVT",
+  "PV2",
+  "PFC",
+  "CPL/SFC",
+  "SGT",
+  "SSG",
+  "SFC",
+  "MSG",
+  "SGM",
+];
 export function convertGrade(grade: string, service = "F") {
+  let ranks: string[] = [];
   switch (service) {
     case "F":
-      const rank = AirForceRanks[Number(grade.at(1)) - 1];
-      if (rank === undefined) {
-        return "";
-      }
-      return rank;
+      ranks = AirForceRanks;
+      break;
+    case "A":
+      ranks = ArmyRanks;
   }
-  return "";
+  const rank = ranks[Number(grade.at(1)) - 1];
+  if (rank === undefined) {
+    return "";
+  }
+  return rank;
 }
 
 export function isHigherRank(grade: string, compareTo: string): boolean {

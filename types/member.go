@@ -44,6 +44,7 @@ func (m Member) MergeIn(new Member) Member {
 	if new.Rank != "" {
 		m.Rank = new.Rank
 	}
+	//TODO: Refactor this to check for explicitly blank supervisor ID
 	if new.SupervisorID != "" {
 		m.SupervisorID = new.SupervisorID
 	}

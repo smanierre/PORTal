@@ -1,6 +1,6 @@
 import { Popover, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
-import React, { SetStateAction, useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { PopoverContent } from "@radix-ui/react-popover";
 import { Command, CommandEmpty, CommandGroup } from "../ui/command";
@@ -8,12 +8,18 @@ import { CommandItem, CommandList } from "cmdk";
 
 interface SelectorProps {
   value: string;
-  setValue: React.Dispatch<SetStateAction<string>>;
+  setValue: (selectedValue: string) => void;
   options: { value: string; label: string }[];
 }
 
 export default function Selector({ value, setValue, options }: SelectorProps) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (options.filter((option) => option.value === value).length === 0) {
+      setValue("");
+    }
+  }, [options]);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -42,10 +48,9 @@ export default function Selector({ value, setValue, options }: SelectorProps) {
                   onSelect={(currentValue) => {
                     if (currentValue === value) {
                       setValue("");
-                      setOpen(false);
-                      return;
+                    } else {
+                      setValue(currentValue);
                     }
-                    setValue(currentValue);
                     setOpen(false);
                   }}
                   className="cursor-pointer py-2 hover:bg-accent hover:text-black"

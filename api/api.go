@@ -119,5 +119,5 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
-	s.mux.ServeHTTP(w, r)
+	preflightMiddleware(s.mux).ServeHTTP(w, r)
 }

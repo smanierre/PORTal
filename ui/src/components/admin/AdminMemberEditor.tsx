@@ -11,7 +11,6 @@ import {
   isHigherRank,
 } from "../../lib/utils";
 import { LoadingSpinner } from "../ui/spinner";
-import SubordinatePicker from "./SubordinatePicker";
 
 interface AdminMemberEditorProps {
   selectedMember: Member;
@@ -34,35 +33,15 @@ export default function AdminMemberEditor({
   members,
   setMembers,
 }: AdminMemberEditorProps) {
-  const [id, setId] = useState(selectedMember ? selectedMember.id : "");
-  const [rank, setRank] = useState(selectedMember ? selectedMember.rank : "");
-  const [firstName, setFirstName] = useState(
-    selectedMember ? selectedMember.first_name : "",
-  );
-  const [lastName, setLastName] = useState(
-    selectedMember ? selectedMember.last_name : "",
-  );
-  const [username, setUsername] = useState(
-    selectedMember ? selectedMember.username : "",
-  );
-  const [admin, setAdmin] = useState(
-    selectedMember ? selectedMember.admin : false,
-  );
+  const [member, setMember] = useState(selectedMember);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [supervisor, setSupervisor] = useState("");
-  // const [subordinates, setSubordinates] = useState<Member[]>([])
   const [waiting, setWaiting] = useState(false);
+
   useEffect(() => {
-    if (selectedMember !== null) {
-      setId(selectedMember.id);
-      setRank(selectedMember.rank);
-      setFirstName(selectedMember.first_name);
-      setLastName(selectedMember.last_name);
-      setUsername(selectedMember.username);
-      setAdmin(selectedMember.admin);
-    }
+    setMember(selectedMember);
   }, [selectedMember]);
+
   async function updateMember(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setWaiting(true);
@@ -70,25 +49,24 @@ export default function AdminMemberEditor({
       console.log("Passwords dont match!");
       return;
     }
-    const m = {
-      id: id,
-      username: username,
-      rank: rank,
-      first_name: firstName,
-      last_name: lastName,
-      admin: admin,
-      password: password,
-      supervisor_id: selectedMember.supervisor_id,
-    };
+
     if (newMember) {
-      await addMember(m, setAddedMember, addedMember, setSelectedMember);
+      await addMember(
+        member,
+        setAddedMember,
+        addedMember,
+        setSelectedMember,
+        password,
+      );
     } else {
-      await updateUser();
+      await updateExistingMember(member);
+      setMembers(members.map((m) => (m.id === member.id ? member : m)));
     }
     setWaiting(false);
     setPassword("");
     setConfirmPassword("");
     setNewMember(false);
+    setMember(member);
   }
   return (
     <div className="" /*"grid grid-cols-adminPane*/>
@@ -99,7 +77,12 @@ export default function AdminMemberEditor({
         }}
       >
         <label>
-          ID: <Input className="inline w-72 bg-primary" value={id} disabled />
+          ID:{" "}
+          <Input
+            className="inline w-72 bg-primary"
+            value={member.id}
+            disabled
+          />
         </label>
         <label>
           Rank:{" "}
@@ -110,17 +93,33 @@ export default function AdminMemberEditor({
                 value: grade,
               };
             })}
-            value={rank}
-            setValue={setRank}
+            value={member.rank}
+            setValue={(selectedValue) => {
+              members.forEach((m) => {
+                if (
+                  m.id === member.supervisor_id &&
+                  isHigherRank(member.rank, m.rank)
+                ) {
+                  console.log("blanking supervisor id");
+                  setMember({
+                    ...member,
+                    rank: selectedValue,
+                    supervisor_id: "",
+                  });
+                  return;
+                }
+              });
+              setMember({ ...member, rank: selectedValue });
+            }}
           />
         </label>
         <label>
           First name:{" "}
           <Input
             className="inline w-48 bg-primary"
-            value={firstName}
+            value={member.first_name}
             onChange={(e) => {
-              setFirstName(e.target.value);
+              setMember({ ...member, first_name: e.target.value });
             }}
           />
         </label>
@@ -128,9 +127,9 @@ export default function AdminMemberEditor({
           Last name:{" "}
           <Input
             className="inline w-48 bg-primary"
-            value={lastName}
+            value={member.last_name}
             onChange={(e) => {
-              setLastName(e.target.value);
+              setMember({ ...member, last_name: e.target.value });
             }}
           />
         </label>
@@ -138,31 +137,31 @@ export default function AdminMemberEditor({
           Username:{" "}
           <Input
             className="inline w-48 bg-primary"
-            value={username}
+            value={member.username}
             onChange={(e) => {
-              setUsername(e.target.value);
+              setMember({ ...member, username: e.target.value });
             }}
           />
         </label>
-        {members.filter((member) =>
-          isHigherRank(member.rank, selectedMember.rank),
-        ).length > 0 ? (
+        {members.filter((m) => isHigherRank(m.rank, member.rank)).length > 0 ? (
           <label>
             Supervisor:
             <Selector
-              value={supervisor}
+              value={member.supervisor_id}
               options={members
                 .filter(
-                  (member) =>
-                    member.supervisor_id === "" &&
-                    member.id !== selectedMember.id &&
-                    !isHigherRank(selectedMember.rank, member.rank),
+                  (m) =>
+                    m.supervisor_id === "" &&
+                    m.id !== member.id &&
+                    !isHigherRank(member.rank, m.rank),
                 )
                 .map((item) => ({
                   label: `${item.first_name} ${item.last_name}`,
                   value: item.id,
                 }))}
-              setValue={setSupervisor}
+              setValue={(selectedId) => {
+                setMember({ ...member, supervisor_id: selectedId });
+              }}
             />
           </label>
         ) : null}
@@ -170,9 +169,9 @@ export default function AdminMemberEditor({
           Admin:{" "}
           <Checkbox
             id="admin"
-            checked={admin}
+            checked={member.admin}
             onClick={() => {
-              setAdmin(!admin);
+              setMember({ ...member, admin: !member.admin });
             }}
           />
         </label>
@@ -221,11 +220,12 @@ async function addMember(
   setAddedMember: React.Dispatch<React.SetStateAction<number>>,
   addedMember: number,
   setSelectedMember: React.Dispatch<React.SetStateAction<Member>>,
+  password: string,
 ) {
   const res = await fetch(`${getBaseUrl()}/api/member`, {
     method: "POST",
     credentials: "same-origin",
-    body: JSON.stringify(m),
+    body: JSON.stringify({ ...m, password: password }),
   });
   if (res.status !== 201) {
     console.log("it failed");
@@ -236,4 +236,13 @@ async function addMember(
   setAddedMember(++addedMember);
 }
 
-async function updateUser() {}
+async function updateExistingMember(member: Member) {
+  const res = await fetch(`${getBaseUrl()}/api/member/${member.id}`, {
+    method: "PUT",
+    credentials: "same-origin",
+    body: JSON.stringify(member),
+  });
+  if (res.status != 200) {
+    console.log("it failed");
+  }
+}
