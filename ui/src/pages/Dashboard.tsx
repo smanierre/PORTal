@@ -2,28 +2,23 @@ import { Accordion, AccordionItem } from "@radix-ui/react-accordion";
 import ProfileCard from "../components/ProfileCard.tsx";
 import QualificationList from "../components/QualificationList.tsx";
 import useLoginRequired from "../hooks/useLoginRequired.ts";
-import { Member, Qualification } from "../index";
 import {
   AccordionContent,
   AccordionTrigger,
 } from "../components/ui/accordion.tsx";
+import {
+  useGetLoggedInMemberQuery,
+  useGetMemberSubordinatesQuery,
+} from "../redux/api.ts";
+import FullPageSpinner from "../components/FullPageSpinner.tsx";
+import { Member } from "../redux/memberSlice.ts";
 
-interface DashboardProps {
-  member: Member | null;
-  qualifications: Qualification[];
-  subordinates: Member[];
-}
-
-export default function Dashboard({
-  member,
-  qualifications,
-  subordinates,
-}: DashboardProps) {
+export default function Dashboard() {
   useLoginRequired();
-  if (member === null) {
-    return <></>;
-  }
-
+  const { data: member, isLoading: memberIsLoading } =
+    useGetLoggedInMemberQuery();
+  const { data: subordinates, isLoading: subordinatesIsLoading } =
+    useGetMemberSubordinatesQuery(member ? member.id : "");
   return (
     <div className={"w-full h-full px-4"}>
       <Accordion
@@ -38,7 +33,14 @@ export default function Dashboard({
         >
           <AccordionTrigger>Profile</AccordionTrigger>
           <AccordionContent>
-            <ProfileCard member={member} subordinates={subordinates} />
+            {memberIsLoading || subordinatesIsLoading ? (
+              <FullPageSpinner />
+            ) : (
+              <ProfileCard
+                member={member as Member}
+                subordinates={subordinates as Member[]}
+              />
+            )}
           </AccordionContent>
         </AccordionItem>
         <AccordionItem
@@ -47,7 +49,7 @@ export default function Dashboard({
         >
           <AccordionTrigger>Qualifications</AccordionTrigger>
           <AccordionContent>
-            <QualificationList qualifications={qualifications} />
+            {/* <QualificationList qualifications={qualifications} /> */}
           </AccordionContent>
         </AccordionItem>
       </Accordion>

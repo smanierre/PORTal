@@ -1,37 +1,23 @@
-import React, { useEffect, useState } from "react";
-import { AppCtx } from "../App";
+import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import FullPageSpinner from "./FullPageSpinner";
+import { useGetLoggedInMemberQuery } from "../redux/api";
 
 interface RedirectProps {
-    children: React.ReactNode
-    appCtx: AppCtx
-    setAppCtx: React.Dispatch<React.SetStateAction<AppCtx>>
+  children: React.ReactNode;
 }
 
-export default function Redirect({ children, setAppCtx }: RedirectProps) {
-    const nav = useNavigate()
-    const location = useLocation()
-    const [waiting, setWaiting] = useState(true)
-    useEffect(() => {
-        const data = localStorage.getItem("data")
-        if (data === null) {
-            setAppCtx({ member: null, qualifications: [], subordinates: [] })
-            nav("/login")
-        } else {
-            const parsedData = JSON.parse(data) as AppCtx
-            setAppCtx({ ...parsedData })
-            if (location.pathname === "/login" || location.pathname === "/") {
-                nav("/dashboard")
-            }
-        }
-        setWaiting(false)
-    }, [])
-    return (
-        waiting ?
-            <FullPageSpinner /> :
-            <>
-                {children}
-            </>
-    )
+export default function Redirect({ children }: RedirectProps) {
+  const nav = useNavigate();
+  const location = useLocation();
+  const { data, isLoading, error } = useGetLoggedInMemberQuery();
+  function handleRedirect(children: React.ReactNode) {
+    if (error !== null && location.pathname !== "/login") {
+      nav("/login");
+    } else if (location.pathname === "/login" && data != null) {
+      nav("/dashboard");
+    }
+    return <>{children}</>;
+  }
+  return isLoading ? <FullPageSpinner /> : handleRedirect(children);
 }

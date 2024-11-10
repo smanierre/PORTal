@@ -40,16 +40,7 @@ func (s Server) login(w http.ResponseWriter, r *http.Request) {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error creating JWT, still logging in", slog.String("error", err.Error()))
 	}
 	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Creating identity cookie")
-	cookie := &http.Cookie{
-		Name:     "identity",
-		Value:    token,
-		Path:     "/api",
-		Domain:   s.config.Domain,
-		Expires:  time.Now().Add(s.config.JWTExpiration * time.Hour),
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	}
+	cookie := s.makeCookie("Identity", token)
 	http.SetCookie(w, cookie)
 	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Sending response back to client", slog.Any("response", res))
 	err = json.NewEncoder(w).Encode(res)
@@ -61,12 +52,7 @@ func (s Server) login(w http.ResponseWriter, r *http.Request) {
 
 func (s Server) logout(w http.ResponseWriter, r *http.Request) {
 	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Clearing identity cookie for member")
-	http.SetCookie(w, &http.Cookie{
-		Name:    JWTCookieName,
-		Path:    "/api",
-		Domain:  s.config.Domain,
-		Expires: time.Now(),
-	})
+	s.removeCookie(w, "Identity")
 }
 
 func (s Server) checkAdmin(w http.ResponseWriter, r *http.Request) {

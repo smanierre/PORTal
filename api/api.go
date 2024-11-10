@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const JWTCookieName = "identity"
+const JWTCookieName = "Identity"
 
 type Backend interface {
 	AddMember(m types.Member) (types.Member, error)
@@ -64,6 +64,7 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 
 	// Member CRUD routes
 	s.mux.Handle("POST /api/member", http.HandlerFunc(s.addMember))
+	s.mux.Handle("GET /api/member", http.HandlerFunc(s.getLoggedInMember))
 	s.mux.Handle("GET /api/member/{id}", http.HandlerFunc(s.getMember))
 	s.mux.Handle("GET /api/members", http.HandlerFunc(s.getAllMembers))
 	s.mux.Handle("PUT /api/member/{id}", http.HandlerFunc(s.updateMember))
@@ -120,4 +121,65 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 	}
 	preflightMiddleware(s.mux).ServeHTTP(w, r)
+}
+
+func (s Server) makeCookie(name, value string) *http.Cookie {
+	if s.dev {
+		s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Returning dev cookie")
+		return createDevCookie(name, value)
+	} else {
+		return createCookie(name, value, s.config.Domain, time.Now().Add(s.config.JWTExpiration*time.Hour))
+	}
+}
+
+func createCookie(name, value, domain string, expires time.Time) *http.Cookie {
+	return &http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     "/api",
+		Domain:   domain,
+		Expires:  expires,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+	}
+}
+
+func createDevCookie(name, value string) *http.Cookie {
+	return &http.Cookie{
+		Name:     name,
+		Value:    value,
+		Path:     "/api",
+		Domain:   "localhost",
+		Expires:  time.Now().Add(24 * time.Hour),
+		Secure:   false,
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+	}
+}
+
+func (s Server) removeCookie(w http.ResponseWriter, name string) {
+	if s.dev {
+		removeCookieDev(w, name)
+	} else {
+		removeCookie(w, name, s.config.Domain)
+	}
+}
+
+func removeCookie(w http.ResponseWriter, name, domain string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:    name,
+		Domain:  domain,
+		Expires: time.Now(),
+		Path:    "/api",
+	})
+}
+
+func removeCookieDev(w http.ResponseWriter, name string) {
+	http.SetCookie(w, &http.Cookie{
+		Name:    name,
+		Domain:  "localhost",
+		Expires: time.Now(),
+		Path:    "/api",
+	})
 }

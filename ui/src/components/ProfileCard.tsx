@@ -1,4 +1,4 @@
-import { Member } from "..";
+import { Member } from "../redux/memberSlice";
 import { convertGrade } from "../lib/utils";
 
 interface ProfileCardProps {

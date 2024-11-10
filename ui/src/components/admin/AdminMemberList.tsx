@@ -1,8 +1,11 @@
-import { Member } from "../../index";
+import { Member } from "../../redux/memberSlice";
 import React, { useState } from "react";
 import { getEmptyMember, convertGrade } from "../../lib/utils";
 import { Button } from "../ui/button";
 import Search from "../generic/Search";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { fetchMember, memberSelector, update } from "../../redux/memberSlice";
+import FullPageSpinner from "../FullPageSpinner";
 
 interface AdminMemberListProps {
   setSelectedMember: React.Dispatch<React.SetStateAction<Member>>;
@@ -18,9 +21,27 @@ export default function AdminMemberList({
   members,
 }: AdminMemberListProps) {
   const [searchTerm, setSearchTerm] = useState("");
-
+  const { member, loading, error } = useAppSelector(memberSelector);
+  const dispatch = useAppDispatch();
   return (
     <div className="flex flex-col items-center align-middle">
+      <h1>{member ? member.first_name : "Null"}</h1>
+      {error == null ? null : <h1>{error}</h1>}
+      <button
+        onClick={() => {
+          dispatch(update({ ...(member as Member), first_name: "Testing" }));
+        }}
+      >
+        Update
+      </button>
+      {loading ? <FullPageSpinner /> : null}
+      <button
+        onClick={() => {
+          dispatch(fetchMember(selectedMember.id));
+        }}
+      >
+        Click me!
+      </button>
       <div className="w-1/2 ml-auto">
         <Search
           className="w-2/3 inline-block border-b-0"
