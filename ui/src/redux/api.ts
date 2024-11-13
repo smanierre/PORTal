@@ -17,6 +17,7 @@ export const api = createApi({
     baseUrl: `${getBaseUrl()}/api/`,
     credentials: import.meta.env.DEV ? "include" : "same-origin",
   }),
+  tagTypes: ["AllMembers", "Subordinates"],
   endpoints: (builder) => ({
     getMemberById: builder.query<Member, string>({
       query: (id) => ({
@@ -24,31 +25,12 @@ export const api = createApi({
         method: "GET",
       }),
     }),
-    addMember: builder.mutation<Member, Member>({
-      query: (member) => ({
-        url: "member",
-        method: "POST",
-        body: member,
-      }),
-    }),
     getAllMembers: builder.query<Member[], void>({
       query: () => ({
         url: "members",
         method: "GET",
       }),
-    }),
-    updateMember: builder.query<Member, Member>({
-      query: (member) => ({
-        url: `member/${member.id}`,
-        method: "PUT",
-        body: member,
-      }),
-    }),
-    deleteMember: builder.query<void, string>({
-      query: (id) => ({
-        url: `member/${id}`,
-        method: "DELETE",
-      }),
+      providesTags: ["AllMembers"]
     }),
     getLoggedInMember: builder.query<Member, void>({
       query: () => ({
@@ -68,17 +50,25 @@ export const api = createApi({
         url: `member/${id}/subordinates`,
         method: "GET",
       }),
+      providesTags: ["Subordinates"]
     }),
+    updateMember: builder.mutation<Member, Member & { password: string }>({
+      query: (member) => ({
+        url: `member/${member.id}`,
+        method: "PUT",
+        body: member,
+      }),
+      invalidatesTags: ["AllMembers", "Subordinates"],
+
+    })
   }),
 });
 
 export const {
   useGetMemberByIdQuery,
-  useAddMemberMutation,
   useGetAllMembersQuery,
-  useUpdateMemberQuery,
-  useDeleteMemberQuery,
   useGetLoggedInMemberQuery,
   useLoginMutation,
   useGetMemberSubordinatesQuery,
+  useUpdateMemberMutation
 } = api;

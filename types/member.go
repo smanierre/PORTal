@@ -27,25 +27,26 @@ type Member struct {
 }
 
 func (m Member) LogValue() slog.Value {
-	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s Admin: %t", m.ID, m.Rank, m.FirstName, m.LastName, m.Username, m.SupervisorID, m.Admin))
+	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s Admin: %t", m.ID, m.Grade, m.FirstName, m.LastName, m.Username, m.SupervisorID, m.Admin))
 }
 
 func (m Member) ToApiMember() ApiMember {
 	return m.ApiMember
 }
 
-func (m Member) MergeIn(new Member) Member {
+func (m Member) MergeIn(new Member, forceNoSupervisor bool) Member {
 	if new.FirstName != "" {
 		m.FirstName = new.FirstName
 	}
 	if new.LastName != "" {
 		m.LastName = new.LastName
 	}
-	if new.Rank != "" {
-		m.Rank = new.Rank
+	if new.Grade != "" {
+		m.Grade = new.Grade
 	}
-	//TODO: Refactor this to check for explicitly blank supervisor ID
-	if new.SupervisorID != "" {
+	if new.SupervisorID == "" && forceNoSupervisor {
+		m.SupervisorID = ""
+	} else if new.SupervisorID != "" {
 		m.SupervisorID = new.SupervisorID
 	}
 	if new.Username != "" {
@@ -62,7 +63,7 @@ type ApiMember struct {
 	FirstName    string `json:"first_name"`
 	LastName     string `json:"last_name"`
 	Username     string `json:"username"`
-	Rank         Grade  `json:"rank"`
+	Grade        Grade  `json:"grade"`
 	SupervisorID string `json:"supervisor_id"`
 	Admin        bool   `json:"admin"`
 }

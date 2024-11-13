@@ -15,7 +15,7 @@ type Backend interface {
 	GetMember(identifier string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
 	GetSubordinates(memberID string) ([]types.Member, error)
-	UpdateMember(m types.Member) (types.Member, error)
+	UpdateMember(m types.Member, forceNoSupervisor bool) (types.Member, error)
 	DeleteMember(id string) error
 
 	AddQualification(q types.Qualification) (types.Qualification, error)
@@ -66,6 +66,7 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("POST /api/member", http.HandlerFunc(s.addMember))
 	s.mux.Handle("GET /api/member", http.HandlerFunc(s.getLoggedInMember))
 	s.mux.Handle("GET /api/member/{id}", http.HandlerFunc(s.getMember))
+	s.mux.Handle("GET /api/member/{id}/subordinates", http.HandlerFunc(s.getMemberSubordinates))
 	s.mux.Handle("GET /api/members", http.HandlerFunc(s.getAllMembers))
 	s.mux.Handle("PUT /api/member/{id}", http.HandlerFunc(s.updateMember))
 	s.mux.Handle("DELETE /api/member/{id}", http.HandlerFunc(s.deleteMember))

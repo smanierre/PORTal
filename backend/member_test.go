@@ -44,7 +44,7 @@ func TestAddAndGetMember(t *testing.T) {
 		FirstName     string
 		LastName      string
 		UserName      string
-		Rank          types.Grade
+		Grade         types.Grade
 		SupervisorID  string
 		Password      string
 		ExpectedError error
@@ -54,7 +54,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      "username",
-			Rank:          types.E4,
+			Grade:         types.E4,
 			SupervisorID:  "",
 			Password:      testutils.RandomString(),
 			ExpectedError: nil,
@@ -64,7 +64,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      testutils.RandomString(),
-			Rank:          types.E8,
+			Grade:         types.E8,
 			SupervisorID:  supervisor.ID,
 			Password:      testutils.RandomString(),
 			ExpectedError: nil,
@@ -74,7 +74,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      testutils.RandomString(),
-			Rank:          types.E4,
+			Grade:         types.E4,
 			SupervisorID:  uuid.NewString(),
 			Password:      testutils.RandomString(),
 			ExpectedError: backend.ErrSupervisorNotFound,
@@ -84,7 +84,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      "username",
-			Rank:          types.E8,
+			Grade:         types.E8,
 			SupervisorID:  "",
 			Password:      testutils.RandomString(),
 			ExpectedError: backend.ErrDuplicateUsername,
@@ -94,7 +94,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     "",
 			LastName:      "",
 			UserName:      "",
-			Rank:          "",
+			Grade:         "",
 			SupervisorID:  "",
 			Password:      "",
 			ExpectedError: backend.ErrMissingArgs,
@@ -104,7 +104,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      testutils.RandomString(),
-			Rank:          types.E3,
+			Grade:         types.E3,
 			SupervisorID:  "",
 			Password:      "test",
 			ExpectedError: backend.ErrWeakPassword,
@@ -114,7 +114,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      testutils.RandomString(),
-			Rank:          types.E7,
+			Grade:         types.E7,
 			SupervisorID:  "",
 			Password:      "toolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolong",
 			ExpectedError: backend.ErrPasswordTooLong,
@@ -128,7 +128,7 @@ func TestAddAndGetMember(t *testing.T) {
 					FirstName:    tt.FirstName,
 					LastName:     tt.LastName,
 					Username:     tt.UserName,
-					Rank:         tt.Rank,
+					Grade:        tt.Grade,
 					SupervisorID: tt.SupervisorID,
 				},
 				Password: tt.Password,
@@ -271,7 +271,7 @@ func TestUpdateMember(t *testing.T) {
 					FirstName:    "Joe",
 					LastName:     "Schmoe",
 					Username:     "newuser",
-					Rank:         types.E1,
+					Grade:        types.E1,
 					Admin:        true,
 					SupervisorID: supervisor.ID,
 				},

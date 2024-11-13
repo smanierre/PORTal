@@ -101,6 +101,25 @@ func (s Server) getMember(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s Server) getMemberSubordinates(w http.ResponseWriter, r *http.Request) {
+	l := s.logger.With(slog.String("path", fmt.Sprintf("%s %s", r.Method, r.URL.Path)))
+	members, err := s.backend.GetSubordinates(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	l.LogAttrs(r.Context(), slog.LevelInfo, "Converting members to ApiMember")
+	var apiMembers []types.ApiMember
+	for _, v := range members {
+		apiMembers = append(apiMembers, v.ApiMember)
+	}
+	err = json.NewEncoder(w).Encode(apiMembers)
+	if err != nil {
+		l.LogAttrs(r.Context(), slog.LevelError, "Error serializing slice of members to json", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
 func (s Server) getAllMembers(w http.ResponseWriter, r *http.Request) {
 	l := s.logger.With(slog.String("path", fmt.Sprintf("%s %s", r.Method, r.URL.Path)))
 	members, err := s.backend.GetAllMembers()
@@ -141,18 +160,23 @@ func (s Server) updateMember(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	member, err := s.backend.UpdateMember(m)
+	forceNoSupervisor := false
+	if m.SupervisorID == "" {
+		forceNoSupervisor = true
+		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Supervisor is blank in request, forcing removal")
+	}
+	member, err := s.backend.UpdateMember(m, forceNoSupervisor)
 	if errors.Is(err, backend.ErrMemberNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if errors.Is(err, backend.ErrSupervisorNotFound) {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	} else if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		//w.WriteHeader(http.StatusBadRequest)
+		//return
+		//} else if err != nil {
+		//	w.WriteHeader(http.StatusInternalServerError)
+		//	return
 	}
-	err = json.NewEncoder(w).Encode(member)
+	err = json.NewEncoder(w).Encode(member.ApiMember)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error encoding member to client", slog.String("error", err.Error()))
 	}
@@ -182,7 +206,7 @@ func validateMember(m types.Member) error {
 	if m.LastName == "" {
 		errs = append(errs, "LastName")
 	}
-	if m.Rank == "" {
+	if m.Grade == "" {
 		errs = append(errs, "Rank")
 	}
 	if len(errs) > 0 {

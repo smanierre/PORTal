@@ -16,9 +16,9 @@ func (p Provider) AddMember(m types.Member) error {
 	var err error
 	if m.SupervisorID == "" {
 		p.logger.LogAttrs(context.Background(), slog.LevelInfo, "No supervisor provided, setting to null in database")
-		_, err = p.Db.Exec(insertMemberQuery, m.ID, m.FirstName, m.LastName, m.Rank, m.Username, nil, m.Admin, m.Hash)
+		_, err = p.Db.Exec(insertMemberQuery, m.ID, m.FirstName, m.LastName, m.Grade, m.Username, nil, m.Admin, m.Hash)
 	} else {
-		_, err = p.Db.Exec(insertMemberQuery, m.ID, m.FirstName, m.LastName, m.Rank, m.Username, m.SupervisorID, m.Admin, m.Hash)
+		_, err = p.Db.Exec(insertMemberQuery, m.ID, m.FirstName, m.LastName, m.Grade, m.Username, m.SupervisorID, m.Admin, m.Hash)
 	}
 	if err != nil && strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
 		p.logger.LogAttrs(context.Background(), slog.LevelWarn, "Provided supervisor id doesn't exist", slog.String("supervisor_id", m.ID))
@@ -47,7 +47,7 @@ func (p Provider) GetMember(identifier string, method backend.ProviderMethod) (t
 	}
 	var m types.Member
 	supervisorId := sql.NullString{}
-	err := row.Scan(&m.ID, &m.FirstName, &m.LastName, &m.Rank, &m.Username, &supervisorId, &m.Admin, &m.Hash)
+	err := row.Scan(&m.ID, &m.FirstName, &m.LastName, &m.Grade, &m.Username, &supervisorId, &m.Admin, &m.Hash)
 	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
 		p.logger.LogAttrs(context.Background(), slog.LevelWarn, "No user found with given identifier")
 		return types.Member{}, backend.ErrMemberNotFound
@@ -73,7 +73,7 @@ func (p Provider) GetAllMembers() ([]types.Member, error) {
 	for rows.Next() {
 		m := types.Member{}
 		supervisorId := sql.NullString{}
-		err = rows.Scan(&m.ID, &m.FirstName, &m.LastName, &m.Rank, &m.Username, &supervisorId, &m.Admin, &m.Hash)
+		err = rows.Scan(&m.ID, &m.FirstName, &m.LastName, &m.Grade, &m.Username, &supervisorId, &m.Admin, &m.Hash)
 		if err != nil {
 			p.logger.LogAttrs(context.Background(), slog.LevelError, "Error scanning member into struct", slog.String("error", err.Error()))
 			continue
@@ -96,7 +96,7 @@ func (p Provider) GetSubordinates(memberID string) ([]types.Member, error) {
 	var subordinates []types.Member
 	var subordinate types.Member
 	for rows.Next() {
-		err = rows.Scan(&subordinate.ID, &subordinate.FirstName, &subordinate.LastName, &subordinate.Rank, &subordinate.Username, &subordinate.SupervisorID, &subordinate.Admin, &subordinate.Hash)
+		err = rows.Scan(&subordinate.ID, &subordinate.FirstName, &subordinate.LastName, &subordinate.Grade, &subordinate.Username, &subordinate.SupervisorID, &subordinate.Admin, &subordinate.Hash)
 		if err != nil {
 			p.logger.LogAttrs(context.Background(), slog.LevelError, "Error when scanning subordinate into struct", slog.String("error", err.Error()))
 			return nil, err
@@ -112,10 +112,10 @@ func (p Provider) UpdateMember(m types.Member) error {
 	var res sql.Result
 	var err error
 	if m.SupervisorID == "" {
-		p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Supervisory ID is empty, inserting as null in database")
-		res, err = p.Db.Exec(updateMemberQuery, m.FirstName, m.LastName, m.Rank, nil, m.Admin, m.Hash, m.ID)
+		p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Supervisor ID is empty, inserting as null in database")
+		res, err = p.Db.Exec(updateMemberQuery, m.FirstName, m.LastName, m.Grade, nil, m.Admin, m.Hash, m.ID)
 	} else {
-		res, err = p.Db.Exec(updateMemberQuery, m.FirstName, m.LastName, m.Rank, m.SupervisorID, m.Admin, m.Hash, m.ID)
+		res, err = p.Db.Exec(updateMemberQuery, m.FirstName, m.LastName, m.Grade, m.SupervisorID, m.Admin, m.Hash, m.ID)
 	}
 	if err != nil && strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
 		p.logger.LogAttrs(context.Background(), slog.LevelWarn, "Attempting to update member with non-existent supervisor")

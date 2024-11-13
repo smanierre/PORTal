@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Member } from "..";
+import { Member } from "../redux/api";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -18,7 +18,7 @@ export function getEmptyMember(): Member {
   return {
     first_name: "",
     last_name: "",
-    rank: "",
+    grade: "",
     id: "",
     admin: false,
     username: "",
@@ -69,4 +69,17 @@ export function isHigherRank(grade: string, compareTo: string): boolean {
   const gradeNum = Number(grade.at(1));
   const compareToNum = Number(compareTo.at(1));
   return gradeNum > compareToNum;
+}
+
+export function validatePassword(
+  password: string,
+  confirmPassword: string,
+): boolean {
+  if (password !== confirmPassword) {
+    return false;
+  }
+  if (password.length < 8) {
+    return false;
+  }
+  return true;
 }

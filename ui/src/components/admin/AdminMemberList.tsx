@@ -1,47 +1,25 @@
-import { Member } from "../../redux/memberSlice";
-import React, { useState } from "react";
-import { getEmptyMember, convertGrade } from "../../lib/utils";
+import { Member } from "../../redux/api";
+import { useState } from "react";
+import { convertGrade } from "../../lib/utils";
 import { Button } from "../ui/button";
 import Search from "../generic/Search";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { fetchMember, memberSelector, update } from "../../redux/memberSlice";
-import FullPageSpinner from "../FullPageSpinner";
+import {
+  adminSelector,
+  newMember,
+  selectMember,
+} from "../../redux/adminMemberSlice";
 
 interface AdminMemberListProps {
-  setSelectedMember: React.Dispatch<React.SetStateAction<Member>>;
-  selectedMember: Member;
-  setNewMember: React.Dispatch<React.SetStateAction<boolean>>;
-  addedMember: number;
   members: Member[];
 }
-export default function AdminMemberList({
-  setSelectedMember,
-  selectedMember,
-  setNewMember,
-  members,
-}: AdminMemberListProps) {
+export default function AdminMemberList({ members }: AdminMemberListProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const { member, loading, error } = useAppSelector(memberSelector);
+  const { selectedMember } = useAppSelector(adminSelector);
   const dispatch = useAppDispatch();
+
   return (
     <div className="flex flex-col items-center align-middle">
-      <h1>{member ? member.first_name : "Null"}</h1>
-      {error == null ? null : <h1>{error}</h1>}
-      <button
-        onClick={() => {
-          dispatch(update({ ...(member as Member), first_name: "Testing" }));
-        }}
-      >
-        Update
-      </button>
-      {loading ? <FullPageSpinner /> : null}
-      <button
-        onClick={() => {
-          dispatch(fetchMember(selectedMember.id));
-        }}
-      >
-        Click me!
-      </button>
       <div className="w-1/2 ml-auto">
         <Search
           className="w-2/3 inline-block border-b-0"
@@ -67,7 +45,7 @@ export default function AdminMemberList({
               member.last_name
                 .toLowerCase()
                 .includes(searchTerm.toLowerCase()) ||
-              convertGrade(member.rank)
+              convertGrade(member.grade)
                 .toLowerCase()
                 .includes(searchTerm.toLowerCase())
             );
@@ -82,19 +60,18 @@ export default function AdminMemberList({
               key={member.id}
               className={`${selectedMember?.id === member.id ? "bg-background text-white" : ""} cursor-pointer`}
               onClick={() => {
-                setSelectedMember(member);
-                setNewMember(false);
+                dispatch(selectMember({ member: member }));
               }}
             >
-              {convertGrade(member.rank)} {member.first_name} {member.last_name}
+              {convertGrade(member.grade)} {member.first_name}{" "}
+              {member.last_name}
             </ul>
           ))}
       </ul>
       <Button
         className="bg-background text-white hover:bg-background-dark ml-auto mt-2"
         onClick={() => {
-          setSelectedMember(getEmptyMember());
-          setNewMember(true);
+          dispatch(newMember());
         }}
       >
         Add Member

@@ -2,13 +2,14 @@ package testutils
 
 import (
 	"PORTal/types"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"math/rand/v2"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func RandomString() string {
@@ -27,7 +28,7 @@ func RandomMember(admin bool) types.Member {
 			FirstName:    RandomString(),
 			LastName:     RandomString(),
 			Username:     RandomString(),
-			Rank:         types.E4,
+			Grade:        types.E4,
 			SupervisorID: "",
 			Admin:        admin,
 		},
@@ -79,8 +80,8 @@ func VerifyUpdatedUser(original, updates, returned types.Member, t *testing.T) {
 	if updates.LastName != "" {
 		original.LastName = updates.LastName
 	}
-	if updates.Rank != "" {
-		original.Rank = updates.Rank
+	if updates.Grade != "" {
+		original.Grade = updates.Grade
 	}
 	if updates.Username != "" {
 		original.Username = updates.Username

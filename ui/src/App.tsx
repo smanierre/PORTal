@@ -23,8 +23,8 @@ export default function App() {
       <Routes location={member === undefined ? "/login" : location.pathname}>
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        {/*<Route path="/qualifications" element={<Qualifications />} />
-            <Route path="/admin" element={<Admin />} /> */}
+        {/*<Route path="/qualifications" element={<Qualifications />} />*/}
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </Layout>
   );

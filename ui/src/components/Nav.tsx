@@ -1,5 +1,5 @@
 import { NavigationMenu, NavigationMenuItem } from "./ui/navigation-menu.tsx";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
@@ -43,6 +43,7 @@ export default function Nav({ loggedIn, admin }: NavProps) {
     return (
       <NavigationMenu
         className={"items-baseline row-span-1 w-full bg-background"}
+        defaultValue="Dashboard"
       >
         <NavigationMenuList className={" h-full w-full space-x-0"}>
           {loggedInItems.map((item) => (
@@ -53,7 +54,7 @@ export default function Nav({ loggedIn, admin }: NavProps) {
             </NavigationMenuItem>
           ))}
           {admin ? (
-            <NavigationMenuItem key={"admin"}>
+            <NavigationMenuItem key={"admin"} value="Admin">
               <Link to="/admin" className={navigationMenuTriggerStyle()}>
                 Admin
               </Link>

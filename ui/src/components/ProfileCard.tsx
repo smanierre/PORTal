@@ -1,5 +1,6 @@
-import { Member } from "../redux/memberSlice";
+import { Member } from "../redux/api";
 import { convertGrade } from "../lib/utils";
+import { Link } from "react-router-dom";
 
 interface ProfileCardProps {
   className?: string;
@@ -15,7 +16,7 @@ export default function ProfileCard({
   return (
     <article className={`${className !== undefined ? className : "p-4"}`}>
       <p>
-        {convertGrade(member?.rank || "")} {member?.first_name}{" "}
+        {convertGrade(member?.grade || "")} {member?.first_name}{" "}
         {member?.last_name}
       </p>
       <p className="py-2">Subordinates:</p>
@@ -23,8 +24,10 @@ export default function ProfileCard({
         {subordinates &&
           subordinates.map((subordinate) => (
             <li key={subordinate.id}>
-              {subordinate.rank} {subordinate.first_name}{" "}
-              {subordinate.last_name}
+              <Link to={`/member/${subordinate.id}`}>
+                {convertGrade(subordinate.grade)} {subordinate.first_name}{" "}
+                {subordinate.last_name}
+              </Link>
             </li>
           ))}
       </ul>

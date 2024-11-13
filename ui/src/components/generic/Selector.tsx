@@ -1,6 +1,6 @@
 import { Popover, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { PopoverContent } from "@radix-ui/react-popover";
 import { Command, CommandEmpty, CommandGroup } from "../ui/command";
@@ -15,11 +15,6 @@ interface SelectorProps {
 export default function Selector({ value, setValue, options }: SelectorProps) {
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
-    if (options.filter((option) => option.value === value).length === 0) {
-      setValue("");
-    }
-  }, [options]);
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

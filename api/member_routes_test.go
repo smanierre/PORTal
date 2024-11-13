@@ -8,12 +8,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestAddMember(t *testing.T) {
@@ -103,7 +104,7 @@ func TestGetMember(t *testing.T) {
 			ID:           goodId,
 			FirstName:    "test",
 			LastName:     "member",
-			Rank:         "TSgt",
+			Grade:        "TSgt",
 			SupervisorID: "",
 		},
 		Password: "",
@@ -182,7 +183,7 @@ func TestGetAllMembers(t *testing.T) {
 			ID:           uuid.NewString(),
 			FirstName:    "test",
 			LastName:     "member",
-			Rank:         "TSgt",
+			Grade:        "TSgt",
 			SupervisorID: "",
 		},
 		Password: "",
@@ -193,7 +194,7 @@ func TestGetAllMembers(t *testing.T) {
 			ID:           uuid.NewString(),
 			FirstName:    "test 2",
 			LastName:     "member 2",
-			Rank:         "MSgt",
+			Grade:        "MSgt",
 			SupervisorID: uuid.NewString(),
 		},
 		Password: "",
@@ -272,7 +273,7 @@ func TestUpdateMember(t *testing.T) {
 				ID:           "old",
 				FirstName:    "old",
 				LastName:     "old",
-				Rank:         "Old",
+				Grade:        "Old",
 				SupervisorID: "Old",
 			},
 			Password: "Old",
