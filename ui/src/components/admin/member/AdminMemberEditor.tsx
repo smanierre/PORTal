@@ -1,26 +1,26 @@
 import { useState } from "react";
-import { Member, useUpdateMemberMutation } from "../../redux/api";
-import Selector from "../generic/Selector";
-import { Input } from "../ui/input";
-import { Checkbox } from "../ui/checkbox";
-import { Button } from "../ui/button";
+import { Member, useCreateMemberMutation, useUpdateMemberMutation } from "../../../redux/api";
+import Selector from "../../generic/Selector";
+import { Input } from "../../ui/input";
+import { Checkbox } from "../../ui/checkbox";
+import { Button } from "../../ui/button";
 import {
   convertGrade,
   validatePassword,
   Grades,
   isHigherRank,
   getEmptyMember,
-} from "../../lib/utils";
-import { LoadingSpinner } from "../ui/spinner";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+} from "../../../lib/utils";
+import { LoadingSpinner } from "../../ui/spinner";
+import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import {
-  adminSelector,
+  adminMemberSelector,
   changesCommitted,
   closeDialog,
   selectMember,
   updateLocalSelectedMember,
-} from "../../redux/adminMemberSlice";
-import ChangesPendingAlert from "../generic/ChangesAlert";
+} from "../../../redux/adminMemberSlice";
+import ChangesPendingAlert from "../../generic/ChangesAlert";
 
 interface AdminMemberEditorProps {
   members: Member[];
@@ -33,17 +33,19 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
     updatePending,
     newMember,
     showChangeWarning,
-  } = useAppSelector(adminSelector);
+    memberChanges
+  } = useAppSelector(adminMemberSelector);
   const dispatch = useAppDispatch();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [triggerUpdate, updateResponse] = useUpdateMemberMutation()
+  const [triggerCreate, createResponse] = useCreateMemberMutation()
 
   function handleSetGrade(selectedValue: string) {
     if (selectedMember === null || updatedMemberDraft === null) {
       return;
     }
-    let currentSupervisorRank = members.reduce((prev, cur) =>
+    let currentSupervisorRank = members.reduce((_, cur) =>
       cur.id === selectedMember?.supervisor_id ? cur : getEmptyMember(),
     ).grade;
     // New rank is higher than supervisor, blank out current supervisor
@@ -91,28 +93,37 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
     if (!updatedMemberDraft) {
       return
     }
-    triggerUpdate({ ...updatedMemberDraft, password: password })
+    switch (newMember) {
+      case true:
+        triggerCreate({ ...updatedMemberDraft, password: password })
+        if (createResponse.error) {
+          console.log(typeof createResponse.error)
+        }
+        break
+      case false:
+        triggerUpdate({ ...updatedMemberDraft, password: password })
+        if (updateResponse.error) {
+          console.log(typeof updateResponse.error)
+        }
+    }
     dispatch(changesCommitted())
   }
 
   return updatedMemberDraft === null || selectedMember === null ? null : (
     <div>
       <form
-        className="p-4 flex gap-4 flex-wrap"
+        className="p-4 flex gap-4 flex-col"
         onSubmit={(e) => {
           e.preventDefault();
           if (password !== "" && !validatePassword(password, confirmPassword)) {
             //TODO: handle this in UI
             return;
           }
-          if (updatedMemberDraft === null) {
-            return;
-          }
           commitUpdate()
         }}
       >
         <label>
-          ID:{" "}
+          ID:
           <Input
             className="inline w-72 bg-primary"
             value={updatedMemberDraft.id}
@@ -120,7 +131,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
           />
         </label>
         <label>
-          Rank:{" "}
+          Rank:
           <Selector
             options={Grades.map((grade) => {
               return {
@@ -133,7 +144,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
           />
         </label>
         <label>
-          First name:{" "}
+          First name:
           <Input
             className="inline w-48 bg-primary"
             value={updatedMemberDraft.first_name}
@@ -148,7 +159,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
           />
         </label>
         <label>
-          Last name:{" "}
+          Last name:
           <Input
             className="inline w-48 bg-primary"
             value={updatedMemberDraft.last_name}
@@ -163,7 +174,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
           />
         </label>
         <label>
-          Username:{" "}
+          Username:
           <Input
             disabled={!newMember}
             className="inline w-48 bg-primary"
@@ -183,6 +194,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
           <label>
             Supervisor:
             <Selector
+              optional
               value={updatedMemberDraft.supervisor_id}
               options={members
                 .filter(
@@ -207,7 +219,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
           </label>
         ) : null}
         <label htmlFor="admin">
-          Admin:{" "}
+          Admin:
           <Checkbox
             id="admin"
             checked={updatedMemberDraft.admin}
@@ -222,7 +234,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
           />
         </label>
         <label>
-          Password:{" "}
+          Password:
           <Input
             type="password"
             className="inline w-48 bg-primary"
@@ -233,7 +245,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
           />
         </label>
         <label>
-          Confirm Password:{" "}
+          Confirm Password:
           <Input
             type="password"
             className="inline w-48 bg-primary"
@@ -246,6 +258,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
         <Button
           type="submit"
           className=" w-36 bg-background hover:bg-background-dark text-white"
+          disabled={!newMember && !memberChanges}
         >
           {updatePending ? (
             <LoadingSpinner className="h-6 w-6 inline-block" />
@@ -258,7 +271,7 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
       </form>
       <ChangesPendingAlert
         open={showChangeWarning}
-        onOpenChange={(open) => { }}
+        onOpenChange={() => { }}
         accept={() => {
           dispatch(closeDialog());
         }}

@@ -1,6 +1,5 @@
 import { Accordion, AccordionItem } from "@radix-ui/react-accordion";
 import ProfileCard from "../components/ProfileCard.tsx";
-import QualificationList from "../components/QualificationList.tsx";
 import useLoginRequired from "../hooks/useLoginRequired.ts";
 import {
   AccordionContent,
@@ -11,7 +10,7 @@ import {
   useGetMemberSubordinatesQuery,
 } from "../redux/api.ts";
 import FullPageSpinner from "../components/FullPageSpinner.tsx";
-import { Member } from "../redux/memberSlice.ts";
+import { Member } from "../redux/api.ts";
 
 export default function Dashboard() {
   useLoginRequired();

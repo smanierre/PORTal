@@ -1,21 +1,21 @@
-import { Member } from "../../redux/api";
+import { Member } from "../../../redux/api"
 import { useState } from "react";
-import { convertGrade } from "../../lib/utils";
-import { Button } from "../ui/button";
-import Search from "../generic/Search";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { convertGrade } from "../../../lib/utils";
+import { Button } from "../../ui/button";
+import Search from "../../generic/Search";
+import { useAppDispatch, useAppSelector } from "../../../redux/hooks";
 import {
-  adminSelector,
+  adminMemberSelector,
   newMember,
   selectMember,
-} from "../../redux/adminMemberSlice";
+} from "../../../redux/adminMemberSlice";
 
 interface AdminMemberListProps {
   members: Member[];
 }
 export default function AdminMemberList({ members }: AdminMemberListProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const { selectedMember } = useAppSelector(adminSelector);
+  const { selectedMember } = useAppSelector(adminMemberSelector);
   const dispatch = useAppDispatch();
 
   return (

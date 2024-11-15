@@ -1,9 +1,9 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Member } from "./api";
 import { RootState } from "./store";
-import { getBaseUrl, getEmptyMember } from "../lib/utils";
+import { getEmptyMember } from "../lib/utils";
 
-export interface AdminState {
+export interface AdminMemberState {
   selectedMember: Member | null;
   pendingSelectedMember: Member | null;
   updatedMemberDraft: Member | null;
@@ -14,7 +14,7 @@ export interface AdminState {
   showChangeWarning: boolean;
 }
 
-const initialState: AdminState = {
+const initialState: AdminMemberState = {
   selectedMember: null,
   pendingSelectedMember: null,
   updatedMemberDraft: null,
@@ -25,8 +25,10 @@ const initialState: AdminState = {
   showChangeWarning: false,
 };
 
+//TODO: Fix logic for switching from edited member to new member in all reducers
+
 export const adminMemberSlice = createSlice({
-  name: "admin",
+  name: "adminMember",
   initialState,
   reducers: {
     selectMember: (state, action: PayloadAction<{ member: Member | null, force?: boolean }>) => {
@@ -43,7 +45,11 @@ export const adminMemberSlice = createSlice({
         state.memberChanges = false;
         return
       }
-      state.newMember = false;
+      if (state.newMember && state.memberChanges) {
+        state.newMember = true
+      } else {
+        state.newMember = false;
+      }
       state.memberChanges = false;
       state.updatedMemberDraft = action.payload.member;
       state.selectedMember = action.payload.member;
@@ -53,7 +59,13 @@ export const adminMemberSlice = createSlice({
       state.updatedMemberDraft = action.payload;
     },
     newMember: (state) => {
+      if (state.memberChanges) {
+        state.showChangeWarning = true
+        state.pendingSelectedMember = getEmptyMember();
+        return
+      }
       state.selectedMember = getEmptyMember();
+      state.updatedMemberDraft = getEmptyMember();
       state.newMember = true
     },
     closeDialog: (state) => {
@@ -72,5 +84,5 @@ export const {
   closeDialog,
   changesCommitted
 } = adminMemberSlice.actions;
-export const adminSelector = (state: RootState) => state.admin;
+export const adminMemberSelector = (state: RootState) => state.adminMember;
 export default adminMemberSlice.reducer;

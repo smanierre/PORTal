@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { Member } from "../redux/api";
+import { Member, Qualification, Reference, Requirement } from "../redux/api";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,6 +24,38 @@ export function getEmptyMember(): Member {
     username: "",
     supervisor_id: "",
   };
+}
+
+export function getEmptyQualification(): Qualification {
+  return {
+    id: "",
+    name: "",
+    notes: "",
+    initial_requirements: [],
+    recurring_requirements: [],
+    expires: false,
+    expiration_days: 0
+  }
+}
+
+export function getEmptyRequirement(): Requirement {
+  return {
+    id: "",
+    name: "",
+    description: "",
+    notes: "",
+    days_valid_for: 0,
+    reference: getEmptyReference(),
+  }
+}
+
+export function getEmptyReference(): Reference {
+  return {
+    id: "",
+    name: "",
+    paragraph: "",
+    volume: 0,
+  }
 }
 
 export const Grades = ["E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"];

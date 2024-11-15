@@ -1,4 +1,4 @@
-import { Qualification } from ".."
+import { Qualification } from "../redux/api"
 
 interface QualificationListProps {
     qualifications: Qualification[]

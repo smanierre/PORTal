@@ -1,10 +1,9 @@
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import Login from "./pages/Login.tsx";
 import Layout from "./Layout.tsx";
 import Nav from "./components/Nav.tsx";
 
 import Dashboard from "./pages/Dashboard.tsx";
-import Qualifications from "./pages/Qualifications.tsx";
 import Admin from "./pages/Admin.tsx";
 import { useGetLoggedInMemberQuery } from "./redux/api.ts";
 import FullPageSpinner from "./components/FullPageSpinner.tsx";

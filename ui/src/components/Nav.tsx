@@ -1,12 +1,12 @@
 import { NavigationMenu, NavigationMenuItem } from "./ui/navigation-menu.tsx";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "./ui/navigation-menu.tsx";
 import { getBaseUrl } from "../lib/utils.ts";
 import { useAppDispatch } from "../redux/hooks.ts";
-import { useGetLoggedInMemberQuery, api } from "../redux/api.ts";
+import { api } from "../redux/api.ts";
 
 const loggedInItems = [
   {

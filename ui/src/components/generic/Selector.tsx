@@ -10,9 +10,10 @@ interface SelectorProps {
   value: string;
   setValue: (selectedValue: string) => void;
   options: { value: string; label: string }[];
+  optional?: boolean,
 }
 
-export default function Selector({ value, setValue, options }: SelectorProps) {
+export default function Selector({ value, setValue, options, optional }: SelectorProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -41,7 +42,7 @@ export default function Selector({ value, setValue, options }: SelectorProps) {
                   key={option.value}
                   value={option.value}
                   onSelect={(currentValue) => {
-                    if (currentValue === value) {
+                    if (currentValue === value && optional) {
                       setValue("");
                     } else {
                       setValue(currentValue);
