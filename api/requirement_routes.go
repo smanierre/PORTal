@@ -22,6 +22,10 @@ func (s Server) addRequirement(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 	req, err = s.backend.AddRequirement(req)
+	if errors.Is(err, backend.ErrMissingArgs) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

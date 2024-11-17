@@ -58,7 +58,6 @@ func RandomRequirement(r types.Reference) types.Requirement {
 	return types.Requirement{
 		ID:           uuid.NewString(),
 		Name:         RandomString(),
-		Description:  RandomString(),
 		Notes:        RandomString(),
 		DaysValidFor: rand.IntN(1000) + 1,
 		Reference:    r,
@@ -133,9 +132,6 @@ func CompareRequirements(r1, r2 types.Requirement) bool {
 		return false
 	}
 	if r1.Notes != r2.Notes {
-		return false
-	}
-	if r1.Description != r2.Description {
 		return false
 	}
 	if r1.DaysValidFor != r2.DaysValidFor {

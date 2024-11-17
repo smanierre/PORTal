@@ -85,6 +85,11 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("PUT /api/requirement/{id}", http.HandlerFunc(s.updateRequirement))
 	s.mux.Handle("DELETE /api/requirement/{id}", http.HandlerFunc(s.deleteRequirement))
 
+	// Reference CRUD routes
+	s.mux.Handle("POST /api/reference", http.HandlerFunc(s.addReference))
+	s.mux.Handle("GET /api/reference/{id}", http.HandlerFunc(s.getReference))
+	s.mux.Handle("GET /api/references", http.HandlerFunc(s.getReferences))
+
 	// Member-Qualification routes
 	s.mux.Handle("POST /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.assignMemberQualification))
 	s.mux.Handle("GET /api/member/{id}/qualifications", http.HandlerFunc(s.getMemberQualifications))

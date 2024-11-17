@@ -257,7 +257,7 @@ func TestGetAllMembers(t *testing.T) {
 
 func TestUpdateMember(t *testing.T) {
 	b := newMockBackend()
-	b.updateMemberOverride = func(m types.Member) (types.Member, error) {
+	b.updateMemberOverride = func(m types.Member, forceNoSupervisor bool) (types.Member, error) {
 		if m.FirstName == "bad" {
 			return types.Member{}, errors.New("generic error")
 		} else if m.FirstName == "not found" {
