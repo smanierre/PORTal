@@ -15,7 +15,7 @@ interface PickerProps<T> {
     className?: string
 }
 export default function Picker<T extends ItemRequirements>({ pickedItems, unpickedItems, setPicked, setUnpicked, className }: PickerProps<T>) {
-    const [selectedItem, setSelectedItem] = useState<T>()
+    const [selectedItem, setSelectedItem] = useState<T | null>(null)
     return (
         <div
             className={`${className ? className : ""} grid grid-cols-picker`}
@@ -26,7 +26,10 @@ export default function Picker<T extends ItemRequirements>({ pickedItems, unpick
                     {pickedItems.map(item =>
                         <li key={item.id}
                             className={`${selectedItem?.id === item.id ? "bg-background text-white" : ""} cursor-pointer`}
-                            onClick={() => { setSelectedItem(item) }}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                setSelectedItem(item)
+                            }}
                         >{item.name}</li>
                     )}
                 </ul >
@@ -34,9 +37,8 @@ export default function Picker<T extends ItemRequirements>({ pickedItems, unpick
             <div className="flex flex-col items-center gap-4 justify-center">
                 <Button
                     type="button"
-                    // disabled={selectedItem === undefined || pickedItems.indexOf(selectedItem) !== -1}
+                    disabled={selectedItem === null || pickedItems.indexOf(selectedItem) !== -1}
                     onClick={() => {
-                        console.log(document.activeElement)
                         if (selectedItem) {
                             setPicked(selectedItem as T)
                         }
@@ -46,7 +48,7 @@ export default function Picker<T extends ItemRequirements>({ pickedItems, unpick
                 </Button>
                 <Button
                     type="button"
-                    // disabled={selectedItem === undefined || unpickedItems.indexOf(selectedItem) !== -1}
+                    disabled={selectedItem === null || unpickedItems.indexOf(selectedItem) !== -1}
                     onClick={() => {
                         if (selectedItem) {
                             setUnpicked(selectedItem as T)
@@ -58,11 +60,17 @@ export default function Picker<T extends ItemRequirements>({ pickedItems, unpick
             </div>
             <div className="h-full">
                 <p>Available:</p>
-                <ul className="overflow-scroll border-black border h-3/4 max-h-max">
+                <ul
+                    onClick={(e) => {
+                        // Needed to prevent clicking this from triggering the select button for some reason
+                        e.preventDefault()
+                    }}
+                    className="overflow-scroll border-black border h-3/4 max-h-max">
                     {unpickedItems.map(item =>
                         <li key={item.id}
                             className={`${selectedItem?.id === item.id ? "bg-background text-white" : ""} cursor-pointer`}
-                            onClick={() => {
+                            onClick={(e) => {
+                                e.preventDefault()
                                 setSelectedItem(item)
                             }}
                         >{item.name}</li>

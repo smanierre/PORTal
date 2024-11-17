@@ -58,7 +58,7 @@ export default function AdminReferenceEditor() {
                 <label>
                     ID:
                     <Input
-                        className="inline w-72 bg-primary"
+                        className="inline w-80 bg-primary"
                         value={updatedReferenceDraft.id}
                         disabled
                     />

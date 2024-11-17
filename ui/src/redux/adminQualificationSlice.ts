@@ -6,7 +6,6 @@ import { getEmptyQualification } from "../lib/utils";
 export interface AdminQualificationState {
     selectedQualification: Qualification | null;
     pendingSelectedQualification: Qualification | null;
-    updatedQualificationDraft: Qualification | null;
     updatePending: boolean;
     updateError: string;
     newQualification: boolean;
@@ -17,7 +16,6 @@ export interface AdminQualificationState {
 const initialState: AdminQualificationState = {
     selectedQualification: null,
     pendingSelectedQualification: null,
-    updatedQualificationDraft: null,
     updatePending: false,
     updateError: "",
     newQualification: false,
@@ -36,7 +34,6 @@ export const adminQualificationSlice = createSlice({
                 return;
             }
             if (action.payload.force) {
-                state.updatedQualificationDraft = state.pendingSelectedQualification;
                 state.selectedQualification = state.pendingSelectedQualification;
                 state.pendingSelectedQualification = null;
                 state.showChangeWarning = false;
@@ -45,12 +42,7 @@ export const adminQualificationSlice = createSlice({
             }
             state.newQualification = false;
             state.qualificationChanges = false;
-            state.updatedQualificationDraft = action.payload.qualification;
             state.selectedQualification = action.payload.qualification;
-        },
-        updateLocalSelectedQualification: (state, action: PayloadAction<Qualification>) => {
-            state.qualificationChanges = true;
-            state.updatedQualificationDraft = action.payload;
         },
         newQualification: (state) => {
             if (state.qualificationChanges) {
@@ -59,7 +51,6 @@ export const adminQualificationSlice = createSlice({
                 return
             }
             state.selectedQualification = getEmptyQualification();
-            state.updatedQualificationDraft = getEmptyQualification();
             state.newQualification = true
         },
         closeDialog: (state) => {
@@ -67,10 +58,13 @@ export const adminQualificationSlice = createSlice({
         },
         changesCommitted: (state) => {
             state.qualificationChanges = false
+        },
+        setChanges: (state, action: PayloadAction<boolean>) => {
+            state.qualificationChanges = action.payload
         }
     }
 })
 
-export const { selectQualification, newQualification, closeDialog, changesCommitted, updateLocalSelectedQualification } = adminQualificationSlice.actions
+export const { selectQualification, newQualification, closeDialog, changesCommitted, setChanges } = adminQualificationSlice.actions
 export const adminQualificationSelector = (state: RootState) => state.adminQualification
 export default adminQualificationSlice.reducer

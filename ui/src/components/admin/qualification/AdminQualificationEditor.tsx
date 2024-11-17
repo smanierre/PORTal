@@ -1,4 +1,5 @@
 import { Qualification, Requirement, useCreateQualificationMutation, useGetAllRequirementsQuery, useUpdateQualificationMutation } from "../../../redux/api";
+import { useState, useEffect } from "react";
 import { Input } from "../../ui/input";
 import { Checkbox } from "../../ui/checkbox";
 import { Button } from "../../ui/button";
@@ -10,7 +11,7 @@ import {
     changesCommitted,
     closeDialog,
     selectQualification,
-    updateLocalSelectedQualification,
+    setChanges,
 } from "../../../redux/adminQualificationSlice";
 import ChangesPendingAlert from "../../generic/ChangesAlert";
 import Picker from "../../generic/Picker";
@@ -18,33 +19,44 @@ import Picker from "../../generic/Picker";
 export default function AdminQualificationEditor() {
     const {
         selectedQualification,
-        updatedQualificationDraft,
         updatePending,
         newQualification,
+        qualificationChanges,
         showChangeWarning,
-        qualificationChanges
     } = useAppSelector(adminQualificationSelector);
+
     const dispatch = useAppDispatch();
     const [triggerUpdate, updateResponse] = useUpdateQualificationMutation();
     const [triggerCreate, createResponse] = useCreateQualificationMutation();
     const { data: requirements } = useGetAllRequirementsQuery();
+    const [qualification, setQualification] = useState(selectedQualification)
 
+    useEffect(() => {
+        setQualification(selectedQualification)
+    }, [selectedQualification])
+
+    useEffect(() => {
+        if (JSON.stringify(selectedQualification) !== JSON.stringify(qualification)) {
+            dispatch(setChanges(true))
+            return
+        }
+        dispatch(setChanges(false))
+    }, [qualification])
 
     function commitUpdate() {
-        console.log(document.activeElement)
-        if (!updatedQualificationDraft) {
+        if (!qualification) {
             return
         }
         switch (newQualification) {
             case true:
-                triggerCreate(updatedQualificationDraft)
+                triggerCreate(qualification)
                 if (createResponse.error) {
                     console.log(typeof createResponse.error)
                 }
                 dispatch(changesCommitted())
                 break
             case false:
-                triggerUpdate(updatedQualificationDraft)
+                triggerUpdate(qualification)
                 if (updateResponse.error) {
                     console.log(typeof updateResponse.error)
                 }
@@ -52,7 +64,7 @@ export default function AdminQualificationEditor() {
         dispatch(changesCommitted())
     }
 
-    return updatedQualificationDraft === null || selectedQualification === null ? null : (
+    return qualification === null ? null : (
         <>
             <form
                 className="p-4 flex gap-4 flex-col"
@@ -64,8 +76,8 @@ export default function AdminQualificationEditor() {
                 <label>
                     ID:
                     <Input
-                        className="inline w-72 bg-primary"
-                        value={updatedQualificationDraft.id}
+                        className="inline w-80 bg-primary"
+                        value={qualification.id}
                         disabled
                     />
                 </label>
@@ -73,14 +85,9 @@ export default function AdminQualificationEditor() {
                     Name:
                     <Input
                         className="inline w-48 bg-primary"
-                        value={updatedQualificationDraft.name}
+                        value={qualification.name}
                         onChange={(e) => {
-                            dispatch(
-                                updateLocalSelectedQualification({
-                                    ...updatedQualificationDraft,
-                                    name: e.target.value,
-                                }),
-                            );
+                            setQualification({ ...qualification, name: e.target.value })
                         }}
                     />
                 </label>
@@ -88,14 +95,9 @@ export default function AdminQualificationEditor() {
                     Notes:
                     <Textarea
                         className="w-1/2 h-72 bg-primary"
-                        value={updatedQualificationDraft.notes}
+                        value={qualification.notes}
                         onChange={(e) => {
-                            dispatch(
-                                updateLocalSelectedQualification({
-                                    ...updatedQualificationDraft,
-                                    notes: e.target.value,
-                                }),
-                            );
+                            setQualification({ ...qualification, notes: e.target.value })
                         }}
                     />
                 </label>
@@ -103,14 +105,9 @@ export default function AdminQualificationEditor() {
                     Expires:
                     <Checkbox
                         id="expires"
-                        checked={updatedQualificationDraft.expires}
+                        checked={qualification.expires}
                         onClick={() => {
-                            dispatch(
-                                updateLocalSelectedQualification({
-                                    ...updatedQualificationDraft,
-                                    expires: !updatedQualificationDraft.expires,
-                                }),
-                            );
+                            setQualification({ ...qualification, expires: !qualification.expires })
                         }}
                     />
                 </label>
@@ -118,16 +115,11 @@ export default function AdminQualificationEditor() {
                     Expiration interval (days):
                     <Input
                         type="number"
-                        disabled={!updatedQualificationDraft.expires}
+                        disabled={!qualification.expires}
                         className="inline w-48 bg-primary"
-                        value={updatedQualificationDraft.expiration_days}
+                        value={qualification.expiration_days}
                         onChange={(e) => {
-                            dispatch(
-                                updateLocalSelectedQualification({
-                                    ...updatedQualificationDraft,
-                                    expiration_days: Number(e.target.value)
-                                })
-                            )
+                            setQualification({ ...qualification, expiration_days: Number(e.target.value) })
                         }}
                     />
                 </label>
@@ -135,21 +127,18 @@ export default function AdminQualificationEditor() {
                     Initial Requirements:
                     <Picker
                         className="h-64"
-                        pickedItems={[...updatedQualificationDraft.initial_requirements]}
-                        unpickedItems={requirements?.filter(req => updatedQualificationDraft.initial_requirements.findIndex(
-                            (value, index, obj) => value.id == req.id
-                        ) == -1) as Requirement[]}
+                        pickedItems={[...qualification.initial_requirements]}
+                        unpickedItems={determineUnpickedItems(qualification.initial_requirements, requirements ? requirements : [])}
                         setPicked={(q) => {
-                            dispatch(updateLocalSelectedQualification({
-                                ...updatedQualificationDraft,
-                                initial_requirements: updatedQualificationDraft.initial_requirements.concat(q),
-                            }))
+                            setQualification({ ...qualification, initial_requirements: qualification.initial_requirements.concat(q) })
                         }}
                         setUnpicked={(q) => {
-                            dispatch(updateLocalSelectedQualification({
-                                ...updatedQualificationDraft,
-                                initial_requirements: updatedQualificationDraft.initial_requirements.filter(req => req.id !== q.id)
-                            }))
+                            setQualification({
+                                ...qualification,
+                                initial_requirements: qualification.initial_requirements.filter(
+                                    req => req.id !== q.id
+                                )
+                            })
                         }}
                     />
                 </label>
@@ -180,4 +169,18 @@ export default function AdminQualificationEditor() {
             />
         </>
     );
+}
+
+function determineUnpickedItems(picked: Requirement[], allReqs: Requirement[]): Requirement[] {
+    if (picked.length === allReqs.length) {
+        return [] as Requirement[]
+    }
+    if (picked.length === 0) {
+        return allReqs
+    }
+    return allReqs.filter(
+        req => picked.find(
+            picked => picked.id !== req.id
+        )
+    ) as Requirement[]
 }

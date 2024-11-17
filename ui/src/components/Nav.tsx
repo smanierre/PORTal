@@ -42,7 +42,7 @@ export default function Nav({ loggedIn, admin }: NavProps) {
   if (loggedIn) {
     return (
       <NavigationMenu
-        className={"items-baseline row-span-1 w-full bg-background"}
+        className={"items-baseline row-span-1 w-full bg-background sticky top-0"}
         defaultValue="Dashboard"
       >
         <NavigationMenuList className={" h-full w-full space-x-0"}>
