@@ -199,7 +199,6 @@ export default function AdminMemberEditor({ members }: AdminMemberEditorProps) {
               options={members
                 .filter(
                   (m) =>
-                    m.supervisor_id === "" &&
                     m.id !== updatedMemberDraft.id &&
                     !isHigherRank(updatedMemberDraft.grade, m.grade),
                 )

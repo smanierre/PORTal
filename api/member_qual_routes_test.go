@@ -12,7 +12,6 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"testing"
 )
 
@@ -100,11 +99,11 @@ func TestGetMemberQualifications(t *testing.T) {
 	b.getMemberQualificationsOverride = func(memberID string) ([]types.Qualification, error) {
 		switch memberID {
 		case "none":
-			return []types.Qualification{}, nil
+			return types.JSONSafeSlice[types.Qualification]{}, nil
 		case "one":
-			return []types.Qualification{qual1}, nil
+			return types.JSONSafeSlice[types.Qualification]{qual1}, nil
 		case "two":
-			return []types.Qualification{qual1, qual2}, nil
+			return types.JSONSafeSlice[types.Qualification]{qual1, qual2}, nil
 		case "bad":
 			return nil, errors.New("generic error")
 		case "notfound":
@@ -171,9 +170,20 @@ func TestGetMemberQualifications(t *testing.T) {
 				for _, mq := range tt.expectedResponse {
 					found := false
 					for _, mq2 := range res {
-						if reflect.DeepEqual(mq, mq2) {
+						mqJson, err := json.Marshal(mq)
+						if err != nil {
+							t.Errorf("Error marshalling member qualificaiton to JSON")
+						}
+						mq2Json, err := json.Marshal(mq2)
+						if err != nil {
+							t.Errorf("Error marshalling member qualificaiton 2 to JSON")
+						}
+						if string(mqJson) == string(mq2Json) {
 							found = true
 						}
+						//if reflect.DeepEqual(mq, mq2) {
+						//	found = true
+						//}
 					}
 					if !found {
 						t.Errorf("Didn't find MemberQualifiation in response: %+v", mq)

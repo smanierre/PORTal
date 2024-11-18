@@ -34,15 +34,6 @@ func (b Backend) GetAllQualifications() ([]types.Qualification, error) {
 	if err != nil {
 		return []types.Qualification{}, err
 	}
-	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Making sure any empty requirement slices are initialized for correct JSON serialization")
-	for i := 0; i < len(quals); i++ {
-		if len(quals[i].InitialRequirements) == 0 {
-			quals[i].InitialRequirements = make([]types.Requirement, 0)
-		}
-		if len(quals[i].RecurringRequirements) == 0 {
-			quals[i].RecurringRequirements = make([]types.Requirement, 0)
-		}
-	}
 	return quals, nil
 }
 

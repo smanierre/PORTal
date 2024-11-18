@@ -72,7 +72,7 @@ func RandomReference() types.Reference {
 	}
 }
 
-func VerifyUpdatedUser(original, updates, returned types.Member, t *testing.T) {
+func VerifyUpdatedUser(original, updates, returned types.Member, forced bool, t *testing.T) {
 	if updates.FirstName != "" {
 		original.FirstName = updates.FirstName
 	}
@@ -85,7 +85,7 @@ func VerifyUpdatedUser(original, updates, returned types.Member, t *testing.T) {
 	if updates.Username != "" {
 		original.Username = updates.Username
 	}
-	if updates.SupervisorID != "" {
+	if updates.SupervisorID != "" && !forced {
 		original.SupervisorID = updates.SupervisorID
 	}
 	if updates.Password != "" {

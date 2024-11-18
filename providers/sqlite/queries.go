@@ -118,7 +118,7 @@ INSERT INTO versions VALUES(1);`
 	getRequirementQuery                  = "SELECT * FROM requirement r FULL JOIN reference re ON r.reference_id = re.id WHERE r.id = $1;"
 	getAllRequirementsQuery              = "SELECT * FROM requirement r FULL JOIN reference re ON r.reference_id = re.id;"
 	getQualificationsForRequirementQuery = "SELECT qualification_id FROM qualification_initial_requirement  WHERE requirement_id=$1 UNION SELECT qualification_id FROM qualification_recurring_requirement WHERE requirement_id=$1;"
-	updateRequirementQuery               = "UPDATE requirement SET name=$1 notes=$2, days_valid_for=$3, reference_id=$4 WHERE id=$6;"
+	updateRequirementQuery               = "UPDATE requirement SET name=$1, notes=$2, days_valid_for=$3, reference_id=$4 WHERE id=$6;"
 	deleteRequirementQuery               = "DELETE FROM requirement WHERE id=$1;"
 
 	addReferenceQuery    = "INSERT INTO reference(id, name, volume, paragraph) VALUES($1, $2, $3, $4);"

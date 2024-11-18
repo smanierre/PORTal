@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
@@ -22,14 +23,23 @@ func init() {
 	}
 }
 
+type JSONSafeSlice[T any] []T
+
+func (s JSONSafeSlice[T]) MarshalJSON() ([]byte, error) {
+	if s == nil {
+		return []byte("[]"), nil
+	}
+	return json.Marshal([]T(s))
+}
+
 type Qualification struct {
-	ID                    string        `json:"id"`
-	Name                  string        `json:"name"`
-	InitialRequirements   []Requirement `json:"initial_requirements"`
-	RecurringRequirements []Requirement `json:"recurring_requirements"`
-	Notes                 string        `json:"notes"`
-	Expires               bool          `json:"expires"`
-	ExpirationDays        int           `json:"expiration_days"`
+	ID                    string                     `json:"id"`
+	Name                  string                     `json:"name"`
+	InitialRequirements   JSONSafeSlice[Requirement] `json:"initial_requirements"`
+	RecurringRequirements JSONSafeSlice[Requirement] `json:"recurring_requirements"`
+	Notes                 string                     `json:"notes"`
+	Expires               bool                       `json:"expires"`
+	ExpirationDays        int                        `json:"expiration_days"`
 }
 
 func (q Qualification) MergeIn(incoming Qualification, forceUpdateExpiration bool) Qualification {

@@ -38,37 +38,37 @@ func TestAddMember(t *testing.T) {
 	}{
 		{
 			name:       "Successful create",
-			body:       `{"first_name":"test","last_name":"member","rank":"TSgt","qualifications":null,"supervisor_id":"random"}`,
+			body:       `{"first_name":"test","last_name":"member","grade":"E6","qualifications":null,"supervisor_id":"random"}`,
 			statusCode: http.StatusCreated,
 		},
 		{
 			name:       "Missing first name",
-			body:       `{"last_name":"member","rank":"TSgt","qualifications":null,"supervisor_id":"random"}`,
+			body:       `{"last_name":"member","grade":"E6","qualifications":null,"supervisor_id":"random"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Missing last name",
-			body:       `{"first_name":"test","rank":"TSgt","qualifications":null,"supervisor_id":"random"}`,
+			body:       `{"first_name":"test","grade":"E6","qualifications":null,"supervisor_id":"random"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
-			name:       "Missing rank",
+			name:       "Missing grade",
 			body:       `{"first_name":"test","last_name":"member","qualifications":null,"supervisor_id":"random"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Supervisor ID doesn't exist",
-			body:       `{"first_name":"test","last_name":"member","rank":"TSgt","qualifications":null,"supervisor_id":"bad"}`,
+			body:       `{"first_name":"test","last_name":"member","grade":"E6","qualifications":null,"supervisor_id":"bad"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Malformed request",
-			body:       `{"first_name":"test","last_name":"member","rank":"TSgt","qualifications":null,"supervisor_id":"random"`,
+			body:       `{"first_name":"test","last_name":"member","grade":"E6","qualifications":null,"supervisor_id":"random"`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Backend error",
-			body:       "{\"first_name\":\"bad\",\"last_name\":\"member\",\"rank\":\"TSgt\",\"qualifications\":null,\"supervisor_id\":\"random\"}",
+			body:       "{\"first_name\":\"bad\",\"last_name\":\"member\",\"grade\":\"E6\",\"qualifications\":null,\"supervisor_id\":\"random\"}",
 			statusCode: http.StatusInternalServerError,
 		},
 	}
@@ -290,32 +290,32 @@ func TestUpdateMember(t *testing.T) {
 	}{
 		{
 			name:       "Successful update",
-			body:       `{"id":"old","first_name":"test new","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"}`,
+			body:       `{"id":"old","first_name":"test new","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"}`,
 			statusCode: http.StatusOK,
 		},
 		{
 			name:       "Backend error",
-			body:       `{"id":"old","first_name":"bad","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"}`,
+			body:       `{"id":"old","first_name":"bad","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"}`,
 			statusCode: http.StatusInternalServerError,
 		},
 		{
 			name:       "Bad JSON body",
-			body:       `{"id":"old","first_name":"test new","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"`,
+			body:       `{"id":"old","first_name":"test new","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Member not found",
-			body:       `{"id":"old","first_name":"not found","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"}`,
+			body:       `{"id":"old","first_name":"not found","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"}`,
 			statusCode: http.StatusNotFound,
 		},
 		{
 			name:       "Update ID",
-			body:       `{"id":"new","first_name":"test new","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"}`,
+			body:       `{"id":"new","first_name":"test new","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Supervisor ID doesn't exist",
-			body:       `{"id":"old","first_name":"test new","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"not found"}`,
+			body:       `{"id":"old","first_name":"test new","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"not found"}`,
 			statusCode: http.StatusBadRequest,
 		},
 	}

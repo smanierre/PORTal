@@ -17,7 +17,7 @@ func CheckMemberForMissingArgs(m types.Member) error {
 		errors = append(errors, "LastName")
 	}
 	if m.Grade == "" {
-		errors = append(errors, "Rank")
+		errors = append(errors, "Grade")
 	}
 	if m.Username == "" {
 		errors = append(errors, "Username")

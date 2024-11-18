@@ -259,9 +259,10 @@ func TestUpdateMember(t *testing.T) {
 	}
 
 	tc := []struct {
-		Name          string
-		Updates       types.Member
-		ExpectedError error
+		Name              string
+		Updates           types.Member
+		ExpectedError     error
+		ForceNoSupervisor bool
 	}{
 		{
 			Name: "Successful full update",
@@ -319,11 +320,27 @@ func TestUpdateMember(t *testing.T) {
 			},
 			ExpectedError: backend.ErrMemberNotFound,
 		},
+		{
+			Name: "Force no supervisor",
+			Updates: types.Member{
+				ApiMember: types.ApiMember{
+					ID:           member.ID,
+					FirstName:    "Joe",
+					LastName:     "Schmoe",
+					Username:     "newuser",
+					Grade:        types.E1,
+					Admin:        true,
+					SupervisorID: "",
+				},
+			},
+			ExpectedError:     nil,
+			ForceNoSupervisor: true,
+		},
 	}
 
 	for _, tt := range tc {
 		t.Run(tt.Name, func(t *testing.T) {
-			mem, err := b.UpdateMember(tt.Updates)
+			mem, err := b.UpdateMember(tt.Updates, tt.ForceNoSupervisor)
 			if tt.ExpectedError == nil && err != nil {
 				t.Errorf("Expected no error but got: %s", err.Error())
 			}
@@ -331,7 +348,7 @@ func TestUpdateMember(t *testing.T) {
 				t.Errorf("Expected error: %s, got: %s", tt.ExpectedError.Error(), err.Error())
 			}
 			if tt.ExpectedError == nil {
-				testutils.VerifyUpdatedUser(member, tt.Updates, mem, t)
+				testutils.VerifyUpdatedUser(member, tt.Updates, mem, tt.ForceNoSupervisor, t)
 			}
 		})
 	}

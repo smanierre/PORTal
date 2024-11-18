@@ -55,6 +55,7 @@ func (s Server) getLoggedInMember(w http.ResponseWriter, r *http.Request) {
 	token, err := validateToken(tokenCookie.Value, s.jwtKeyFunc, s.logger)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
 	customClaims, ok := token.Claims.(*CustomClaims)
 	if !ok {
@@ -170,11 +171,11 @@ func (s Server) updateMember(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else if errors.Is(err, backend.ErrSupervisorNotFound) {
-		//w.WriteHeader(http.StatusBadRequest)
-		//return
-		//} else if err != nil {
-		//	w.WriteHeader(http.StatusInternalServerError)
-		//	return
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	err = json.NewEncoder(w).Encode(member.ApiMember)
 	if err != nil {
