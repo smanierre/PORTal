@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +14,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestLogin(t *testing.T) {
@@ -24,7 +25,7 @@ func TestLogin(t *testing.T) {
 			FirstName: "Test",
 			LastName:  "Member",
 			Username:  "tmember",
-			Rank:      types.E8,
+			Grade:     types.E8,
 		},
 		Password: "valid",
 	}

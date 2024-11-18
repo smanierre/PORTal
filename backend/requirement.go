@@ -4,10 +4,14 @@ import (
 	"PORTal/types"
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"log/slog"
 )
 
 func (b Backend) AddRequirement(r types.Requirement) (types.Requirement, error) {
+	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Generating ID...")
+	r.ID = uuid.NewString()
+
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Checking for missing args...")
 	if err := CheckRequirementForMissingArgs(r); err != nil {
 		b.logger.LogAttrs(context.Background(), slog.LevelWarn, "Required arguments missing", slog.String("error", err.Error()))

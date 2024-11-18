@@ -12,7 +12,6 @@ RUN npm run build
 FROM golang:1.22.8-bookworm AS backend
 
 WORKDIR /build
-
 COPY go.mod /build/go.mod
 COPY go.sum /build/go.sum
 RUN go mod download

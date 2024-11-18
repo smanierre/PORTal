@@ -8,8 +8,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"io"
 	"log/slog"
 	"os"
@@ -17,6 +15,9 @@ import (
 	"slices"
 	"sort"
 	"testing"
+
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestAddAndGetMember(t *testing.T) {
@@ -43,7 +44,7 @@ func TestAddAndGetMember(t *testing.T) {
 		FirstName     string
 		LastName      string
 		UserName      string
-		Rank          types.Rank
+		Grade         types.Grade
 		SupervisorID  string
 		Password      string
 		ExpectedError error
@@ -53,7 +54,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      "username",
-			Rank:          types.E4,
+			Grade:         types.E4,
 			SupervisorID:  "",
 			Password:      testutils.RandomString(),
 			ExpectedError: nil,
@@ -63,7 +64,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      testutils.RandomString(),
-			Rank:          types.E8,
+			Grade:         types.E8,
 			SupervisorID:  supervisor.ID,
 			Password:      testutils.RandomString(),
 			ExpectedError: nil,
@@ -73,7 +74,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      testutils.RandomString(),
-			Rank:          types.E4,
+			Grade:         types.E4,
 			SupervisorID:  uuid.NewString(),
 			Password:      testutils.RandomString(),
 			ExpectedError: backend.ErrSupervisorNotFound,
@@ -83,7 +84,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      "username",
-			Rank:          types.E8,
+			Grade:         types.E8,
 			SupervisorID:  "",
 			Password:      testutils.RandomString(),
 			ExpectedError: backend.ErrDuplicateUsername,
@@ -93,7 +94,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     "",
 			LastName:      "",
 			UserName:      "",
-			Rank:          "",
+			Grade:         "",
 			SupervisorID:  "",
 			Password:      "",
 			ExpectedError: backend.ErrMissingArgs,
@@ -103,7 +104,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      testutils.RandomString(),
-			Rank:          types.E3,
+			Grade:         types.E3,
 			SupervisorID:  "",
 			Password:      "test",
 			ExpectedError: backend.ErrWeakPassword,
@@ -113,7 +114,7 @@ func TestAddAndGetMember(t *testing.T) {
 			FirstName:     testutils.RandomString(),
 			LastName:      testutils.RandomString(),
 			UserName:      testutils.RandomString(),
-			Rank:          types.E7,
+			Grade:         types.E7,
 			SupervisorID:  "",
 			Password:      "toolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolongtoolong",
 			ExpectedError: backend.ErrPasswordTooLong,
@@ -127,7 +128,7 @@ func TestAddAndGetMember(t *testing.T) {
 					FirstName:    tt.FirstName,
 					LastName:     tt.LastName,
 					Username:     tt.UserName,
-					Rank:         tt.Rank,
+					Grade:        tt.Grade,
 					SupervisorID: tt.SupervisorID,
 				},
 				Password: tt.Password,
@@ -258,9 +259,10 @@ func TestUpdateMember(t *testing.T) {
 	}
 
 	tc := []struct {
-		Name          string
-		Updates       types.Member
-		ExpectedError error
+		Name              string
+		Updates           types.Member
+		ExpectedError     error
+		ForceNoSupervisor bool
 	}{
 		{
 			Name: "Successful full update",
@@ -270,7 +272,7 @@ func TestUpdateMember(t *testing.T) {
 					FirstName:    "Joe",
 					LastName:     "Schmoe",
 					Username:     "newuser",
-					Rank:         types.E1,
+					Grade:        types.E1,
 					Admin:        true,
 					SupervisorID: supervisor.ID,
 				},
@@ -318,11 +320,27 @@ func TestUpdateMember(t *testing.T) {
 			},
 			ExpectedError: backend.ErrMemberNotFound,
 		},
+		{
+			Name: "Force no supervisor",
+			Updates: types.Member{
+				ApiMember: types.ApiMember{
+					ID:           member.ID,
+					FirstName:    "Joe",
+					LastName:     "Schmoe",
+					Username:     "newuser",
+					Grade:        types.E1,
+					Admin:        true,
+					SupervisorID: "",
+				},
+			},
+			ExpectedError:     nil,
+			ForceNoSupervisor: true,
+		},
 	}
 
 	for _, tt := range tc {
 		t.Run(tt.Name, func(t *testing.T) {
-			mem, err := b.UpdateMember(tt.Updates)
+			mem, err := b.UpdateMember(tt.Updates, tt.ForceNoSupervisor)
 			if tt.ExpectedError == nil && err != nil {
 				t.Errorf("Expected no error but got: %s", err.Error())
 			}
@@ -330,7 +348,7 @@ func TestUpdateMember(t *testing.T) {
 				t.Errorf("Expected error: %s, got: %s", tt.ExpectedError.Error(), err.Error())
 			}
 			if tt.ExpectedError == nil {
-				testutils.VerifyUpdatedUser(member, tt.Updates, mem, t)
+				testutils.VerifyUpdatedUser(member, tt.Updates, mem, tt.ForceNoSupervisor, t)
 			}
 		})
 	}

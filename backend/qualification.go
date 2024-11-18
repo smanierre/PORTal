@@ -30,7 +30,11 @@ func (b Backend) GetQualification(id string) (types.Qualification, error) {
 
 func (b Backend) GetAllQualifications() ([]types.Qualification, error) {
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting all qualifications")
-	return b.qualificationProvider.GetAllQualifications()
+	quals, err := b.qualificationProvider.GetAllQualifications()
+	if err != nil {
+		return []types.Qualification{}, err
+	}
+	return quals, nil
 }
 
 func (b Backend) UpdateQualification(q types.Qualification, forceExpirationUpdate bool) (types.Qualification, error) {

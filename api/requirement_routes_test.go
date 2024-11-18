@@ -73,7 +73,6 @@ func TestGetRequirement(t *testing.T) {
 	testRequirement := types.Requirement{
 		ID:           uuid.NewString(),
 		Name:         "test",
-		Description:  "requirement",
 		Notes:        "notes",
 		DaysValidFor: 182,
 	}
@@ -149,14 +148,12 @@ func TestGetAllRequirements(t *testing.T) {
 	testRequirement := types.Requirement{
 		ID:           uuid.NewString(),
 		Name:         "Test",
-		Description:  "requirement",
 		Notes:        "some test notes",
 		DaysValidFor: -1,
 	}
 	testRequirement2 := types.Requirement{
 		ID:           uuid.NewString(),
 		Name:         "Test 2",
-		Description:  "requirement 2",
 		Notes:        "some test notes 2",
 		DaysValidFor: 400,
 	}
@@ -215,7 +212,6 @@ func TestUpdateRequirement(t *testing.T) {
 	originalRequirement := types.Requirement{
 		ID:           "old",
 		Name:         "old",
-		Description:  "old",
 		Notes:        "old",
 		DaysValidFor: 100,
 	}

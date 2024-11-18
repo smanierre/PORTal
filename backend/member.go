@@ -68,7 +68,7 @@ func (b Backend) GetSubordinates(memberID string) ([]types.Member, error) {
 	return b.memberProvider.GetSubordinates(memberID)
 }
 
-func (b Backend) UpdateMember(m types.Member) (types.Member, error) {
+func (b Backend) UpdateMember(m types.Member, forceNoSupervisor bool) (types.Member, error) {
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Updating member")
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting previous member to determine updates")
 	previousMember, err := b.memberProvider.GetMember(m.ID, ById)
@@ -77,7 +77,7 @@ func (b Backend) UpdateMember(m types.Member) (types.Member, error) {
 		return types.Member{}, err
 	}
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Merging members to determine updates")
-	updateMember := previousMember.MergeIn(m)
+	updateMember := previousMember.MergeIn(m, forceNoSupervisor)
 	if updateMember.Password != "" {
 		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "New password provided, verifying it meets requirements")
 		if len(m.Password) < MinimumPwLength {

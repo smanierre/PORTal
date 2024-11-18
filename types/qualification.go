@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
@@ -22,14 +23,23 @@ func init() {
 	}
 }
 
+type JSONSafeSlice[T any] []T
+
+func (s JSONSafeSlice[T]) MarshalJSON() ([]byte, error) {
+	if s == nil {
+		return []byte("[]"), nil
+	}
+	return json.Marshal([]T(s))
+}
+
 type Qualification struct {
-	ID                    string        `json:"id"`
-	Name                  string        `json:"name"`
-	InitialRequirements   []Requirement `json:"initial_requirements"`
-	RecurringRequirements []Requirement `json:"recurring_requirements,omitempty"`
-	Notes                 string        `json:"notes,omitempty"`
-	Expires               bool          `json:"expires"`
-	ExpirationDays        int           `json:"expiration_days,omitempty"`
+	ID                    string                     `json:"id"`
+	Name                  string                     `json:"name"`
+	InitialRequirements   JSONSafeSlice[Requirement] `json:"initial_requirements"`
+	RecurringRequirements JSONSafeSlice[Requirement] `json:"recurring_requirements"`
+	Notes                 string                     `json:"notes"`
+	Expires               bool                       `json:"expires"`
+	ExpirationDays        int                        `json:"expiration_days"`
 }
 
 func (q Qualification) MergeIn(incoming Qualification, forceUpdateExpiration bool) Qualification {
@@ -61,13 +71,12 @@ type Requirement struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
 	Reference    Reference `json:"reference"`
-	Description  string    `json:"description"`
-	Notes        string    `json:"notes,omitempty"`
-	DaysValidFor int       `json:"days_valid_for,omitempty"`
+	Notes        string    `json:"notes"`
+	DaysValidFor int       `json:"days_valid_for"`
 }
 
 func (r Requirement) LogValue() slog.Value {
-	return slog.StringValue(fmt.Sprintf("ID: %s Name: %s Description: %s Notes: %s DaysValidFor: %d", r.ID, r.Name, r.Description, r.Notes, r.DaysValidFor))
+	return slog.StringValue(fmt.Sprintf("ID: %s Name: %s Notes: %s DaysValidFor: %d", r.ID, r.Name, r.Notes, r.DaysValidFor))
 }
 
 func (r Requirement) MergeIn(incoming Requirement) Requirement {
@@ -76,9 +85,6 @@ func (r Requirement) MergeIn(incoming Requirement) Requirement {
 	}
 	if incoming.Notes != "" {
 		r.Notes = incoming.Notes
-	}
-	if incoming.Description != "" {
-		r.Description = incoming.Description
 	}
 	if incoming.DaysValidFor != 0 {
 		r.DaysValidFor = incoming.DaysValidFor
@@ -93,7 +99,7 @@ type MemberRequirement struct {
 	MemberID      string `json:"member_id"`
 	Requirement   `json:"requirement"`
 	Completed     bool      `json:"completed"`
-	CompletedDate time.Time `json:"completed_date,omitempty"`
+	CompletedDate time.Time `json:"completed_date"`
 }
 
 type Reference struct {

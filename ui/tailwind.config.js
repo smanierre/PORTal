@@ -106,7 +106,7 @@ module.exports = {
 		},
 		gridTemplateColumns: {
 			'adminPane': '33% 1fr',
-			'subordinatePicker': '45% 10% 45%',
+			'picker': '45% 10% 45%',
 		},
 	},
 	plugins: [require("tailwindcss-animate")],

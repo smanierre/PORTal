@@ -2,13 +2,14 @@ package testutils
 
 import (
 	"PORTal/types"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"math/rand/v2"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func RandomString() string {
@@ -27,7 +28,7 @@ func RandomMember(admin bool) types.Member {
 			FirstName:    RandomString(),
 			LastName:     RandomString(),
 			Username:     RandomString(),
-			Rank:         types.E4,
+			Grade:        types.E4,
 			SupervisorID: "",
 			Admin:        admin,
 		},
@@ -57,7 +58,6 @@ func RandomRequirement(r types.Reference) types.Requirement {
 	return types.Requirement{
 		ID:           uuid.NewString(),
 		Name:         RandomString(),
-		Description:  RandomString(),
 		Notes:        RandomString(),
 		DaysValidFor: rand.IntN(1000) + 1,
 		Reference:    r,
@@ -72,20 +72,20 @@ func RandomReference() types.Reference {
 	}
 }
 
-func VerifyUpdatedUser(original, updates, returned types.Member, t *testing.T) {
+func VerifyUpdatedUser(original, updates, returned types.Member, forced bool, t *testing.T) {
 	if updates.FirstName != "" {
 		original.FirstName = updates.FirstName
 	}
 	if updates.LastName != "" {
 		original.LastName = updates.LastName
 	}
-	if updates.Rank != "" {
-		original.Rank = updates.Rank
+	if updates.Grade != "" {
+		original.Grade = updates.Grade
 	}
 	if updates.Username != "" {
 		original.Username = updates.Username
 	}
-	if updates.SupervisorID != "" {
+	if updates.SupervisorID != "" && !forced {
 		original.SupervisorID = updates.SupervisorID
 	}
 	if updates.Password != "" {
@@ -132,9 +132,6 @@ func CompareRequirements(r1, r2 types.Requirement) bool {
 		return false
 	}
 	if r1.Notes != r2.Notes {
-		return false
-	}
-	if r1.Description != r2.Description {
 		return false
 	}
 	if r1.DaysValidFor != r2.DaysValidFor {

@@ -7,9 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 func (s Server) addMember(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +44,41 @@ func (s Server) addMember(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s Server) getLoggedInMember(w http.ResponseWriter, r *http.Request) {
+	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Checking for Identity cookie from initial page load")
+	tokenCookie, err := r.Cookie(JWTCookieName)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error when retrieving Identity cookie", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	token, err := validateToken(tokenCookie.Value, s.jwtKeyFunc, s.logger)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	customClaims, ok := token.Claims.(*CustomClaims)
+	if !ok {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error casting claims to CustomClaims")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	member, err := s.backend.GetMember(customClaims.Subject)
+	if errors.Is(err, backend.ErrMemberNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	} else if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Identity validated, sending member back to client")
+	err = json.NewEncoder(w).Encode(member.ToApiMember())
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error encoding member to json response", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
 func (s Server) getMember(w http.ResponseWriter, r *http.Request) {
 	l := s.logger.With(slog.String("path", fmt.Sprintf("%s %s", r.Method, r.URL.Path)))
 	id := r.PathValue("id")
@@ -62,6 +98,25 @@ func (s Server) getMember(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(m.ToApiMember())
 	if err != nil {
 		l.LogAttrs(context.Background(), slog.LevelError, "Error serializing ApiMember to client", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+}
+
+func (s Server) getMemberSubordinates(w http.ResponseWriter, r *http.Request) {
+	l := s.logger.With(slog.String("path", fmt.Sprintf("%s %s", r.Method, r.URL.Path)))
+	members, err := s.backend.GetSubordinates(r.PathValue("id"))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	l.LogAttrs(r.Context(), slog.LevelInfo, "Converting members to ApiMember")
+	var apiMembers []types.ApiMember
+	for _, v := range members {
+		apiMembers = append(apiMembers, v.ApiMember)
+	}
+	err = json.NewEncoder(w).Encode(apiMembers)
+	if err != nil {
+		l.LogAttrs(r.Context(), slog.LevelError, "Error serializing slice of members to json", slog.String("error", err.Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }
@@ -106,7 +161,12 @@ func (s Server) updateMember(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	member, err := s.backend.UpdateMember(m)
+	forceNoSupervisor := false
+	if m.SupervisorID == "" {
+		forceNoSupervisor = true
+		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Supervisor is blank in request, forcing removal")
+	}
+	member, err := s.backend.UpdateMember(m, forceNoSupervisor)
 	if errors.Is(err, backend.ErrMemberNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -117,7 +177,7 @@ func (s Server) updateMember(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	err = json.NewEncoder(w).Encode(member)
+	err = json.NewEncoder(w).Encode(member.ApiMember)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error encoding member to client", slog.String("error", err.Error()))
 	}
@@ -147,7 +207,7 @@ func validateMember(m types.Member) error {
 	if m.LastName == "" {
 		errs = append(errs, "LastName")
 	}
-	if m.Rank == "" {
+	if m.Grade == "" {
 		errs = append(errs, "Rank")
 	}
 	if len(errs) > 0 {

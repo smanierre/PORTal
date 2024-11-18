@@ -66,6 +66,9 @@ func (s Server) getAllQualifications(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	if quals == nil {
+		quals = make([]types.Qualification, 0)
+	}
 	err = json.NewEncoder(w).Encode(quals)
 	if err != nil {
 		l.LogAttrs(r.Context(), slog.LevelError, "Error serializing []types.Qualification to client", slog.String("error", err.Error()))

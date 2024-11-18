@@ -6,18 +6,18 @@ import (
 	"time"
 )
 
-type Rank string
+type Grade string
 
 const (
-	E1 Rank = "AB"
-	E2 Rank = "Amn"
-	E3 Rank = "A1C"
-	E4 Rank = "SrA"
-	E5 Rank = "SSgt"
-	E6 Rank = "TSgt"
-	E7 Rank = "MSgt"
-	E8 Rank = "SMSgt"
-	E9 Rank = "CMSgt"
+	E1 Grade = "E1"
+	E2 Grade = "E2"
+	E3 Grade = "E3"
+	E4 Grade = "E4"
+	E5 Grade = "E5"
+	E6 Grade = "E6"
+	E7 Grade = "E7"
+	E8 Grade = "E8"
+	E9 Grade = "E9"
 )
 
 type Member struct {
@@ -27,24 +27,26 @@ type Member struct {
 }
 
 func (m Member) LogValue() slog.Value {
-	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s Admin: %t", m.ID, m.Rank, m.FirstName, m.LastName, m.Username, m.SupervisorID, m.Admin))
+	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s Admin: %t", m.ID, m.Grade, m.FirstName, m.LastName, m.Username, m.SupervisorID, m.Admin))
 }
 
 func (m Member) ToApiMember() ApiMember {
 	return m.ApiMember
 }
 
-func (m Member) MergeIn(new Member) Member {
+func (m Member) MergeIn(new Member, forceNoSupervisor bool) Member {
 	if new.FirstName != "" {
 		m.FirstName = new.FirstName
 	}
 	if new.LastName != "" {
 		m.LastName = new.LastName
 	}
-	if new.Rank != "" {
-		m.Rank = new.Rank
+	if new.Grade != "" {
+		m.Grade = new.Grade
 	}
-	if new.SupervisorID != "" {
+	if new.SupervisorID == "" && forceNoSupervisor {
+		m.SupervisorID = ""
+	} else if new.SupervisorID != "" {
 		m.SupervisorID = new.SupervisorID
 	}
 	if new.Username != "" {
@@ -61,7 +63,7 @@ type ApiMember struct {
 	FirstName    string `json:"first_name"`
 	LastName     string `json:"last_name"`
 	Username     string `json:"username"`
-	Rank         Rank   `json:"rank"`
+	Grade        Grade  `json:"grade"`
 	SupervisorID string `json:"supervisor_id"`
 	Admin        bool   `json:"admin"`
 }

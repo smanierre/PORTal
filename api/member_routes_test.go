@@ -8,12 +8,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestAddMember(t *testing.T) {
@@ -37,37 +38,37 @@ func TestAddMember(t *testing.T) {
 	}{
 		{
 			name:       "Successful create",
-			body:       `{"first_name":"test","last_name":"member","rank":"TSgt","qualifications":null,"supervisor_id":"random"}`,
+			body:       `{"first_name":"test","last_name":"member","grade":"E6","qualifications":null,"supervisor_id":"random"}`,
 			statusCode: http.StatusCreated,
 		},
 		{
 			name:       "Missing first name",
-			body:       `{"last_name":"member","rank":"TSgt","qualifications":null,"supervisor_id":"random"}`,
+			body:       `{"last_name":"member","grade":"E6","qualifications":null,"supervisor_id":"random"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Missing last name",
-			body:       `{"first_name":"test","rank":"TSgt","qualifications":null,"supervisor_id":"random"}`,
+			body:       `{"first_name":"test","grade":"E6","qualifications":null,"supervisor_id":"random"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
-			name:       "Missing rank",
+			name:       "Missing grade",
 			body:       `{"first_name":"test","last_name":"member","qualifications":null,"supervisor_id":"random"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Supervisor ID doesn't exist",
-			body:       `{"first_name":"test","last_name":"member","rank":"TSgt","qualifications":null,"supervisor_id":"bad"}`,
+			body:       `{"first_name":"test","last_name":"member","grade":"E6","qualifications":null,"supervisor_id":"bad"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Malformed request",
-			body:       `{"first_name":"test","last_name":"member","rank":"TSgt","qualifications":null,"supervisor_id":"random"`,
+			body:       `{"first_name":"test","last_name":"member","grade":"E6","qualifications":null,"supervisor_id":"random"`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Backend error",
-			body:       "{\"first_name\":\"bad\",\"last_name\":\"member\",\"rank\":\"TSgt\",\"qualifications\":null,\"supervisor_id\":\"random\"}",
+			body:       "{\"first_name\":\"bad\",\"last_name\":\"member\",\"grade\":\"E6\",\"qualifications\":null,\"supervisor_id\":\"random\"}",
 			statusCode: http.StatusInternalServerError,
 		},
 	}
@@ -103,7 +104,7 @@ func TestGetMember(t *testing.T) {
 			ID:           goodId,
 			FirstName:    "test",
 			LastName:     "member",
-			Rank:         "TSgt",
+			Grade:        "TSgt",
 			SupervisorID: "",
 		},
 		Password: "",
@@ -182,7 +183,7 @@ func TestGetAllMembers(t *testing.T) {
 			ID:           uuid.NewString(),
 			FirstName:    "test",
 			LastName:     "member",
-			Rank:         "TSgt",
+			Grade:        "TSgt",
 			SupervisorID: "",
 		},
 		Password: "",
@@ -193,7 +194,7 @@ func TestGetAllMembers(t *testing.T) {
 			ID:           uuid.NewString(),
 			FirstName:    "test 2",
 			LastName:     "member 2",
-			Rank:         "MSgt",
+			Grade:        "MSgt",
 			SupervisorID: uuid.NewString(),
 		},
 		Password: "",
@@ -256,7 +257,7 @@ func TestGetAllMembers(t *testing.T) {
 
 func TestUpdateMember(t *testing.T) {
 	b := newMockBackend()
-	b.updateMemberOverride = func(m types.Member) (types.Member, error) {
+	b.updateMemberOverride = func(m types.Member, forceNoSupervisor bool) (types.Member, error) {
 		if m.FirstName == "bad" {
 			return types.Member{}, errors.New("generic error")
 		} else if m.FirstName == "not found" {
@@ -272,7 +273,7 @@ func TestUpdateMember(t *testing.T) {
 				ID:           "old",
 				FirstName:    "old",
 				LastName:     "old",
-				Rank:         "Old",
+				Grade:        "Old",
 				SupervisorID: "Old",
 			},
 			Password: "Old",
@@ -289,32 +290,32 @@ func TestUpdateMember(t *testing.T) {
 	}{
 		{
 			name:       "Successful update",
-			body:       `{"id":"old","first_name":"test new","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"}`,
+			body:       `{"id":"old","first_name":"test new","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"}`,
 			statusCode: http.StatusOK,
 		},
 		{
 			name:       "Backend error",
-			body:       `{"id":"old","first_name":"bad","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"}`,
+			body:       `{"id":"old","first_name":"bad","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"}`,
 			statusCode: http.StatusInternalServerError,
 		},
 		{
 			name:       "Bad JSON body",
-			body:       `{"id":"old","first_name":"test new","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"`,
+			body:       `{"id":"old","first_name":"test new","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Member not found",
-			body:       `{"id":"old","first_name":"not found","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"}`,
+			body:       `{"id":"old","first_name":"not found","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"}`,
 			statusCode: http.StatusNotFound,
 		},
 		{
 			name:       "Update ID",
-			body:       `{"id":"new","first_name":"test new","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"random new"}`,
+			body:       `{"id":"new","first_name":"test new","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"random new"}`,
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "Supervisor ID doesn't exist",
-			body:       `{"id":"old","first_name":"test new","last_name":"member new","rank":"SMSgt","qualifications":null,"supervisor_id":"not found"}`,
+			body:       `{"id":"old","first_name":"test new","last_name":"member new","grade":"E8","qualifications":null,"supervisor_id":"not found"}`,
 			statusCode: http.StatusBadRequest,
 		},
 	}

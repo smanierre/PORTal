@@ -16,8 +16,8 @@ func CheckMemberForMissingArgs(m types.Member) error {
 	if m.LastName == "" {
 		errors = append(errors, "LastName")
 	}
-	if m.Rank == "" {
-		errors = append(errors, "Rank")
+	if m.Grade == "" {
+		errors = append(errors, "Grade")
 	}
 	if m.Username == "" {
 		errors = append(errors, "Username")
@@ -55,9 +55,6 @@ func CheckRequirementForMissingArgs(r types.Requirement) error {
 	}
 	if r.DaysValidFor == 0 {
 		errors = append(errors, "DaysValidFor")
-	}
-	if r.Description == "" {
-		errors = append(errors, "Description")
 	}
 	if err := CheckReferenceForMissingArgs(r.Reference); err != nil {
 		errors = append(errors, fmt.Sprintf("Reference: %s", err.Error()))
