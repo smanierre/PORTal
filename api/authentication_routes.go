@@ -1,54 +1,52 @@
 package api
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
-	"time"
 )
 
-func (s Server) login(w http.ResponseWriter, r *http.Request) {
-	var res LoginResponse
-	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Deserializing body into types.Credentials")
-	var creds Credentials
-	err := json.NewDecoder(r.Body).Decode(&creds)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error deserializing credentials from client", slog.String("error", err.Error()))
-		w.WriteHeader(http.StatusBadRequest)
-	}
-	member, err := s.backend.Login(creds.Username, creds.Password)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	res.Member = member.ToApiMember()
-	res.Qualifications, err = s.backend.GetMemberQualifications(res.Member.ID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	subordinates, err := s.backend.GetSubordinates(res.Member.ID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	for _, subordinate := range subordinates {
-		res.Subordinates = append(res.Subordinates, subordinate.ToApiMember())
-	}
-	token, err := createToken(member, s.config.JWTExpiration*time.Hour, []byte(s.config.JWTSecret))
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error creating JWT, still logging in", slog.String("error", err.Error()))
-	}
-	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Creating identity cookie")
-	cookie := s.makeCookie("Identity", token)
-	http.SetCookie(w, cookie)
-	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Sending response back to client", slog.Any("response", res))
-	err = json.NewEncoder(w).Encode(res)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error serializing response to client", slog.String("error", err.Error()))
-		w.WriteHeader(http.StatusInternalServerError)
-	}
-}
+//func (s Server) login(w http.ResponseWriter, r *http.Request) {
+//	var res LoginResponse
+//	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Deserializing body into types.Credentials")
+//	var creds Credentials
+//	err := json.NewDecoder(r.Body).Decode(&creds)
+//	if err != nil {
+//		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error deserializing credentials from client", slog.String("error", err.Error()))
+//		w.WriteHeader(http.StatusBadRequest)
+//	}
+//	member, err := s.backend.Login(creds.Username, creds.Password)
+//	if err != nil {
+//		w.WriteHeader(http.StatusUnauthorized)
+//		return
+//	}
+//	res.Member = member.ToApiMember()
+//	res.Qualifications, err = s.backend.GetMemberQualifications(res.Member.ID)
+//	if err != nil {
+//		w.WriteHeader(http.StatusInternalServerError)
+//		return
+//	}
+//	subordinates, err := s.backend.GetSubordinates(res.Member.ID)
+//	if err != nil {
+//		w.WriteHeader(http.StatusInternalServerError)
+//		return
+//	}
+//	for _, subordinate := range subordinates {
+//		res.Subordinates = append(res.Subordinates, subordinate.ToApiMember())
+//	}
+//	token, err := createToken(member, s.config.JWTExpiration*time.Hour, []byte(s.config.JWTSecret))
+//	if err != nil {
+//		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error creating JWT, still logging in", slog.String("error", err.Error()))
+//	}
+//	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Creating identity cookie")
+//	cookie := s.makeCookie("Identity", token)
+//	http.SetCookie(w, cookie)
+//	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Sending response back to client", slog.Any("response", res))
+//	err = json.NewEncoder(w).Encode(res)
+//	if err != nil {
+//		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error serializing response to client", slog.String("error", err.Error()))
+//		w.WriteHeader(http.StatusInternalServerError)
+//	}
+//}
 
 func (s Server) logout(w http.ResponseWriter, r *http.Request) {
 	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Clearing identity cookie for member")

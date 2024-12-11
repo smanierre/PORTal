@@ -26,20 +26,17 @@ func (c Config) Merge(new Config) Config {
 	}
 	// Domain must be provided
 	if new.Api.Domain == "" {
-		panic("Domain must be defined in configuration file")
+		log.Fatal("Domain must be provided in config file")
 	}
 	c.Api.Domain = new.Api.Domain
 	if new.Api.Port != 0 {
 		c.Api.Port = new.Api.Port
 	}
-	// JWTSecret must be provided
-	if new.Api.JWTSecret == "" {
-		panic("JWTSecret must be defined in configuration file")
+	// Organization must be provided
+	if new.Api.Organization == "" {
+		log.Fatal("Organization must be provided in config file")
 	}
-	c.Api.JWTSecret = new.Api.JWTSecret
-	if new.Api.JWTExpiration != 0 {
-		c.Api.JWTExpiration = new.Api.JWTExpiration
-	}
+	c.Api.Organization = new.Api.Organization
 	return c
 }
 
@@ -49,10 +46,8 @@ var DefaultConfig Config = Config{
 		BcryptCost: 16,
 	},
 	Api: api.Config{
-		Domain:        "",
-		JWTExpiration: 168,
-		JWTSecret:     "",
-		Port:          8080,
+		Domain: "",
+		Port:   8080,
 	},
 }
 

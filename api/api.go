@@ -1,14 +1,14 @@
 package api
 
 import (
+	"PORTal/templates"
 	"PORTal/types"
 	"context"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 )
-
-const JWTCookieName = "Identity"
 
 type Backend interface {
 	AddMember(m types.Member) (types.Member, error)
@@ -45,10 +45,9 @@ type Backend interface {
 }
 
 type Config struct {
-	Domain        string        `yaml:"domain"`
-	JWTExpiration time.Duration `yaml:"JWTExpiration"`
-	JWTSecret     string        `yaml:"JWTSecret"`
-	Port          int           `yaml:"port"`
+	Domain       string `yaml:"domain"`
+	Port         int    `yaml:"port"`
+	Organization string `yaml:"organization"`
 }
 
 func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
@@ -60,55 +59,69 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 		dev:     dev,
 		config:  config,
 	}
+	logger.LogAttrs(context.Background(), slog.LevelInfo, "Loading templates...")
+	rootData := templates.RootData{
+		Organization: config.Organization,
+	}
+	var t *templates.TemplateRepo
+	if s.dev {
+		t = templates.New(os.DirFS("templates"), rootData)
+	} else {
+		t = templates.New(templates.TemplateDir, rootData)
+	}
+
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering routes...")
 
-	// Member CRUD routes
-	s.mux.Handle("POST /api/member", http.HandlerFunc(s.addMember))
-	s.mux.Handle("GET /api/member", http.HandlerFunc(s.getLoggedInMember))
-	s.mux.Handle("GET /api/member/{id}", http.HandlerFunc(s.getMember))
-	s.mux.Handle("GET /api/member/{id}/subordinates", http.HandlerFunc(s.getMemberSubordinates))
-	s.mux.Handle("GET /api/members", http.HandlerFunc(s.getAllMembers))
-	s.mux.Handle("PUT /api/member/{id}", http.HandlerFunc(s.updateMember))
-	s.mux.Handle("DELETE /api/member/{id}", http.HandlerFunc(s.deleteMember))
-
-	// Qualification CRUD routes
-	s.mux.Handle("POST /api/qualification", http.HandlerFunc(s.addQualification))
-	s.mux.Handle("GET /api/qualification/{id}", http.HandlerFunc(s.getQualification))
-	s.mux.Handle("GET /api/qualifications", http.HandlerFunc(s.getAllQualifications))
-	s.mux.Handle("PUT /api/qualification/{id}", http.HandlerFunc(s.updateQualification))
-	s.mux.Handle("DELETE /api/qualification/{id}", http.HandlerFunc(s.deleteQualification))
-
-	// Requirement CRUD routes
-	s.mux.Handle("POST /api/requirement", http.HandlerFunc(s.addRequirement))
-	s.mux.Handle("GET /api/requirement/{id}", http.HandlerFunc(s.getRequirement))
-	s.mux.Handle("GET /api/requirements", http.HandlerFunc(s.getAllRequirements))
-	s.mux.Handle("PUT /api/requirement/{id}", http.HandlerFunc(s.updateRequirement))
-	s.mux.Handle("DELETE /api/requirement/{id}", http.HandlerFunc(s.deleteRequirement))
-
-	// Reference CRUD routes
-	s.mux.Handle("POST /api/reference", http.HandlerFunc(s.addReference))
-	s.mux.Handle("GET /api/reference/{id}", http.HandlerFunc(s.getReference))
-	s.mux.Handle("GET /api/references", http.HandlerFunc(s.getReferences))
-
-	// Member-Qualification routes
-	s.mux.Handle("POST /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.assignMemberQualification))
-	s.mux.Handle("GET /api/member/{id}/qualifications", http.HandlerFunc(s.getMemberQualifications))
-	s.mux.Handle("GET /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.getMemberQualification))
-	s.mux.Handle("DELETE /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.removeMemberQualification))
-
-	// Authentication routes
-	s.mux.Handle("POST /api/login", http.HandlerFunc(s.login))
-	s.mux.Handle("GET /api/logout", http.HandlerFunc(s.logout))
-	s.mux.Handle("GET /api/checkAdmin", http.HandlerFunc(s.checkAdmin))
+	s.mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Render(w, "root", nil)
+	}))
+	//// Member CRUD routes
+	//s.mux.Handle("POST /api/member", http.HandlerFunc(s.addMember))
+	//s.mux.Handle("GET /api/member", http.HandlerFunc(s.getLoggedInMember))
+	//s.mux.Handle("GET /api/member/{id}", http.HandlerFunc(s.getMember))
+	//s.mux.Handle("GET /api/member/{id}/subordinates", http.HandlerFunc(s.getMemberSubordinates))
+	//s.mux.Handle("GET /api/members", http.HandlerFunc(s.getAllMembers))
+	//s.mux.Handle("PUT /api/member/{id}", http.HandlerFunc(s.updateMember))
+	//s.mux.Handle("DELETE /api/member/{id}", http.HandlerFunc(s.deleteMember))
+	//
+	//// Qualification CRUD routes
+	//s.mux.Handle("POST /api/qualification", http.HandlerFunc(s.addQualification))
+	//s.mux.Handle("GET /api/qualification/{id}", http.HandlerFunc(s.getQualification))
+	//s.mux.Handle("GET /api/qualifications", http.HandlerFunc(s.getAllQualifications))
+	//s.mux.Handle("PUT /api/qualification/{id}", http.HandlerFunc(s.updateQualification))
+	//s.mux.Handle("DELETE /api/qualification/{id}", http.HandlerFunc(s.deleteQualification))
+	//
+	//// Requirement CRUD routes
+	//s.mux.Handle("POST /api/requirement", http.HandlerFunc(s.addRequirement))
+	//s.mux.Handle("GET /api/requirement/{id}", http.HandlerFunc(s.getRequirement))
+	//s.mux.Handle("GET /api/requirements", http.HandlerFunc(s.getAllRequirements))
+	//s.mux.Handle("PUT /api/requirement/{id}", http.HandlerFunc(s.updateRequirement))
+	//s.mux.Handle("DELETE /api/requirement/{id}", http.HandlerFunc(s.deleteRequirement))
+	//
+	//// Reference CRUD routes
+	//s.mux.Handle("POST /api/reference", http.HandlerFunc(s.addReference))
+	//s.mux.Handle("GET /api/reference/{id}", http.HandlerFunc(s.getReference))
+	//s.mux.Handle("GET /api/references", http.HandlerFunc(s.getReferences))
+	//
+	//// Member-Qualification routes
+	//s.mux.Handle("POST /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.assignMemberQualification))
+	//s.mux.Handle("GET /api/member/{id}/qualifications", http.HandlerFunc(s.getMemberQualifications))
+	//s.mux.Handle("GET /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.getMemberQualification))
+	//s.mux.Handle("DELETE /api/member/{id}/qualification/{qualID}", http.HandlerFunc(s.removeMemberQualification))
+	//
+	//// Authentication routes
+	//s.mux.Handle("POST /api/login", http.HandlerFunc(s.login))
+	//s.mux.Handle("GET /api/logout", http.HandlerFunc(s.logout))
+	//s.mux.Handle("GET /api/checkAdmin", http.HandlerFunc(s.checkAdmin))
 
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
-	if dev {
-		logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from build folder")
-		s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("ui/dist/")))
-	} else {
-		logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from /app/dist/")
-		s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("/app/dist/")))
-	}
+	//if dev {
+	//	logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from build folder")
+	//	s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("ui/dist/")))
+	//} else {
+	//	logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering frontend from /app/dist/")
+	//	s.mux.Handle("GET /", http.HandlerFunc(s.frontendHandler("/app/dist/")))
+	//}
 	return s
 }
 
@@ -134,7 +147,8 @@ func (s Server) makeCookie(name, value string) *http.Cookie {
 		s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Returning dev cookie")
 		return createDevCookie(name, value)
 	} else {
-		return createCookie(name, value, s.config.Domain, time.Now().Add(s.config.JWTExpiration*time.Hour))
+		return &http.Cookie{}
+		//return createCookie(name, value, s.config.Domain, time.Now().Add(s.config.JWTExpiration*time.Hour))
 	}
 }
 

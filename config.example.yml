@@ -6,5 +6,4 @@ backend:
 api:
   domain: portal.com # Required domain name the site will be served from. Used for cookies
   port: 8080 # Optional port for server to listen on
-  JWTExpiration: 168 # Optional number of hours JWT token is valid for
-  JWTSecret: c3VwZXJzZWNyZXR2YWx1ZQo # Required string used to sign JWT tokens
+  organization: 103 LRS # Required organization for instance

@@ -68,7 +68,7 @@ CREATE TABLE qualification_recurring_requirement(
 CREATE TABLE session(
     id string PRIMARY KEY,
     expiration datetime,
-    user_agent string
+    user_agent stringPORTal.db
 );
 
 CREATE TABLE member_session(
@@ -110,7 +110,7 @@ INSERT INTO versions VALUES(1);`
 	deleteQualificationInitialRequirementQuery   = "DELETE FROM qualification_initial_requirement WHERE requirement_id=$1;"
 
 	addMemberQualificationQuery    = "INSERT INTO member_qualification(member_id, qualification_id) VALUES($1, $2);"
-	checkMemberQualificationQuery  = "SELECT COUNT(*) FROM member_qualification WHERE member_id=$1 AND qualification_id=$2;"
+	checkMemberQualificationQuery  = "SELECT COUNT(*) FROM member_qualification WHEREPORTal.db member_id=$1 AND qualification_id=$2;"
 	getMemberQualificationIDsQuery = "SELECT qualification_id FROM member_qualification WHERE member_id=$1;"
 	removeMemberQualificationQuery = "DELETE FROM member_qualification WHERE member_id=$1 AND qualification_ID=$2;"
 

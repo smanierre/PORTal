@@ -15,7 +15,7 @@ type CustomClaims struct {
 }
 
 func (s Server) jwtKeyFunc(t *jwt.Token) (interface{}, error) {
-	return []byte(s.config.JWTSecret), nil
+	return []byte("s.config.JWTSecret"), nil
 }
 
 func createToken(member types.Member, expiration time.Duration, key []byte) (string, error) {
