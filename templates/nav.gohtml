@@ -1,0 +1,15 @@
+{{ define "nav"}}
+    {{ if .Show }}
+        <nav class="nav" id="nav" {{ if .OobSwap }}hx-swap-oob="true"{{end}}>
+            {{ range .GetNavItems }}
+                <a class="nav-item" hx-get="{{ .Href }}" hx-target="#content">{{ .Display }}</a>
+            {{ end }}
+            <div class="nav-right-items">
+                <p class="nav-display-name">{{ .DisplayName }}</p>
+                <a class="nav-item" hx-get="/logout">Logout</a>
+            </div>
+        </nav>
+    {{ else }}
+        <nav id="nav"></nav>
+    {{ end }}
+{{ end }}

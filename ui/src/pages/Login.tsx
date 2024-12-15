@@ -85,7 +85,7 @@ export default function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
           <Button
-            className="w-4/5 mx-auto mt-8 block"
+            className="w-4/5 mx-auto mt-8 block whitespace-nowrap"
             type="submit"
             disabled={loading}
           >

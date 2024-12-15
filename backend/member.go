@@ -55,12 +55,29 @@ func (b Backend) GetMember(identifier string) (types.Member, error) {
 		m = ById
 	}
 	l.LogAttrs(context.Background(), slog.LevelInfo, "Getting member from database")
-	return b.memberProvider.GetMember(identifier, m)
+	member, err := b.memberProvider.GetMember(identifier, m)
+	if err != nil {
+		return member, err
+	}
+	if member.Disabled {
+		return types.Member{}, ErrMemberDisabled
+	}
+	return member, nil
 }
 
 func (b Backend) GetAllMembers() ([]types.Member, error) {
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting all members")
 	return b.memberProvider.GetAllMembers()
+}
+
+func (b Backend) GetDisabledMembers() ([]types.Member, error) {
+	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting all disabled members")
+	members, err := b.memberProvider.GetDisabledMembers()
+	if err != nil {
+		return nil, err
+	}
+	b.logger.LogAttrs(context.Background(), slog.LevelInfo, fmt.Sprintf("Found %d disabled members", len(members)))
+	return members, nil
 }
 
 func (b Backend) GetSubordinates(memberID string) ([]types.Member, error) {
@@ -117,4 +134,23 @@ func (b Backend) DeleteMember(identifier string) error {
 		m = ById
 	}
 	return b.memberProvider.DeleteMember(identifier, m)
+}
+
+func (b Backend) DisableMember(id string) error {
+	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Disabling member", slog.String("id", id))
+	err := b.memberProvider.DisableMember(id)
+	if err != nil {
+		return err
+	}
+	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Removing member as supervisor for any other members")
+	return b.memberProvider.RemoveSubordinates(id)
+}
+
+func (b Backend) EnableMember(id string) error {
+	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Enabling member", slog.String("id", id))
+	err := b.memberProvider.EnableMember(id)
+	if err != nil {
+		return err
+	}
+	return nil
 }

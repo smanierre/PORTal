@@ -1,8 +1,8 @@
-package api_test
+package server_test
 
 import (
-	"PORTal/api"
 	"PORTal/backend"
+	"PORTal/server"
 	"PORTal/testutils"
 	"PORTal/types"
 	"encoding/json"
@@ -35,7 +35,7 @@ func TestAddMemberQualification(t *testing.T) {
 		}
 		return errors.New("unexpected case")
 	}
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name            string
@@ -112,7 +112,7 @@ func TestGetMemberQualifications(t *testing.T) {
 			return nil, errors.New("unexpected case")
 		}
 	}
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name             string
@@ -211,7 +211,7 @@ func TestDeleteMemberQualification(t *testing.T) {
 		return errors.New("unexpected case")
 	}
 
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name       string

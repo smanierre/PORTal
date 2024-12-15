@@ -30,9 +30,13 @@ type MemberProvider interface {
 	AddMember(m types.Member) error
 	GetMember(identifier string, method ProviderMethod) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
+	GetDisabledMembers() ([]types.Member, error)
 	GetSubordinates(memberID string) ([]types.Member, error)
+	RemoveSubordinates(memberID string) error
 	UpdateMember(member types.Member) error
 	DeleteMember(identifier string, method ProviderMethod) error
+	DisableMember(id string) error
+	EnableMember(id string) error
 	AssignMemberQualification(memberID, qualificationID string) error
 	GetMemberQualification(memberID, qualificationID string) (types.Qualification, error)
 	GetMemberQualifications(memberID string) ([]types.Qualification, error)

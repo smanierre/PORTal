@@ -1,9 +1,9 @@
 package app
 
 import (
-	"PORTal/api"
 	"PORTal/backend"
 	"PORTal/providers/sqlite"
+	"PORTal/server"
 	"context"
 	"fmt"
 	"io"
@@ -14,7 +14,7 @@ import (
 
 type Config struct {
 	Backend backend.Config `yaml:"backend"`
-	Api     api.Config     `yaml:"api"`
+	Server  server.Config  `yaml:"server"`
 }
 
 func (c Config) Merge(new Config) Config {
@@ -25,18 +25,24 @@ func (c Config) Merge(new Config) Config {
 		c.Backend.BcryptCost = new.Backend.BcryptCost
 	}
 	// Domain must be provided
-	if new.Api.Domain == "" {
+	if new.Server.Domain == "" {
 		log.Fatal("Domain must be provided in config file")
 	}
-	c.Api.Domain = new.Api.Domain
-	if new.Api.Port != 0 {
-		c.Api.Port = new.Api.Port
+	c.Server.Domain = new.Server.Domain
+	if new.Server.Port != 0 {
+		c.Server.Port = new.Server.Port
 	}
 	// Organization must be provided
-	if new.Api.Organization == "" {
+	if new.Server.Organization == "" {
 		log.Fatal("Organization must be provided in config file")
 	}
-	c.Api.Organization = new.Api.Organization
+	c.Server.Organization = new.Server.Organization
+	if new.Server.SessionTimeout != 0 {
+		c.Server.SessionTimeout = new.Server.SessionTimeout
+	}
+	if new.Server.Service != "" {
+		c.Server.Service = new.Server.Service
+	}
 	return c
 }
 
@@ -45,9 +51,11 @@ var DefaultConfig Config = Config{
 		DbFile:     "PORTal.db",
 		BcryptCost: 16,
 	},
-	Api: api.Config{
-		Domain: "",
-		Port:   8080,
+	Server: server.Config{
+		Domain:         "",
+		Port:           8080,
+		SessionTimeout: 1,
+		Service:        "f",
 	},
 }
 
@@ -68,17 +76,17 @@ func New(config Config, dev bool, logDest io.Writer) App {
 		nil,
 	)
 	a := App{
-		server: api.New(l.With(slog.String("service", "api_server")), b, dev, config.Api),
+		server: server.New(l.With(slog.String("service", "server")), b, dev, config.Server),
 		config: config,
 	}
 	return a
 }
 
 type App struct {
-	server api.Server
+	server server.Server
 	config Config
 }
 
 func (a App) Run() {
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", a.config.Api.Port), a.server))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", a.config.Server.Port), a.server))
 }

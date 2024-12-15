@@ -42,6 +42,11 @@ type Qualification struct {
 	ExpirationDays        int                        `json:"expiration_days"`
 }
 
+func (q Qualification) LogValue() slog.Value {
+	return slog.StringValue(fmt.Sprintf("ID: %s, Name: %s, Notes: %s, Expires: %t, Expiration Days: %d, Initial Requirements: %v, Recurring Requirements: %v",
+		q.ID, q.Name, q.Notes, q.Expires, q.ExpirationDays, q.InitialRequirements, q.RecurringRequirements))
+}
+
 func (q Qualification) MergeIn(incoming Qualification, forceUpdateExpiration bool) Qualification {
 	if incoming.Name != "" {
 		q.Name = incoming.Name

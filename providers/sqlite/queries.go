@@ -11,6 +11,7 @@ CREATE TABLE member(
     supervisor_id string,
     admin integer,
     hash string,
+    disabled integer,
     FOREIGN KEY (supervisor_id) REFERENCES member(id) ON DELETE SET NULL
 );
 
@@ -68,7 +69,7 @@ CREATE TABLE qualification_recurring_requirement(
 CREATE TABLE session(
     id string PRIMARY KEY,
     expiration datetime,
-    user_agent stringPORTal.db
+    user_agent string
 );
 
 CREATE TABLE member_session(
@@ -88,14 +89,18 @@ CREATE TABLE reference(
 
 INSERT INTO versions VALUES(1);`
 
-	insertMemberQuery           = "INSERT INTO member(id, first_name, last_name, rank, user_name, supervisor_id, admin, hash) VALUES($1, $2, $3, $4, $5, $6, $7, $8);"
-	getMemberQuery              = "SELECT * FROM member WHERE id=$1;"
-	getMemberByUsernameQuery    = "SELECT * FROM member where user_name=$1;"
-	getAllMembersQuery          = "SELECT * FROM member;"
-	getSubordinatesQuery        = "SELECT * FROM member WHERE supervisor_id=$1;"
+	insertMemberQuery           = "INSERT INTO member(id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled) VALUES($1, $2, $3, $4, $5, $6, $7, $8, 0);"
+	getMemberQuery              = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled FROM member WHERE id=$1;"
+	getMemberByUsernameQuery    = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled FROM member WHERE user_name=$1;"
+	getAllMembersQuery          = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE disabled != 1;"
+	getDisabledMembersQuery     = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE disabled=1;"
+	getSubordinatesQuery        = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE supervisor_id=$1 AND disabled != 1;"
+	removeSubordinatesQuery     = "UPDATE member SET supervisor_id=null WHERE supervisor_id=$1;"
 	updateMemberQuery           = "UPDATE member SET first_name=$1, last_name=$2, rank=$3, supervisor_id=$4, admin=$5, hash=$6 WHERE ID=$7;"
 	deleteMemberQuery           = "DELETE FROM member WHERE id=$1;"
 	deleteMemberByUsernameQuery = "DELETE FROM member WHERE user_name=$1;"
+	disableMemberQuery          = "UPDATE member SET disabled=1 WHERE id=$1;"
+	enableMemberQuery           = "UPDATE member set disabled=0 WHERE id=$1;"
 
 	insertQualificationQuery                     = "INSERT INTO qualification(id, name, notes, expires, expiration_days) VALUES($1, $2, $3, $4, $5);"
 	getQualificationQuery                        = "SELECT * FROM qualification WHERE id=$1;"
@@ -110,7 +115,7 @@ INSERT INTO versions VALUES(1);`
 	deleteQualificationInitialRequirementQuery   = "DELETE FROM qualification_initial_requirement WHERE requirement_id=$1;"
 
 	addMemberQualificationQuery    = "INSERT INTO member_qualification(member_id, qualification_id) VALUES($1, $2);"
-	checkMemberQualificationQuery  = "SELECT COUNT(*) FROM member_qualification WHEREPORTal.db member_id=$1 AND qualification_id=$2;"
+	checkMemberQualificationQuery  = "SELECT COUNT(*) FROM member_qualification WHERE member_id=$1 AND qualification_id=$2;"
 	getMemberQualificationIDsQuery = "SELECT qualification_id FROM member_qualification WHERE member_id=$1;"
 	removeMemberQualificationQuery = "DELETE FROM member_qualification WHERE member_id=$1 AND qualification_ID=$2;"
 

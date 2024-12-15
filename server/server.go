@@ -1,14 +1,18 @@
-package api
+package server
 
 import (
 	"PORTal/templates"
 	"PORTal/types"
 	"context"
+	"embed"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 )
+
+//go:embed assets
+var assetsDir embed.FS
 
 type Backend interface {
 	AddMember(m types.Member) (types.Member, error)
@@ -45,35 +49,54 @@ type Backend interface {
 }
 
 type Config struct {
-	Domain       string `yaml:"domain"`
-	Port         int    `yaml:"port"`
-	Organization string `yaml:"organization"`
+	Domain         string `yaml:"domain"`
+	Port           int    `yaml:"port"`
+	Organization   string `yaml:"organization"`
+	SessionTimeout int    `yaml:"session-timeout"`
+	Service        string `yaml:"service"`
+}
+
+type Server struct {
+	logger       *slog.Logger
+	backend      Backend
+	mux          *http.ServeMux
+	dev          bool
+	config       Config
+	templateRepo *templates.TemplateRepo
 }
 
 func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
-	logger.LogAttrs(context.Background(), slog.LevelInfo, "Creating new api server")
-	s := Server{
-		logger:  logger,
-		backend: backend,
-		mux:     http.NewServeMux(),
-		dev:     dev,
-		config:  config,
-	}
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Loading templates...")
 	rootData := templates.RootData{
 		Organization: config.Organization,
 	}
 	var t *templates.TemplateRepo
-	if s.dev {
+	if dev {
 		t = templates.New(os.DirFS("templates"), rootData)
 	} else {
 		t = templates.New(templates.TemplateDir, rootData)
 	}
+	logger.LogAttrs(context.Background(), slog.LevelInfo, "Creating new server")
+	s := Server{
+		logger:       logger,
+		backend:      backend,
+		mux:          http.NewServeMux(),
+		dev:          dev,
+		config:       config,
+		templateRepo: t,
+	}
 
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering routes...")
+	// Static assets
+	s.mux.Handle("GET /assets/", http.FileServerFS(assetsDir))
 
-	s.mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Render(w, "root", nil)
+	// Index is the login page
+	s.mux.Handle("GET /", http.HandlerFunc(s.RootGetHandler))
+	// Handle login requests
+	s.mux.Handle("POST /", http.HandlerFunc(s.RootPostHandler))
+
+	s.mux.Handle("GET /dashboard", http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		s.templateRepo.RenderFragment(writer, "dashboard", "content", nil)
 	}))
 	//// Member CRUD routes
 	//s.mux.Handle("POST /api/member", http.HandlerFunc(s.addMember))
@@ -125,64 +148,20 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	return s
 }
 
-type Server struct {
-	logger  *slog.Logger
-	backend Backend
-	mux     *http.ServeMux
-	dev     bool
-	config  Config
-}
-
 func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if s.dev {
-		s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Development mode, setting CORS to http://localhost:5173")
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
-	}
-	preflightMiddleware(s.mux).ServeHTTP(w, r)
+	s.mux.ServeHTTP(w, r)
 }
 
 func (s Server) makeCookie(name, value string) *http.Cookie {
-	if s.dev {
-		s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Returning dev cookie")
-		return createDevCookie(name, value)
-	} else {
-		return &http.Cookie{}
-		//return createCookie(name, value, s.config.Domain, time.Now().Add(s.config.JWTExpiration*time.Hour))
-	}
-}
-
-func createCookie(name, value, domain string, expires time.Time) *http.Cookie {
 	return &http.Cookie{
 		Name:     name,
 		Value:    value,
-		Path:     "/api",
-		Domain:   domain,
-		Expires:  expires,
+		Path:     "/",
+		Domain:   s.config.Domain,
+		Expires:  time.Now().Add(time.Duration(s.config.SessionTimeout) * 24 * time.Hour),
 		Secure:   true,
 		HttpOnly: true,
-		SameSite: http.SameSiteNoneMode,
-	}
-}
-
-func createDevCookie(name, value string) *http.Cookie {
-	return &http.Cookie{
-		Name:     name,
-		Value:    value,
-		Path:     "/api",
-		Domain:   "localhost",
-		Expires:  time.Now().Add(24 * time.Hour),
-		Secure:   false,
-		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
-	}
-}
-
-func (s Server) removeCookie(w http.ResponseWriter, name string) {
-	if s.dev {
-		removeCookieDev(w, name)
-	} else {
-		removeCookie(w, name, s.config.Domain)
+		SameSite: http.SameSiteStrictMode,
 	}
 }
 
@@ -191,15 +170,10 @@ func removeCookie(w http.ResponseWriter, name, domain string) {
 		Name:    name,
 		Domain:  domain,
 		Expires: time.Now(),
-		Path:    "/api",
+		Path:    "/",
 	})
 }
 
-func removeCookieDev(w http.ResponseWriter, name string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:    name,
-		Domain:  "localhost",
-		Expires: time.Now(),
-		Path:    "/api",
-	})
+func checkHTMXRequest(r *http.Request) bool {
+	return r.Header.Get("HX-Request") != ""
 }

@@ -1,7 +1,7 @@
-package api_test
+package server_test
 
 import (
-	"PORTal/api"
+	"PORTal/server"
 	"PORTal/testutils"
 	"PORTal/types"
 	"encoding/json"
@@ -36,7 +36,7 @@ func TestLogin(t *testing.T) {
 		}
 		return types.Member{}, errors.New("generic error")
 	}
-	s := api.New(slog.Default(), m, false, api.Config{JWTSecret: "test", JWTExpiration: 1 * time.Hour})
+	s := server.New(slog.Default(), m, false, server.Config{JWTSecret: "test", JWTExpiration: 1 * time.Hour})
 
 	tc := []struct {
 		name             string
@@ -69,7 +69,7 @@ func TestLogin(t *testing.T) {
 				t.Errorf("Expected response code: %d, got: %d", tt.statusCode, w.Code)
 			}
 			if w.Code == http.StatusOK {
-				var res api.LoginResponse
+				var res server.LoginResponse
 				err := json.NewDecoder(w.Body).Decode(&res)
 				if err != nil {
 					t.Errorf("Error decoding response into member struct: %s", err.Error())
@@ -88,14 +88,14 @@ func TestLogin(t *testing.T) {
 
 func TestLogout(t *testing.T) {
 	m := newMockBackend()
-	s := api.New(slog.Default(), m, false, api.Config{
+	s := server.New(slog.Default(), m, false, server.Config{
 		JWTSecret: "supersecret",
 	})
 
 	member := testutils.RandomMember(false)
 	member.ID = uuid.NewString()
 
-	token, err := api.CreateToken(member, time.Hour, []byte("supersecret"))
+	token, err := server.CreateToken(member, time.Hour, []byte("supersecret"))
 	if err != nil {
 		t.Fatalf("Error creating token for TestLogout: %s", err.Error())
 	}
@@ -138,7 +138,7 @@ func TestLogout(t *testing.T) {
 
 func TestCheckAdmin(t *testing.T) {
 	m := newMockBackend()
-	s := api.New(slog.Default(), m, false, api.Config{
+	s := server.New(slog.Default(), m, false, server.Config{
 		JWTSecret: "supersecret",
 	})
 
@@ -148,22 +148,22 @@ func TestCheckAdmin(t *testing.T) {
 	normalMember := testutils.RandomMember(false)
 	normalMember.ID = uuid.NewString()
 
-	adminToken, err := api.CreateToken(adminMember, time.Hour, []byte("supersecret"))
+	adminToken, err := server.CreateToken(adminMember, time.Hour, []byte("supersecret"))
 	if err != nil {
 		t.Fatalf("Error creating adminToken for TestCheckAdmin: %s", err.Error())
 	}
 
-	normalToken, err := api.CreateToken(normalMember, time.Hour, []byte("supersecret"))
+	normalToken, err := server.CreateToken(normalMember, time.Hour, []byte("supersecret"))
 	if err != nil {
 		t.Fatalf("Error creating normalToken for TestCheckAdmin: %s", err.Error())
 	}
 
-	invalidSignatureToken, err := api.CreateToken(adminMember, time.Hour, []byte("differentsecret"))
+	invalidSignatureToken, err := server.CreateToken(adminMember, time.Hour, []byte("differentsecret"))
 	if err != nil {
 		t.Fatalf("Error creating invalidSignatureToken for TestCheckAdmin: %s", err.Error())
 	}
 
-	expiredToken, err := api.CreateToken(adminMember, time.Millisecond, []byte("supersecret"))
+	expiredToken, err := server.CreateToken(adminMember, time.Millisecond, []byte("supersecret"))
 	if err != nil {
 		t.Fatalf("Error creating expiredToken for TestCheckAdmin: %s", err.Error())
 	}
@@ -200,7 +200,7 @@ func TestCheckAdmin(t *testing.T) {
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, "/api/checkAdmin", nil)
 			r.AddCookie(&http.Cookie{
-				Name:    api.JWTCookieName,
+				Name:    server.JWTCookieName,
 				Value:   tt.Token,
 				Path:    "/api",
 				Domain:  "localhost",

@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"PORTal/backend"
@@ -42,41 +42,42 @@ func (s Server) addMember(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		l.LogAttrs(r.Context(), slog.LevelError, "Error serializing IdJson to client", slog.String("error", err.Error()))
 	}
+	fmt.Println("hi")
 }
 
 func (s Server) getLoggedInMember(w http.ResponseWriter, r *http.Request) {
-	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Checking for Identity cookie from initial page load")
-	tokenCookie, err := r.Cookie(JWTCookieName)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error when retrieving Identity cookie", slog.String("error", err.Error()))
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	token, err := validateToken(tokenCookie.Value, s.jwtKeyFunc, s.logger)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	customClaims, ok := token.Claims.(*CustomClaims)
-	if !ok {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error casting claims to CustomClaims")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	member, err := s.backend.GetMember(customClaims.Subject)
-	if errors.Is(err, backend.ErrMemberNotFound) {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	} else if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Identity validated, sending member back to client")
-	err = json.NewEncoder(w).Encode(member.ToApiMember())
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error encoding member to json response", slog.String("error", err.Error()))
-		w.WriteHeader(http.StatusInternalServerError)
-	}
+	//s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Checking for Identity cookie from initial page load")
+	//tokenCookie, err := r.Cookie(JWTCookieName)
+	//if err != nil {
+	//	s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error when retrieving Identity cookie", slog.String("error", err.Error()))
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	//token, err := validateToken(tokenCookie.Value, s.jwtKeyFunc, s.logger)
+	//if err != nil {
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	//customClaims, ok := token.Claims.(*CustomClaims)
+	//if !ok {
+	//	s.logger.LogAttrs(r.Context(), slog.LevelError, "Error casting claims to CustomClaims")
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//	return
+	//}
+	//member, err := s.backend.GetMember(customClaims.Subject)
+	//if errors.Is(err, backend.ErrMemberNotFound) {
+	//	w.WriteHeader(http.StatusNotFound)
+	//	return
+	//} else if err != nil {
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	//s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Identity validated, sending member back to client")
+	//err = json.NewEncoder(w).Encode(member.ToApiMember())
+	//if err != nil {
+	//	s.logger.LogAttrs(r.Context(), slog.LevelError, "Error encoding member to json response", slog.String("error", err.Error()))
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//}
 }
 
 func (s Server) getMember(w http.ResponseWriter, r *http.Request) {

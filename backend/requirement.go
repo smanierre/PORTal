@@ -25,7 +25,11 @@ func (b Backend) GetRequirement(id string) (types.Requirement, error) {
 }
 
 func (b Backend) GetAllRequirements() ([]types.Requirement, error) {
-	return b.requirementProvider.GetAllRequirements()
+	reqs, err := b.requirementProvider.GetAllRequirements()
+	if err != nil {
+		return nil, err
+	}
+	return reqs, nil
 }
 
 func (b Backend) UpdateRequirement(r types.Requirement) (types.Requirement, error) {

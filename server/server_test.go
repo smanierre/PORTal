@@ -1,3 +1,3 @@
-package api
+package server
 
 var CreateToken = createToken

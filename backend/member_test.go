@@ -453,3 +453,257 @@ func TestDeleteMember_Sqlite(t *testing.T) {
 		})
 	}
 }
+
+func TestDisableMember_Sqlite(t *testing.T) {
+	dbID := uuid.NewString()
+	t.Cleanup(func() {
+		os.Remove(fmt.Sprintf("%s.db", dbID))
+	})
+	buf := &bytes.Buffer{}
+	mr := io.MultiWriter(os.Stdout, buf)
+	logger := slog.New(slog.NewTextHandler(mr, nil))
+	provider, err := sqlite.New(logger, fmt.Sprintf("%s.db", dbID), 1.0)
+	if err != nil {
+		t.Fatalf("Error creating provider for tests: %s", err.Error())
+	}
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+
+	// Setup for clean disable
+	m1, err := b.AddMember(testutils.RandomMember(false))
+	if err != nil {
+		t.Fatalf("Error adding member for TestDisableMember_Sqlite: %s", err.Error())
+	}
+
+	// Setup for repeat disable
+	m2, err := b.AddMember(testutils.RandomMember(true))
+	if err != nil {
+		t.Fatalf("Error adding member for TestDisableMember_Sqlite: %s", err.Error())
+	}
+	err = b.DisableMember(m2.ID)
+	if err != nil {
+		t.Fatalf("Error disabling member for TestDisableMember_Sqlite: %s", err.Error())
+	}
+
+	// Setup for member with subordinates
+	m3, err := b.AddMember(testutils.RandomMember(false))
+	if err != nil {
+		t.Fatalf("Error adding member for TestDisableMember_Sqlite: %s", err.Error())
+	}
+	m4 := testutils.RandomMember(false)
+	m4.SupervisorID = m3.ID
+	m4, err = b.AddMember(m4)
+	if err != nil {
+		t.Fatalf("Error adding member for TestDisableMember_Sqlite: %s", err.Error())
+	}
+	m5 := testutils.RandomMember(false)
+	m5.SupervisorID = m3.ID
+	m5, err = b.AddMember(m5)
+	if err != nil {
+		t.Fatalf("Error adding member for TestDisableMember_Sqlite: %s", err.Error())
+	}
+
+	tc := []struct {
+		Name             string
+		MemberID         string
+		ExpectedError    error
+		VerificationFunc func(*testing.T)
+	}{
+		{
+			Name:          "Successful disable",
+			MemberID:      m1.ID,
+			ExpectedError: nil,
+		},
+		{
+			Name:          "Member not found",
+			MemberID:      uuid.NewString(),
+			ExpectedError: backend.ErrMemberNotFound,
+		},
+		{
+			Name:          "Member already disabled",
+			MemberID:      m2.ID,
+			ExpectedError: nil,
+		},
+		{
+			Name:          "Member with subordinates",
+			MemberID:      m3.ID,
+			ExpectedError: nil,
+			VerificationFunc: func(t *testing.T) {
+				sub1, err := b.GetMember(m4.ID)
+				if err != nil {
+					t.Errorf("Error getting member for \"Member with subordinates\" validation func: %s", err.Error())
+				}
+				if sub1.SupervisorID != "" {
+					t.Error("Expected sub1's supervisor to be blank, but it wasn't")
+				}
+				sub2, err := b.GetMember(m5.ID)
+				if err != nil {
+					t.Errorf("Error getting member for \"Member with subordinates\" validation func: %s", err.Error())
+				}
+				if sub2.SupervisorID != "" {
+					t.Error("Expected sub1's supervisor to be blank, but it wasn't")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tc {
+		t.Run(tt.Name, func(t *testing.T) {
+			err := b.DisableMember(tt.MemberID)
+			if tt.ExpectedError == nil && err != nil {
+				t.Errorf("Expected no error but got: %s", err.Error())
+			}
+			if tt.ExpectedError == nil {
+				_, err = b.GetMember(tt.MemberID)
+				if !errors.Is(err, backend.ErrMemberDisabled) {
+					t.Errorf("Expected member to be disabled, but it wasn't: %s", err)
+				}
+				if tt.VerificationFunc != nil {
+					tt.VerificationFunc(t)
+				}
+			}
+		})
+	}
+}
+
+func TestEnableMember_Sqlite(t *testing.T) {
+	dbID := uuid.NewString()
+	t.Cleanup(func() {
+		os.Remove(fmt.Sprintf("%s.db", dbID))
+	})
+	buf := &bytes.Buffer{}
+	mr := io.MultiWriter(os.Stdout, buf)
+	logger := slog.New(slog.NewTextHandler(mr, nil))
+	provider, err := sqlite.New(logger, fmt.Sprintf("%s.db", dbID), 1.0)
+	if err != nil {
+		t.Fatalf("Error creating provider for tests: %s", err.Error())
+	}
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+
+	// Setup successful enable
+	m1, err := b.AddMember(testutils.RandomMember(true))
+	if err != nil {
+		t.Fatalf("Error adding member for TestEnableMember_Sqlite: %s", err.Error())
+	}
+	err = b.DisableMember(m1.ID)
+	if err != nil {
+		t.Fatalf("Error disabling member for TestEnableMember_Sqlite: %s", err.Error())
+	}
+	tc := []struct {
+		Name             string
+		Id               string
+		ExpectedError    error
+		VerificationFunc func(*testing.T)
+	}{
+		{
+			Name:          "Successful enable",
+			Id:            m1.ID,
+			ExpectedError: nil,
+			VerificationFunc: func(t *testing.T) {
+				m, err := b.GetMember(m1.ID)
+				if err != nil {
+					t.Errorf("Error getting member for TestEnableMember_Sqlite: %s", err.Error())
+				}
+				if m.Disabled {
+					t.Errorf("Expected member to be enabled, but it isn't")
+				}
+			},
+		},
+		{
+			Name:             "Member not found",
+			Id:               uuid.NewString(),
+			ExpectedError:    backend.ErrMemberNotFound,
+			VerificationFunc: nil,
+		},
+	}
+
+	for _, tt := range tc {
+		t.Run(tt.Name, func(t *testing.T) {
+			err = b.EnableMember(tt.Id)
+			if tt.ExpectedError == nil && err != nil {
+				t.Errorf("Expected no error but got: %s", err.Error())
+			}
+			if tt.ExpectedError != nil && err == nil {
+				t.Errorf("Expected error: %s", tt.ExpectedError.Error())
+			}
+			if tt.VerificationFunc != nil {
+				tt.VerificationFunc(t)
+			}
+		})
+	}
+}
+
+func TestGetDisabledMembers_Sqlite(t *testing.T) {
+	dbID := uuid.NewString()
+	t.Cleanup(func() {
+		os.Remove(fmt.Sprintf("%s.db", dbID))
+	})
+	buf := &bytes.Buffer{}
+	mr := io.MultiWriter(os.Stdout, buf)
+	logger := slog.New(slog.NewTextHandler(mr, nil))
+	provider, err := sqlite.New(logger, fmt.Sprintf("%s.db", dbID), 1.0)
+	if err != nil {
+		t.Fatalf("Error creating provider for tests: %s", err.Error())
+	}
+	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+
+	// Create members to disable later
+	m1, err := b.AddMember(testutils.RandomMember(false))
+	if err != nil {
+		t.Fatalf("Error when creating member for TestGetDisabledMembers_Sqlite: %s", err.Error())
+	}
+	m2, err := b.AddMember(testutils.RandomMember(false))
+	if err != nil {
+		t.Fatalf("Error when creating member for TestGetDisabledMembers_Sqlite: %s", err.Error())
+	}
+
+	tc := []struct {
+		Name             string
+		ExpectedError    error
+		ExpectedResponse []types.Member
+		SetupFunc        func(t *testing.T)
+	}{
+		{
+			Name:             "No members",
+			ExpectedResponse: []types.Member{},
+			ExpectedError:    nil,
+			SetupFunc:        func(t *testing.T) {},
+		},
+		{
+			Name:             "One member",
+			ExpectedError:    nil,
+			ExpectedResponse: []types.Member{m1},
+			SetupFunc: func(t *testing.T) {
+				err := b.DisableMember(m1.ID)
+				if err != nil {
+					t.Errorf("Error disabling member for TestGetDisabledMembers_Sqlite: %s", err.Error())
+				}
+			},
+		},
+		{
+			Name:             "Two members",
+			ExpectedError:    nil,
+			ExpectedResponse: []types.Member{m1, m2},
+			SetupFunc: func(t *testing.T) {
+				err := b.DisableMember(m2.ID)
+				if err != nil {
+					t.Errorf("Error disabling member for TestGetDisabledMembers_Sqlite: %s", err.Error())
+				}
+			},
+		},
+	}
+
+	for _, tt := range tc {
+		t.Run(tt.Name, func(t *testing.T) {
+			tt.SetupFunc(t)
+			members, err := b.GetDisabledMembers()
+			if tt.ExpectedError == nil && err != nil {
+				t.Errorf("Expected no error but got: %s", err.Error())
+			}
+			if !slices.EqualFunc(members, tt.ExpectedResponse, func(m1, m2 types.Member) bool {
+				return reflect.DeepEqual(m1.ApiMember, m2.ApiMember)
+			}) {
+				t.Errorf("Expected response: %v\nGot: %v", tt.ExpectedResponse, members)
+			}
+		})
+	}
+}

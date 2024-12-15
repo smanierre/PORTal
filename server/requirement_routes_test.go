@@ -1,8 +1,8 @@
-package api_test
+package server_test
 
 import (
-	"PORTal/api"
 	"PORTal/backend"
+	"PORTal/server"
 	"PORTal/types"
 	"bytes"
 	"encoding/json"
@@ -30,7 +30,7 @@ func TestAddRequirement(t *testing.T) {
 		}
 	}
 
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name       string
@@ -90,7 +90,7 @@ func TestGetRequirement(t *testing.T) {
 			return types.Requirement{}, errors.New("unexpected case")
 		}
 	}
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name             string
@@ -166,7 +166,7 @@ func TestGetAllRequirements(t *testing.T) {
 			return nil, errors.New("generic error")
 		}
 	}
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name             string
@@ -233,7 +233,7 @@ func TestUpdateRequirement(t *testing.T) {
 		}
 	}
 
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name       string
@@ -304,7 +304,7 @@ func TestDeleteRequirement(t *testing.T) {
 		}
 	}
 
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name       string

@@ -12,9 +12,14 @@ import (
 //go:embed *
 var TemplateDir embed.FS
 
-type tplData struct {
-	RootData
+type TplData struct {
+	NavData
 	ContentData interface{}
+}
+
+type tplData struct {
+	TplData
+	RootData
 }
 
 type TemplateRepo struct {
@@ -40,7 +45,7 @@ func New(templatesDir fs.FS, data RootData) *TemplateRepo {
 		if d.IsDir() {
 			return nil
 		}
-		t.templates[strings.Split(d.Name(), ".")[0]], err = template.ParseFS(templatesDir, "root.gohtml", path)
+		t.templates[strings.Split(d.Name(), ".")[0]], err = template.ParseFS(templatesDir, "root.gohtml", "nav.gohtml", path)
 		if err != nil {
 			return err
 		}
@@ -53,10 +58,21 @@ func New(templatesDir fs.FS, data RootData) *TemplateRepo {
 	return t
 }
 
-func (t *TemplateRepo) Render(w io.Writer, name string, data interface{}) error {
-	d := tplData{
-		RootData:    t.rootData,
-		ContentData: data,
+func (t *TemplateRepo) Render(w io.Writer, name string, data *TplData) error {
+	var d tplData
+	if data == nil {
+		d = tplData{
+			TplData: TplData{
+				NavData:     NavData{},
+				ContentData: nil,
+			},
+			RootData: t.rootData,
+		}
+	} else {
+		d = tplData{
+			TplData:  *data,
+			RootData: t.rootData,
+		}
 	}
 	return t.templates[name].ExecuteTemplate(w, "root", d)
 }

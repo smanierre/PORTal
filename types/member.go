@@ -24,6 +24,7 @@ type Member struct {
 	ApiMember
 	Password string `json:"password,omitempty"`
 	Hash     string
+	Disabled bool
 }
 
 func (m Member) LogValue() slog.Value {
@@ -32,6 +33,21 @@ func (m Member) LogValue() slog.Value {
 
 func (m Member) ToApiMember() ApiMember {
 	return m.ApiMember
+}
+
+func (m Member) GetRank(service string) string {
+	switch service {
+	case "f":
+		return AfRankMap[m.Grade]
+	case "a":
+		return ArmyRankMap[m.Grade]
+	case "m":
+		return MarineRankMap[m.Grade]
+	case "n":
+		return NavyRankMap[m.Grade]
+	default:
+		return ""
+	}
 }
 
 func (m Member) MergeIn(new Member, forceNoSupervisor bool) Member {

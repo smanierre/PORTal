@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"log/slog"
@@ -50,32 +50,32 @@ import (
 
 func (s Server) logout(w http.ResponseWriter, r *http.Request) {
 	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Clearing identity cookie for member")
-	s.removeCookie(w, "Identity")
+	//s.removeCookie(w, "Identity")
 }
 
 func (s Server) checkAdmin(w http.ResponseWriter, r *http.Request) {
 	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Validating member's admin permissions")
-	tokenCookie, err := r.Cookie(JWTCookieName)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error getting token cookie", slog.String("error", err.Error()))
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	token, err := validateToken(tokenCookie.Value, s.jwtKeyFunc, s.logger)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	customClaims, ok := token.Claims.(*CustomClaims)
-	if !ok {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error casting claims to CustomClaims")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if !customClaims.Admin {
-		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "User is not admin", slog.String("member_id", customClaims.Subject))
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
+	//tokenCookie, err := r.Cookie(JWTCookieName)
+	//if err != nil {
+	//	s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error getting token cookie", slog.String("error", err.Error()))
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	//token, err := validateToken(tokenCookie.Value, s.jwtKeyFunc, s.logger)
+	//if err != nil {
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	//customClaims, ok := token.Claims.(*CustomClaims)
+	//if !ok {
+	//	s.logger.LogAttrs(r.Context(), slog.LevelError, "Error casting claims to CustomClaims")
+	//	w.WriteHeader(http.StatusInternalServerError)
+	//	return
+	//}
+	//if !customClaims.Admin {
+	//	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "User is not admin", slog.String("member_id", customClaims.Subject))
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
+	//w.WriteHeader(http.StatusOK)
 }

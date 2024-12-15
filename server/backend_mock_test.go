@@ -1,11 +1,11 @@
-package api_test
+package server_test
 
 import (
-	"PORTal/api"
+	"PORTal/server"
 	"PORTal/types"
 )
 
-var _ api.Backend = (*mockBackend)(nil)
+var _ server.Backend = (*mockBackend)(nil)
 
 func newMockBackend() *mockBackend {
 	return &mockBackend{

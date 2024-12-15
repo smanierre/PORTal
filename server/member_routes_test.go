@@ -1,8 +1,8 @@
-package api_test
+package server_test
 
 import (
-	"PORTal/api"
 	"PORTal/backend"
+	"PORTal/server"
 	"PORTal/types"
 	"bytes"
 	"encoding/json"
@@ -29,7 +29,7 @@ func TestAddMember(t *testing.T) {
 		return m, nil
 	}
 
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name       string
@@ -124,7 +124,7 @@ func TestGetMember(t *testing.T) {
 		}
 
 	}
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name             string
@@ -209,7 +209,7 @@ func TestGetAllMembers(t *testing.T) {
 			return nil, errors.New("generic error")
 		}
 	}
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name            string
@@ -281,7 +281,7 @@ func TestUpdateMember(t *testing.T) {
 		}, nil
 	}
 
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name       string
@@ -347,7 +347,7 @@ func TestDeleteMember(t *testing.T) {
 			return errors.New("unexpected case")
 		}
 	}
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name       string

@@ -3,7 +3,9 @@
 backend:
   DbFile: PORTal.db # Optional path to the database file within the container
   BcryptCost: 16 # Optional number for cost of hashing password
-api:
+server:
   domain: portal.com # Required domain name the site will be served from. Used for cookies
   port: 8080 # Optional port for server to listen on
   organization: 103 LRS # Required organization for instance
+  session_timeout: 1 # Optional number of days a session is valid for
+  service: f # Optional code for which service to display ranks as f=Air Force, a=Army, M=Marines, N=Navy

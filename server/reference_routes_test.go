@@ -1,8 +1,8 @@
-package api_test
+package server_test
 
 import (
-	"PORTal/api"
 	"PORTal/backend"
+	"PORTal/server"
 	"PORTal/types"
 	"bytes"
 	"encoding/json"
@@ -30,7 +30,7 @@ func TestReferenceQualification(t *testing.T) {
 		}
 	}
 
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name       string
@@ -92,7 +92,7 @@ func TestGetReference(t *testing.T) {
 			return types.Reference{}, errors.New("unexpected case")
 		}
 	}
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name             string
@@ -166,7 +166,7 @@ func TestGetAllReferences(t *testing.T) {
 		}
 		return nil, errors.New("generic error")
 	}
-	s := api.New(slog.Default(), b, false, api.Config{JWTSecret: "test"})
+	s := server.New(slog.Default(), b, false, server.Config{JWTSecret: "test"})
 
 	tc := []struct {
 		name             string
