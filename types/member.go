@@ -87,5 +87,6 @@ type ApiMember struct {
 type Session struct {
 	SessionID string
 	UserAgent string
+	IpAddress string
 	Expires   time.Time
 }

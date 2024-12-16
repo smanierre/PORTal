@@ -19,6 +19,7 @@ var (
 	ErrReferenceNotFound            = errors.New("unable to find reference with given id")
 	ErrRequirementInUse             = errors.New("requirement is assigned to qualification")
 	ErrRequirementNotFound          = errors.New("requirement with that identifier not found")
+	ErrSessionValidationFailed      = errors.New("session validation failed")
 	ErrSupervisorNotFound           = errors.New("supervisor with that ID not found")
 	ErrWeakPassword                 = errors.New("supplied password doesn't meet requirements")
 )

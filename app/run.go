@@ -37,8 +37,8 @@ func (c Config) Merge(new Config) Config {
 		log.Fatal("Organization must be provided in config file")
 	}
 	c.Server.Organization = new.Server.Organization
-	if new.Server.SessionTimeout != 0 {
-		c.Server.SessionTimeout = new.Server.SessionTimeout
+	if new.Backend.SessionTimeout != 0 {
+		c.Backend.SessionTimeout = new.Backend.SessionTimeout
 	}
 	if new.Server.Service != "" {
 		c.Server.Service = new.Server.Service
@@ -48,20 +48,25 @@ func (c Config) Merge(new Config) Config {
 
 var DefaultConfig Config = Config{
 	Backend: backend.Config{
-		DbFile:     "PORTal.db",
-		BcryptCost: 16,
+		DbFile:         "PORTal.db",
+		BcryptCost:     16,
+		SessionTimeout: 4,
 	},
 	Server: server.Config{
-		Domain:         "",
-		Port:           8080,
-		SessionTimeout: 1,
-		Service:        "f",
+		Domain:  "",
+		Port:    8080,
+		Service: "f",
 	},
 }
 
 func New(config Config, dev bool, logDest io.Writer) App {
 	config = DefaultConfig.Merge(config)
-	l := slog.New(slog.NewTextHandler(logDest, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo}))
+	var l *slog.Logger
+	if dev {
+		l = slog.New(slog.NewTextHandler(logDest, &slog.HandlerOptions{AddSource: true, Level: slog.LevelDebug}))
+	} else {
+		l = slog.New(slog.NewJSONHandler(logDest, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo}))
+	}
 	provider, err := sqlite.New(l.With(slog.String("service", "sqlite_provider")), config.Backend.DbFile, 1)
 	if err != nil {
 		l.LogAttrs(context.Background(), slog.LevelError, "Error creating provider", slog.String("error", err.Error()))
@@ -69,6 +74,7 @@ func New(config Config, dev bool, logDest io.Writer) App {
 
 	b := backend.New(
 		l.With(slog.String("service", "backend")),
+		provider,
 		provider,
 		provider,
 		provider,

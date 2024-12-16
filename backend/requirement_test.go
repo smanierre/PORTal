@@ -30,7 +30,7 @@ func TestAddGetRequirement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	ref1, err := b.AddReference(testutils.RandomReference())
 	if err != nil {
@@ -103,7 +103,7 @@ func TestGetAllRequirements(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	ref1, err := b.AddReference(testutils.RandomReference())
 	if err != nil {
@@ -188,7 +188,7 @@ func TestUpdateRequirement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	originalRef, err := b.AddReference(testutils.RandomReference())
 	if err != nil {
@@ -289,7 +289,7 @@ func TestDeleteRequirement(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	ref1, err := b.AddReference(testutils.RandomReference())
 	if err != nil {

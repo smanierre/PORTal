@@ -61,6 +61,18 @@ func (p Provider) GetMember(identifier string, method backend.ProviderMethod) (t
 	return m, nil
 }
 
+func (p Provider) GetMemberFromSession(sessionID string) (types.Member, error) {
+	p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting member from session", slog.String("session_id", sessionID))
+	row := p.Db.QueryRow(getMemberFromSessionQuery, sessionID)
+	var memberID string
+	err := row.Scan(&memberID)
+	if err != nil {
+		p.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting member id from session", slog.String("error", err.Error()))
+		return types.Member{}, err
+	}
+	return p.GetMember(memberID, backend.ById)
+}
+
 func (p Provider) GetAllMembers() ([]types.Member, error) {
 	p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting all members from database")
 	rows, err := p.Db.Query(getAllMembersQuery)

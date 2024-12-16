@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
-func (s Server) RootGetHandler(w http.ResponseWriter, r *http.Request) {
+func (s Server) LoginGetHandler(w http.ResponseWriter, r *http.Request) {
 	hx := checkHTMXRequest(r)
 	if !hx {
 		err := s.templateRepo.Render(w, "login", &templates.TplData{
@@ -27,7 +28,7 @@ func (s Server) RootGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s Server) RootPostHandler(w http.ResponseWriter, r *http.Request) {
+func (s Server) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error parsing form", slog.String("error", err.Error()))
@@ -53,7 +54,9 @@ func (s Server) RootPostHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	sessionId, expiration := s.backend.CreateSession(m.ID, r.UserAgent(), strings.Split(r.RemoteAddr, ":")[0])
 	w.Header().Set("HX-Push-URL", "/dashboard")
+	http.SetCookie(w, s.makeCookie(SessionCookieName, sessionId, expiration))
 	err = s.templateRepo.RenderFragment(w, "dashboard", "content", nil)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard fragment", slog.String("error", err.Error()))
@@ -69,7 +72,6 @@ func (s Server) RootPostHandler(w http.ResponseWriter, r *http.Request) {
 	err = s.templateRepo.RenderFragment(w, "nav", "nav", templates.NavData{
 		Show:         true,
 		DisplayName:  fmt.Sprintf("%s %s %s", m.GetRank(s.config.Service), m.FirstName, m.LastName),
-		Admin:        m.Admin,
 		OobSwap:      true,
 		Member:       m,
 		Subordinates: len(subordinates) > 0,

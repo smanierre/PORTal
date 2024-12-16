@@ -5,7 +5,6 @@ import "PORTal/types"
 type NavData struct {
 	Show         bool
 	DisplayName  string
-	Admin        bool
 	OobSwap      bool
 	Member       types.Member
 	Subordinates bool

@@ -32,7 +32,7 @@ func TestAddAndGetMember(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	supervisor, err := b.AddMember(testutils.RandomMember(true))
 	if err != nil {
@@ -165,7 +165,7 @@ func TestGetAllMembers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	member1 := testutils.RandomMember(true)
 	member2 := testutils.RandomMember(false)
@@ -247,7 +247,7 @@ func TestUpdateMember(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	member, err := b.AddMember(testutils.RandomMember(false))
 	if err != nil {
@@ -366,7 +366,7 @@ func TestDeleteMember_Sqlite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	m1, err := b.AddMember(testutils.RandomMember(false))
 	if err != nil {
@@ -466,7 +466,7 @@ func TestDisableMember_Sqlite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	// Setup for clean disable
 	m1, err := b.AddMember(testutils.RandomMember(false))
@@ -577,7 +577,7 @@ func TestEnableMember_Sqlite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	// Setup successful enable
 	m1, err := b.AddMember(testutils.RandomMember(true))
@@ -644,7 +644,7 @@ func TestGetDisabledMembers_Sqlite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
 
 	// Create members to disable later
 	m1, err := b.AddMember(testutils.RandomMember(false))

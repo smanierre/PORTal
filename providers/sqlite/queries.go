@@ -68,8 +68,9 @@ CREATE TABLE qualification_recurring_requirement(
 
 CREATE TABLE session(
     id string PRIMARY KEY,
-    expiration datetime,
-    user_agent string
+    user_agent string,
+    ip_address string,
+    expiration datetime
 );
 
 CREATE TABLE member_session(
@@ -132,9 +133,9 @@ INSERT INTO versions VALUES(1);`
 	updateReferenceQuery = "UPDATE reference SET name=$1, volume=$2, paragraph=$3 WHERE id=$4;"
 	deleteReferenceQuery = "DELETE FROM reference WHERE id=$1;"
 
-	insertSessionQuery       = "INSERT INTO session(id, expiration, user_agent) VALUES($1, $2, $3);"
-	insertMemberSessionQuery = "INSERT INTO member_session(member_id, session_id) VALUES($1, $2);"
-	getSessionQuery          = "SELECT * FROM session WHERE id=$1;"
-	deleteSessionQuery       = "DELETE FROM session WHERE id=$1;"
-	getMemberSessionQuery    = "SELECT * FROM member_session WHERE member_id=$1 AND session_id=$2;"
+	insertSessionQuery        = "INSERT INTO session(id, user_agent, ip_address, expiration) VALUES($1, $2, $3, $4);"
+	insertMemberSessionQuery  = "INSERT INTO member_session(member_id, session_id) VALUES($1, $2);"
+	getSessionQuery           = "SELECT id, expiration, user_agent, ip_address FROM session WHERE id=$1;"
+	deleteSessionQuery        = "DELETE FROM session WHERE id=$1;"
+	getMemberFromSessionQuery = "SELECT member_id FROM member_session WHERE session_id=$2;"
 )
