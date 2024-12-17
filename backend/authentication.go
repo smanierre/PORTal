@@ -52,3 +52,10 @@ func (b Backend) ValidateSession(sessionID, userAgent, ipAddress string) (types.
 	}
 	return b.memberProvider.GetMemberFromSession(sessionID)
 }
+
+func (b Backend) DeleteSession(sessionID string) {
+	err := b.authenticationProvider.DeleteSession(sessionID)
+	if err != nil {
+		b.logger.LogAttrs(context.Background(), slog.LevelError, "Session deletion failed", slog.String("error", err.Error()))
+	}
+}

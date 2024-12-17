@@ -34,3 +34,12 @@ func (p Provider) GetSession(sessionID string) (types.Session, error) {
 	}
 	return s, nil
 }
+
+func (p Provider) DeleteSession(sessionID string) error {
+	p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Deleting session from database", slog.String("session_id", sessionID))
+	_, err := p.Db.Exec(deleteSessionQuery, sessionID)
+	if err != nil {
+		return err
+	}
+	return nil
+}

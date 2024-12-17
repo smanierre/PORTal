@@ -55,6 +55,7 @@ type Backend interface {
 	Login(username, password string) (types.Member, error)
 	CreateSession(memberID, userAgent, ipAddress string) (string, time.Time)
 	ValidateSession(sessionID, userAgent, ipAddress string) (types.Member, error)
+	DeleteSession(sessionID string)
 }
 
 type Config struct {
@@ -102,6 +103,8 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("GET /", http.HandlerFunc(s.LoginGetHandler))
 	// Handle login requests
 	s.mux.Handle("POST /", http.HandlerFunc(s.LoginPostHandler))
+	// Logout request
+	s.mux.Handle("GET /logout", http.HandlerFunc(s.LogoutHandler))
 
 	// Dashboard
 	s.mux.Handle("GET /dashboard", http.HandlerFunc(s.DashboardGetHandler))
@@ -143,4 +146,12 @@ func removeCookie(w http.ResponseWriter, name, domain string) {
 
 func checkHTMXRequest(r *http.Request) bool {
 	return r.Header.Get("HX-Request") != ""
+}
+
+func getSessionId(r *http.Request) (string, error) {
+	c, err := r.Cookie(SessionCookieName)
+	if err != nil {
+		return "", err
+	}
+	return c.Value, nil
 }

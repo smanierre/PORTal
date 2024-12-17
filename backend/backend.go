@@ -70,6 +70,7 @@ type RequirementProvider interface {
 type AuthenticationProvider interface {
 	CreateSession(memberID, sessionID, userAgent, ipAddress string, expiration time.Time) error
 	GetSession(sessionID string) (types.Session, error)
+	DeleteSession(sessionID string) error
 }
 
 type Clock interface {

@@ -28,7 +28,6 @@ func (s Server) skipLoginMiddleware(next http.Handler) http.Handler {
 			}
 			s.logger.LogAttrs(r.Context(), slog.LevelDebug, "Valid session redirecting to the dashboard")
 			r = r.WithContext(context.WithValue(r.Context(), MemberContextKey, m))
-			//s.mux.ServeHTTP(w, r)
 			http.Redirect(w, r, "/dashboard", http.StatusTemporaryRedirect)
 		} else {
 			next.ServeHTTP(w, r)
@@ -57,7 +56,8 @@ func (s Server) sessionRequiredMiddleware(next http.Handler) http.Handler {
 			if checkHTMXRequest(r) {
 				err = s.templateRepo.RenderFragment(w, "login", "content", templates.LoginData{Organization: s.config.Organization})
 			} else {
-				err = s.templateRepo.Render(w, "login", nil)
+				http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+				return
 			}
 			if err != nil {
 				s.logger.LogAttrs(r.Context(), slog.LevelError, "Failed to render login", slog.String("error", err.Error()))

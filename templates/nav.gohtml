@@ -6,10 +6,10 @@
             {{ end }}
             <div class="nav-right-items">
                 <p class="nav-display-name">{{ .DisplayName }}</p>
-                <a class="nav-item" hx-get="/logout">Logout</a>
+                <a class="nav-item" hx-target="#content" hx-get="/logout">Logout</a>
             </div>
         </nav>
     {{ else }}
-        <nav id="nav"></nav>
+        <nav id="nav" {{ if .OobSwap }}hx-swap-oob="true"{{end}}></nav>
     {{ end }}
 {{ end }}
