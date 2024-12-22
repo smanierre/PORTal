@@ -4,7 +4,6 @@ import "PORTal/types"
 
 type NavData struct {
 	Show         bool
-	DisplayName  string
 	OobSwap      bool
 	Member       types.Member
 	Subordinates bool

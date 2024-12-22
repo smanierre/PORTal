@@ -5,7 +5,7 @@
                 <a class="nav-item" hx-get="{{ .Href }}" hx-target="#content">{{ .Display }}</a>
             {{ end }}
             <div class="nav-right-items">
-                <p class="nav-display-name">{{ .DisplayName }}</p>
+                <p class="nav-display-name">{{ displayName .Member }}</p>
                 <a class="nav-item" hx-target="#content" hx-get="/logout">Logout</a>
             </div>
         </nav>

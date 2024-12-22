@@ -2,16 +2,16 @@
     <div class="login-container">
         <div class="login-form-container">
             <p class="login-form-header">{{ .Organization }} PORTal Login</p>
-        <form hx-post="/" hx-target="#content" hx-indicator=".login-submit">
+        <form hx-post="/" hx-target="#content" hx-indicator=".form-submit">
             <label>
                 <input class="login-input" name="username" placeholder="Username" style="margin-top: 2.5rem;" type="text" />
             </label>
             <label>
                 <input class="login-input" name="password" placeholder="Password" type="password" />
             </label>
-            <button class="login-submit button" type="submit">
-                <span class="login-submit--text">Login</span>
-                <span class="login-submit--spinner"><img src="/assets/images/spinner.svg" alt="loading" /></span>
+            <button class="button form-submit" type="submit">
+                <span class="form-submit--text">Login</span>
+                <span class="form-submit--spinner"><img src="/assets/images/spinner.svg" alt="loading" /></span>
             </button>
         </form>
             <div id="loginError" class="login-error--hidden"></div>

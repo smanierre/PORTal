@@ -5,6 +5,7 @@ import (
 	"PORTal/types"
 	"context"
 	"embed"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
@@ -26,7 +27,7 @@ type Backend interface {
 	GetMember(identifier string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
 	GetSubordinates(memberID string) ([]types.Member, error)
-	UpdateMember(m types.Member, forceNoSupervisor bool) (types.Member, error)
+	UpdateMember(m types.Member, forceNoSupervisor, forceNoAdmin bool) (types.Member, error)
 	DeleteMember(id string) error
 
 	AddQualification(q types.Qualification) (types.Qualification, error)
@@ -81,9 +82,9 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	}
 	var t *templates.TemplateRepo
 	if dev {
-		t = templates.New(os.DirFS("templates"), rootData)
+		t = templates.New(os.DirFS("templates"), rootData, config.Service)
 	} else {
-		t = templates.New(templates.TemplateDir, rootData)
+		t = templates.New(templates.TemplateDir, rootData, config.Service)
 	}
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Creating new server")
 	s := Server{
@@ -109,6 +110,12 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	// Dashboard
 	s.mux.Handle("GET /dashboard", http.HandlerFunc(s.DashboardGetHandler))
 
+	// Admin page
+	s.mux.Handle("GET /admin", http.HandlerFunc(s.AdminGetHandler))
+	s.mux.Handle("GET /admin/members", http.HandlerFunc(s.AdminMembersGetHandler))
+	s.mux.Handle("GET /admin/member/{id}", http.HandlerFunc(s.AdminMemberEditorGetHandler))
+
+	s.mux.Handle("POST /admin/member/{id}", http.HandlerFunc(s.UpdateMember))
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 
 	return s
@@ -154,4 +161,13 @@ func getSessionId(r *http.Request) (string, error) {
 		return "", err
 	}
 	return c.Value, nil
+}
+
+func getMemberFromContext(ctx context.Context) (types.Member, error) {
+	mVal := ctx.Value(MemberContextKey)
+	m, ok := mVal.(types.Member)
+	if !ok {
+		return types.Member{}, errors.New("Unable to get member from context")
+	}
+	return m, nil
 }

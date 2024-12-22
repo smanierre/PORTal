@@ -1,5 +1,19 @@
 package types
 
+func GetRanks(service string) map[Grade]string {
+	switch service {
+	case "f":
+		return AfRankMap
+	case "a":
+		return AfRankMap
+	case "n":
+		return NavyRankMap
+	case "m":
+		return MarineRankMap
+	}
+	return map[Grade]string{}
+}
+
 var AfRankMap = map[Grade]string{
 	E1: "AB",
 	E2: "Amn",

@@ -27,25 +27,36 @@ type TemplateRepo struct {
 	rootData  RootData
 }
 
-func New(templatesDir fs.FS, data RootData) *TemplateRepo {
+func New(templatesDir fs.FS, data RootData, serviceCode string) *TemplateRepo {
 	t := &TemplateRepo{
 		templates: map[string]*template.Template{},
 		rootData:  data,
 	}
+
+	funcs := template.FuncMap{
+		"displayName": getDisplayNameFunc(serviceCode),
+	}
+
 	err := fs.WalkDir(templatesDir, ".", func(path string, d fs.DirEntry, err error) error {
 		if parts := strings.Split(d.Name(), "."); parts[len(parts)-1] != "gohtml" {
 			return nil
 		}
 		if d.Name() == "root.gohtml" {
-			t.templates["root"], err = template.ParseFS(templatesDir, "root.gohtml")
+			t.templates["root"], err = template.New("root").Funcs(funcs).ParseFS(templatesDir, "root.gohtml")
 			if err != nil {
 				return err
 			}
 		}
+		// Skip directories
 		if d.IsDir() {
 			return nil
 		}
-		t.templates[strings.Split(d.Name(), ".")[0]], err = template.ParseFS(templatesDir, "root.gohtml", "nav.gohtml", path)
+		// Skip components directory as they will be parsed with each template
+		if strings.Contains(path, "components/") {
+			return nil
+		}
+		name := strings.Split(d.Name(), ".")[0]
+		t.templates[name], err = template.New(name).Funcs(funcs).ParseFS(templatesDir, "root.gohtml", "nav.gohtml", path, "components/*")
 		if err != nil {
 			return err
 		}

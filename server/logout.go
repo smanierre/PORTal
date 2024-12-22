@@ -2,6 +2,7 @@ package server
 
 import (
 	"PORTal/templates"
+	"PORTal/templates/pages"
 	"log/slog"
 	"net/http"
 )
@@ -26,7 +27,7 @@ func (s Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering nav OOB", slog.String("error", err.Error()))
 	}
-	err = s.templateRepo.RenderFragment(w, "login", "content", templates.LoginData{
+	err = s.templateRepo.RenderFragment(w, "login", "content", pages.LoginData{
 		Organization: s.config.Organization,
 	})
 	if err != nil {

@@ -1,0 +1,10 @@
+{{ define "dropdown"}}
+    <div style="padding: 5px" x-data="dropdown">
+    <button type="button" class="button primary" @click="toggle" x-text="selected"></button>
+    <ul class="dropdown-content" x-show="open" @click.outside="toggle" x-transition>
+       {{ range .Items }}
+           <li class="dropdown-item" @click="() => {selectHandler('{{ .DisplayName }}')}" hx-target="{{ $.SwapTarget }}" hx-get="/{{ $.FragmentBasePath }}/{{ .Value }}">{{ .DisplayName }}</li>
+       {{end}}
+    </ul>
+    </div>
+{{end}}

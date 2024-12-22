@@ -2,7 +2,7 @@ package server
 
 import (
 	"PORTal/backend"
-	"PORTal/templates"
+	"PORTal/templates/pages"
 	"context"
 	"errors"
 	"log/slog"
@@ -54,7 +54,7 @@ func (s Server) sessionRequiredMiddleware(next http.Handler) http.Handler {
 			removeCookie(w, SessionCookieName, s.config.Domain)
 			w.Header().Set("HX-Push-URL", "/")
 			if checkHTMXRequest(r) {
-				err = s.templateRepo.RenderFragment(w, "login", "content", templates.LoginData{Organization: s.config.Organization})
+				err = s.templateRepo.RenderFragment(w, "login", "content", pages.LoginData{Organization: s.config.Organization})
 			} else {
 				http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 				return

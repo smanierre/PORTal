@@ -1,6 +1,7 @@
 :root {
     --background: 229 50% 28%;
     --background-dark: 229 50% 20%;
+    --background-light: 229 50% 42%;
     --foreground: 0 0% 100%;
     --accent: 0 0% 100%;
     --primary: 0 0 100%;
@@ -105,23 +106,23 @@ body {
     margin-top: 1.25rem;
 }
 
-.login-submit {
+.form-submit {
     width: 80%;
     margin-left: auto;
     margin-right: auto;
     margin-top: 1.25rem;
     display: block;
     height: 2.5rem;
-    .login-submit--spinner {
+    .form-submit--spinner {
         display: none;
     }
 }
 
-.login-submit.htmx-request {
-    .login-submit--spinner {
+.form-submit.htmx-request {
+    .form-submit--spinner {
         display: inline;
     }
-    .login-submit--text {
+    .form-submit--text {
         display: none;
     }
 }
@@ -157,6 +158,7 @@ body {
 }
 
 .button {
+    width: fit-content;
     align-items: center;
     justify-items: center;
     white-space: nowrap;
@@ -170,8 +172,101 @@ body {
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 150ms;
     border: none;
+
     &:hover {
         background-color: hsl(var(--primary-dark));
-
     }
+}
+
+.button.primary.disabled {
+    background-color: hsla(var(--background-light)/ 0.7);
+    cursor: not-allowed;
+    &:hover {
+        background-color: hsla(var(--background-light)/ 0.7);
+    }
+}
+
+.button.primary {
+        background-color: hsl(var(--background));
+        color: hsl(var(--primary));
+        &:hover {
+            background-color: hsl(var(--background-dark));
+        }
+}
+
+.admin-layout {
+    display: grid;
+    height: 100%;
+    width: 100%;
+    grid-template-rows: 40px 1fr;
+}
+
+.admin-content {
+    display: grid;
+    grid-template-columns: 33% 1fr;
+
+}
+
+.member-editor {
+    padding: 1rem;
+    display: flex;
+    gap: 1rem;
+    flex-direction: column;
+}
+
+.dropdown-content {
+    z-index: 10;
+    background-color: hsl(var(--background));
+    color: hsl(var(--primary));
+    position:relative;
+    width: fit-content;
+}
+
+.dropdown-item {
+    cursor: pointer;
+    padding: 1rem;
+    &:hover {
+        background-color: hsl(var(--background-dark))
+    }
+}
+
+.searchable-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: middle;
+}
+
+.searchable-list-search {
+    width: 50%;
+    margin-left: auto;
+}
+
+.searchable-list-search-input {
+    width: 66.6666%;
+    display: inline-block;
+    border-bottom-width: 0;
+    background-color: hsl(var(--primary));
+    margin-left: auto;
+}
+
+.searchable-list-items {
+    overflow-x: scroll;
+    margin-left: auto;
+    height: 66.6666%;
+    width: 50%;
+    border: 1px solid black;
+    padding: 0.5rem;
+}
+
+.searchable-list-item {
+    cursor: pointer;
+    &:hover {
+        background-color: hsla(var(--background-light) / 0.7);
+    }
+}
+
+.editor-input {
+    width: 22rem;
+    display: inline;
 }

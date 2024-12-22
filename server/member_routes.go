@@ -167,7 +167,7 @@ func (s Server) updateMember(w http.ResponseWriter, r *http.Request) {
 		forceNoSupervisor = true
 		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Supervisor is blank in request, forcing removal")
 	}
-	member, err := s.backend.UpdateMember(m, forceNoSupervisor)
+	member, err := s.backend.UpdateMember(m, forceNoSupervisor, false)
 	if errors.Is(err, backend.ErrMemberNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return

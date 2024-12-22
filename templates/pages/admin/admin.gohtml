@@ -1,0 +1,68 @@
+{{ define "content" }}
+    <div class="admin-layout">
+        {{ template "dropdown" .DropdownData }}
+        <div id="admin-content" class="admin-content">
+            {{ template "members" .MembersData}}
+        </div>
+    </div>
+{{ end }}
+
+
+{{ define "members" }}
+    <div id="members-list" class="searchable-list" {{ if .OobSwap }}hx-swap-oob="true"{{ end }}>
+            <div class="searchable-list-search">
+                <input class="searchable-list-search-input" placeholder="Filter"/>
+                <button class="button primary" type="button">Clear</button>
+            </div>
+            <ul class="searchable-list-items">
+                {{ range .Members }}
+                    <li class="searchable-list-item" hx-target="{{$.SwapTarget}}" hx-get="/{{$.FragmentBasePath}}/{{.ID}}">{{ displayName . }}</li>
+                {{ end }}
+            </ul>
+    </div>
+    <div id="member-content">
+        {{ if ne .SelectedMember.ID "" }}
+            {{ template "member-editor" .MemberEditorData }}
+        {{end}}
+    </div>
+{{ end }}
+
+{{ define "member-editor" }}
+        <form class="member-editor" x-data="memberEditor" hx-indicator=".form-submit" hx-post="/admin/member/{{ .SelectedMember.ID }}" hx-target="#member-content">
+            <label>ID: <input name="id" class="editor-input" disabled value="{{ .SelectedMember.ID }}" /></label>
+            <label>Rank:
+                <select @change="changes=true" name="grade">
+                    {{ range $grade, $rank := .Ranks }}
+                        <option {{ if eq $grade $.SelectedMember.Grade }}selected{{ end }} value="{{$grade}}">{{$rank}}</option>
+                    {{ end }}
+                </select>
+            </label>
+            <label>First Name: <input @keyup="changes=true" name="first_name" value="{{ .SelectedMember.FirstName }}" /></label>
+            <label>Last Name: <input @keyup="changes=true" name="last_name" value="{{ .SelectedMember.LastName }}" /></label>
+            <label>Username: <input name="username" disabled value="{{ .SelectedMember.Username }}" /></label>
+            {{ if .PotentialSupervisors }}
+            <label>Supervisor: <select @change="changes=true" name="supervisor">
+                    {{ range .PotentialSupervisors }}
+                        <option value="{{.ID}}">{{ displayName . }}</option>
+                    {{ end }}
+                </select>reflected an
+            </label>
+            {{ end }}
+            <label>Admin: <input name="admin" type="checkbox" @change="changes=true" {{ if .SelectedMember.Admin }} checked {{ end }}></label>
+            <label>Password: <input @keyup="passwordChanges=true" name="password" type="password" x-model="password"/></label>
+            <label>Confirm Password: <input @keyup="passwordChanges=true" name="confirm_password" type="password" x-model="confirmPassword"
+                   x-init="$watch('confirmPassword', val => {
+                   validPassword=!((confirmPassword === '' && password === '') ||
+                   (confirmPassword !== '' && confirmPassword === password && confirmPassword.length >= 8))
+                   }); $watch('confirmPassword', () => { passwordChanges=!(confirmPassword === '' && password === '')})
+                   ">
+            </label>
+            <button class="form-submit button primary" type="submit"
+                    :class="((changes && !passwordChanges) || validPassword) || 'disabled'"
+                    :disabled="!((changes && !passwordChanges) || validPassword)"
+            >
+                <span class="form-submit--text">Update User</span>
+                <span class="form-submit--spinner"><img src="/assets/images/spinner.svg" alt="loading" /></span>
+            </button>
+        </form>
+{{ end }}

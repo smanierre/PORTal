@@ -3,8 +3,8 @@ package server
 import (
 	"PORTal/backend"
 	"PORTal/templates"
+	"PORTal/templates/pages"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -15,7 +15,7 @@ func (s Server) LoginGetHandler(w http.ResponseWriter, r *http.Request) {
 	if !hx {
 		err := s.templateRepo.Render(w, "login", &templates.TplData{
 			NavData:     templates.NavData{},
-			ContentData: templates.LoginData{Organization: s.config.Organization},
+			ContentData: pages.LoginData{Organization: s.config.Organization},
 		})
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login template: %s", slog.String("error", err.Error()))
@@ -71,7 +71,6 @@ func (s Server) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = s.templateRepo.RenderFragment(w, "nav", "nav", templates.NavData{
 		Show:         true,
-		DisplayName:  fmt.Sprintf("%s %s %s", m.GetRank(s.config.Service), m.FirstName, m.LastName),
 		OobSwap:      true,
 		Member:       m,
 		Subordinates: len(subordinates) > 0,
