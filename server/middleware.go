@@ -2,7 +2,9 @@ package server
 
 import (
 	"PORTal/backend"
+	"PORTal/templates"
 	"PORTal/templates/pages"
+	"PORTal/types"
 	"context"
 	"errors"
 	"log/slog"
@@ -75,6 +77,46 @@ func (s Server) assetMiddleware(next http.Handler) http.Handler {
 			s.mux.ServeHTTP(w, r)
 			return
 		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (s Server) adminRequiredMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "/admin") {
+			s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Admin not required, skipping")
+			next.ServeHTTP(w, r)
+			return
+		}
+		// Runs after session validation middleware, so no need to verify session, member should be in context
+		m, err := getMemberFromContext(r.Context())
+		if err != nil || !m.Admin {
+			s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Member isn't in context or isn't admin, rendering the dashboard")
+			// Ensure that member doesn't have the admin option in the Nav
+			var err error
+			if checkHTMXRequest(r) {
+				err = s.templateRepo.RenderFragment(w, "dashboard", "content", nil)
+			} else {
+				http.Redirect(w, r, "/dashboard", http.StatusFound)
+			}
+			if err != nil {
+				s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard fragment", slog.String("error", err.Error()))
+				_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+			}
+			if !checkHTMXRequest(r) {
+				err = s.templateRepo.RenderFragment(w, "nav", "nav", templates.NavData{
+					Show:         true,
+					OobSwap:      true,
+					Member:       types.Member{},
+					Subordinates: false, // TODO: Get subordinates
+				})
+				if err != nil {
+					s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering nav OOB", slog.String("error", err.Error()))
+				}
+			}
+			return
+		}
+		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Member is admin, continuing on")
 		next.ServeHTTP(w, r)
 	})
 }

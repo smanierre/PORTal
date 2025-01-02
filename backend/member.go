@@ -65,6 +65,28 @@ func (b Backend) GetMember(identifier string) (types.Member, error) {
 	return member, nil
 }
 
+func (b Backend) GetDisabledMember(identifier string) (types.Member, error) {
+	l := b.logger.With(slog.String("identifier", identifier))
+	l.LogAttrs(context.Background(), slog.LevelInfo, "Getting disabled member from database")
+	var m ProviderMethod
+	if _, err := uuid.Parse(identifier); err != nil {
+		l.LogAttrs(context.Background(), slog.LevelInfo, "Using method ByUsername")
+		m = ByUsername
+	} else {
+		l.LogAttrs(context.Background(), slog.LevelInfo, "Using method ById")
+		m = ById
+	}
+	l.LogAttrs(context.Background(), slog.LevelInfo, "Getting member from database")
+	member, err := b.memberProvider.GetMember(identifier, m)
+	if err != nil {
+		return member, err
+	}
+	if !member.Disabled {
+		return types.Member{}, ErrMemberNotFound
+	}
+	return member, nil
+}
+
 func (b Backend) GetAllMembers() ([]types.Member, error) {
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting all members")
 	return b.memberProvider.GetAllMembers()

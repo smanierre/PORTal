@@ -8,8 +8,8 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <script src="https://unpkg.com/htmx.org@2.0.3"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.7/dist/cdn.min.js"></script>
-    <script src="/assets/js/dropdown.js"></script>
-    <script src="/assets/js/member_editor.js"></script>
+    <script src="/assets/js/alpineStores.js"></script>
+    <script src="/assets/js/errors.js"></script>
     <link rel="icon" type="image/png" href="/assets/images/port_dawg.png" />
     <link rel="stylesheet" href="/assets/css/reset.css" />
     <link rel="stylesheet" href="/assets/css/index.css" />
@@ -20,6 +20,7 @@
     {{ block "nav" .NavData }}
         <p>Error rendering nav</p>
     {{ end }}
+    <div id="toast" class="toast toast--hidden"></div>
     <div id="content">
     {{ block "content" .ContentData }}
         <h1>Make me a 404 page</h1>

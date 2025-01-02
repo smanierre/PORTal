@@ -25,10 +25,14 @@ const (
 type Backend interface {
 	AddMember(m types.Member) (types.Member, error)
 	GetMember(identifier string) (types.Member, error)
+	GetDisabledMember(identifier string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
+	GetDisabledMembers() ([]types.Member, error)
 	GetSubordinates(memberID string) ([]types.Member, error)
 	UpdateMember(m types.Member, forceNoSupervisor, forceNoAdmin bool) (types.Member, error)
 	DeleteMember(id string) error
+	DisableMember(id string) error
+	EnableMember(id string) error
 
 	AddQualification(q types.Qualification) (types.Qualification, error)
 	GetQualification(id string) (types.Qualification, error)
@@ -113,11 +117,16 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	// Admin page
 	s.mux.Handle("GET /admin", http.HandlerFunc(s.AdminGetHandler))
 	s.mux.Handle("GET /admin/members", http.HandlerFunc(s.AdminMembersGetHandler))
-	s.mux.Handle("GET /admin/member/{id}", http.HandlerFunc(s.AdminMemberEditorGetHandler))
+	s.mux.Handle("GET /admin/members/disabled", http.HandlerFunc(s.AdminMembersGetDisabledHandler))
+	s.mux.Handle("GET /admin/members/{id}", http.HandlerFunc(s.AdminMemberEditorGetHandler))
+	s.mux.Handle("POST /admin/members/{id}", http.HandlerFunc(s.UpdateMember))
+	s.mux.Handle("POST /admin/members/{id}/disable", http.HandlerFunc(s.AdminMemberDisableHandler))
+	s.mux.Handle("POST /admin/members/{id}/enable", http.HandlerFunc(s.AdminMemberEnableHandler))
+	s.mux.Handle("GET /admin/members/add", http.HandlerFunc(s.AdminGetNewMember))
+	s.mux.Handle("POST /admin/members/add", http.HandlerFunc(s.AddMember))
+	s.mux.Handle("GET /admin/members/{id}/potentialSupervisors/{grade}", http.HandlerFunc(s.AdminGetPotentialSupervisors))
 
-	s.mux.Handle("POST /admin/member/{id}", http.HandlerFunc(s.UpdateMember))
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
-
 	return s
 }
 
@@ -125,7 +134,8 @@ func (s Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.assetMiddleware(
 		s.skipLoginMiddleware(
 			s.sessionRequiredMiddleware(
-				s.mux))).ServeHTTP(w, r)
+				s.adminRequiredMiddleware(
+					s.mux)))).ServeHTTP(w, r)
 }
 
 func (s Server) makeCookie(name, value string, expiration time.Time) *http.Cookie {

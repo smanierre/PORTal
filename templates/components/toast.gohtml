@@ -1,0 +1,10 @@
+{{ define "toast" }}
+<div x-data="" @click="$refs.toast.classList.add('toast--hidden')"
+     x-ref="toast" id="toast" hx-swap-oob="true" class="toast {{if .Danger}}toast-danger{{end}}"
+    x-init="setTimeout(() => {
+        $el.classList.add('toast--hidden');
+    }, 5000)"
+>
+    {{.Message}}
+</div>
+{{ end }}

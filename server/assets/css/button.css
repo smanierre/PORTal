@@ -1,0 +1,69 @@
+.button {
+    width: fit-content;
+    align-items: center;
+    justify-items: center;
+    white-space: nowrap;
+    font-weight: 500;
+    font-size: 1rem;
+    line-height: 1.25rem;
+    padding: 0.5rem 1rem;
+    background-color: hsl(var(--primary));
+    cursor: pointer;
+    transition-property: color, background-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+    border: none;
+
+    &:hover {
+        background-color: hsl(var(--primary-dark));
+    }
+}
+
+.button.primary:disabled {
+    background-color: hsla(var(--background-light)/ 0.7);
+    cursor: not-allowed;
+    &:hover {
+        background-color: hsla(var(--background-light)/ 0.7);
+    }
+}
+
+.button.primary {
+    background-color: hsl(var(--background));
+    color: hsl(var(--primary));
+    &:hover {
+        background-color: hsl(var(--background-dark));
+    }
+}
+
+.button.danger {
+    background-color: hsl(var(--error));
+    color: hsl(var(--primary));
+    &:hover {
+        background-color: hsl(var(--error-dark));
+    }
+}
+
+.form-submit {
+    display: grid;
+    grid-template-areas: "stack";
+    .form-submit--spinner {
+        opacity: 0;
+        grid-area: stack;
+    }
+    .form-submit--text {
+        grid-area: stack;
+    }
+}
+
+.form-submit.htmx-request {
+    .form-submit--spinner {
+        opacity: 1;
+    }
+    .form-submit--text {
+        opacity: 0;
+    }
+}
+
+.primary .spinner {
+    fill: hsl(var(--primary));
+}

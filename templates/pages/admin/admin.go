@@ -17,11 +17,17 @@ type MembersData struct {
 	FragmentBasePath string
 	MemberEditorData MemberEditorData
 	OobSwap          bool
+	DisabledMembers  bool
 }
 
 type MemberEditorData struct {
-	Members              []types.Member
-	SelectedMember       types.Member
-	Ranks                map[types.Grade]string
+	SelectedMember     types.Member
+	Ranks              map[types.Grade]string
+	SupervisorListData SupervisorListData
+	NewMember          bool
+}
+
+type SupervisorListData struct {
 	PotentialSupervisors []types.Member
+	SelectedMember       types.Member
 }

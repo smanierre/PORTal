@@ -1,3 +1,10 @@
+@import "button.css";
+@import "login.css";
+@import "admin.css";
+@import "searchable-list.css";
+@import "dropdown.css";
+@import "toast.css";
+
 :root {
     --background: 229 50% 28%;
     --background-dark: 229 50% 20%;
@@ -8,6 +15,8 @@
     --primary-dark: 0 0 90%;
     --error-dark: 351 100% 38%;
     --error: 351 100% 44%;
+    --success: 120 67% 45%;
+    --nav-height: 40px;
 }
 
 @font-face {
@@ -33,7 +42,7 @@ body {
     width: 100vw;
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: 40px 1fr;
+    grid-template-rows: var(--nav-height) 1fr;
 }
 
 .nav {
@@ -73,200 +82,5 @@ body {
     margin-right: 1rem;
 }
 
-.login-container {
-    display: flex;
-    width: 100vw;
-    height: 100vh;
-    justify-content: center;
-    align-items: center;
-}
 
-.login-form-container {
-    width: 24rem;
-    height: fit-content;
-    padding-bottom: 2rem;
-    background-color: hsl(var(--background));
-}
 
-.login-form-header {
-    text-align: center;
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-    font-weight: 700;
-    margin-top: 1rem;
-    color: hsl(var(--primary));
-}
-
-.login-input {
-    width: 80%;
-    height: 2.5rem;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 1.25rem;
-}
-
-.form-submit {
-    width: 80%;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 1.25rem;
-    display: block;
-    height: 2.5rem;
-    .form-submit--spinner {
-        display: none;
-    }
-}
-
-.form-submit.htmx-request {
-    .form-submit--spinner {
-        display: inline;
-    }
-    .form-submit--text {
-        display: none;
-    }
-}
-
-.login-error--hidden {
-    height: 0;
-    width: 80%;
-    opacity: 0;
-    font-size: 0;
-    line-height: 0;
-    padding: 0;
-    margin-left: auto;
-    margin-right: auto;
-    transition-property: all;
-    transition-duration: 500ms;
-}
-
-.login-error--active {
-    color: white;
-    background-color: hsl(var(--error-dark));
-    border: 1px solid hsl(var(--error));
-    opacity: 100%;
-    text-align: center;
-    line-height: 1.25rem;
-    font-size: 1rem;
-    width: 80%;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: 1.25rem;
-    padding: 0.5rem 1rem;
-    transition-property: all;
-    transition-duration: 500ms;
-}
-
-.button {
-    width: fit-content;
-    align-items: center;
-    justify-items: center;
-    white-space: nowrap;
-    font-weight: 500;
-    font-size: 1rem;
-    line-height: 1.25rem;
-    padding: 0.5rem 1rem;
-    background-color: hsl(var(--primary));
-    cursor: pointer;
-    transition-property: color, background-color;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
-    border: none;
-
-    &:hover {
-        background-color: hsl(var(--primary-dark));
-    }
-}
-
-.button.primary.disabled {
-    background-color: hsla(var(--background-light)/ 0.7);
-    cursor: not-allowed;
-    &:hover {
-        background-color: hsla(var(--background-light)/ 0.7);
-    }
-}
-
-.button.primary {
-        background-color: hsl(var(--background));
-        color: hsl(var(--primary));
-        &:hover {
-            background-color: hsl(var(--background-dark));
-        }
-}
-
-.admin-layout {
-    display: grid;
-    height: 100%;
-    width: 100%;
-    grid-template-rows: 40px 1fr;
-}
-
-.admin-content {
-    display: grid;
-    grid-template-columns: 33% 1fr;
-
-}
-
-.member-editor {
-    padding: 1rem;
-    display: flex;
-    gap: 1rem;
-    flex-direction: column;
-}
-
-.dropdown-content {
-    z-index: 10;
-    background-color: hsl(var(--background));
-    color: hsl(var(--primary));
-    position:relative;
-    width: fit-content;
-}
-
-.dropdown-item {
-    cursor: pointer;
-    padding: 1rem;
-    &:hover {
-        background-color: hsl(var(--background-dark))
-    }
-}
-
-.searchable-list {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    vertical-align: middle;
-}
-
-.searchable-list-search {
-    width: 50%;
-    margin-left: auto;
-}
-
-.searchable-list-search-input {
-    width: 66.6666%;
-    display: inline-block;
-    border-bottom-width: 0;
-    background-color: hsl(var(--primary));
-    margin-left: auto;
-}
-
-.searchable-list-items {
-    overflow-x: scroll;
-    margin-left: auto;
-    height: 66.6666%;
-    width: 50%;
-    border: 1px solid black;
-    padding: 0.5rem;
-}
-
-.searchable-list-item {
-    cursor: pointer;
-    &:hover {
-        background-color: hsla(var(--background-light) / 0.7);
-    }
-}
-
-.editor-input {
-    width: 22rem;
-    display: inline;
-}

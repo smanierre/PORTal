@@ -1,0 +1,41 @@
+.searchable-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: middle;
+}
+
+.searchable-list-search {
+    width: 50%;
+    margin-left: auto;
+}
+
+.searchable-list-search-input {
+    width: 66.6666%;
+    display: inline-block;
+    border-bottom-width: 0;
+    background-color: hsl(var(--primary));
+    margin-left: auto;
+}
+
+.searchable-list-items {
+    overflow-x: scroll;
+    margin-left: auto;
+    height: 66.6666%;
+    width: 50%;
+    border: 1px solid black;
+    padding: 0.5rem;
+}
+
+.searchable-list-item {
+    cursor: pointer;
+}
+
+.searchable-list-item:not(.searchable-list-item--selected):hover {
+        background-color: hsla(var(--background-light) / 0.7);
+}
+
+.searchable-list-item--selected {
+    background-color: hsl(var(--background));
+    color: hsl(var(--primary));
+}
