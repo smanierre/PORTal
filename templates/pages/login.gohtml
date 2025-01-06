@@ -2,12 +2,20 @@
     <div class="login-container">
         <div class="login-form-container" x-data="">
             <p class="login-form-header">{{ .Organization }} PORTal Login</p>
-            <form hx-post="/" hx-target="#content" hx-indicator=".form-submit" x-data="">
+            <form hx-post="/" hx-target="#content" hx-indicator=".form-submit"
+                  @htmx:xhr:loadstart="() => {
+                    $refs.usernameInput.disabled = true;
+                    $refs.passwordInput.disabled = true;
+                }"
+                  @htmx:after-request.camel="() => {
+                    $refs.usernameInput.disabled = false;
+                    $refs.passwordInput.disabled = false;
+                }" x-data="">
                 <label>
-                    <input class="login-input" name="username" placeholder="Username" style="margin-top: 2.5rem;" type="text" />
+                    <input class="login-input" name="username" x-ref="usernameInput" placeholder="Username" style="margin-top: 2.5rem;" type="text" />
                 </label>
                 <label>
-                    <input class="login-input" name="password" placeholder="Password" type="password" />
+                    <input class="login-input" name="password" x-ref="passwordInput" placeholder="Password" type="password" />
                 </label>
                 <div class="login-form-submit-container" @click="$refs.err.className='login-error--hidden'">
                     {{ template "login-button" "Login"}}

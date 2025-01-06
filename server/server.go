@@ -119,12 +119,12 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("GET /admin/members", http.HandlerFunc(s.AdminMembersGetHandler))
 	s.mux.Handle("GET /admin/members/disabled", http.HandlerFunc(s.AdminMembersGetDisabledHandler))
 	s.mux.Handle("GET /admin/members/{id}", http.HandlerFunc(s.AdminMemberEditorGetHandler))
-	s.mux.Handle("POST /admin/members/{id}", http.HandlerFunc(s.UpdateMember))
+	s.mux.Handle("POST /admin/members/{id}", http.HandlerFunc(s.AdminMemberUpdateHandler))
 	s.mux.Handle("POST /admin/members/{id}/disable", http.HandlerFunc(s.AdminMemberDisableHandler))
 	s.mux.Handle("POST /admin/members/{id}/enable", http.HandlerFunc(s.AdminMemberEnableHandler))
-	s.mux.Handle("GET /admin/members/add", http.HandlerFunc(s.AdminGetNewMember))
-	s.mux.Handle("POST /admin/members/add", http.HandlerFunc(s.AddMember))
-	s.mux.Handle("GET /admin/members/{id}/potentialSupervisors/{grade}", http.HandlerFunc(s.AdminGetPotentialSupervisors))
+	s.mux.Handle("GET /admin/members/add", http.HandlerFunc(s.AdminGetNewMemberHandler))
+	s.mux.Handle("POST /admin/members/add", http.HandlerFunc(s.AdminAddMemberHandler))
+	s.mux.Handle("GET /admin/members/{id}/potentialSupervisors/{grade}", http.HandlerFunc(s.AdminGetPotentialSupervisorsHandler))
 
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	return s
