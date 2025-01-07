@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func (s Server) AdminMembersGetHandler(w http.ResponseWriter, r *http.Request) {
+func (s Server) AdminMemberGetHandler(w http.ResponseWriter, r *http.Request) {
 	mems, err := s.backend.GetAllMembers()
 	if err != nil {
 		if checkHTMXRequest(r) {
@@ -31,7 +31,7 @@ func (s Server) AdminMembersGetHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	data := admin.MembersData{
+	data := admin.MembersContentData{
 		Members:          mems,
 		SwapTarget:       "#member-content",
 		FragmentBasePath: "admin/members",
@@ -48,7 +48,34 @@ func (s Server) AdminMembersGetHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	http.Redirect(w, r, "/admin", http.StatusFound)
+	m, err := getMemberFromContext(r.Context())
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error getting member from context, redirecting to dashboard")
+		http.Redirect(w, r, "/dashboard", http.StatusFound)
+		return
+	}
+	tplData := &templates.TplData{
+		NavData: templates.NavData{
+			Show:         true,
+			OobSwap:      false,
+			Member:       m,
+			Subordinates: false,
+		},
+		ContentData: admin.MemberRootData{
+			DropdownData: components.DropdownData{
+				Items:            adminDropdownItems,
+				SwapTarget:       "#admin-content",
+				FragmentBasePath: "admin",
+			},
+			MembersData: data,
+		},
+	}
+	err = s.templateRepo.Render(w, "admin_members", tplData)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin members template", slog.String("error", err.Error()))
+		_ = s.templateRepo.RenderFragment(w, "errors", "generic_ise", nil)
+		return
+	}
 }
 
 func (s Server) AdminMembersGetDisabledHandler(w http.ResponseWriter, r *http.Request) {
@@ -70,9 +97,9 @@ func (s Server) AdminMembersGetDisabledHandler(w http.ResponseWriter, r *http.Re
 		}
 		return
 	}
-	data := admin.Data{
+	data := admin.MemberRootData{
 		DropdownData: components.DropdownData{Items: adminDropdownItems},
-		MembersData: admin.MembersData{
+		MembersData: admin.MembersContentData{
 			Members:          disabledMembers,
 			SwapTarget:       "#member-content",
 			FragmentBasePath: "admin/members",
@@ -209,7 +236,7 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 		}
 		return
 	}
-	membersData := admin.MembersData{
+	membersData := admin.MembersContentData{
 		MemberEditorData: admin.MemberEditorData{
 			SelectedMember: updatedMember,
 			Ranks:          types.GetRanks(s.config.Service),
@@ -277,7 +304,7 @@ func (s Server) AdminMemberDisableHandler(w http.ResponseWriter, r *http.Request
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin member editor fragment", slog.String("error", err.Error()))
 		_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
 	}
-	membersData := admin.MembersData{
+	membersData := admin.MembersContentData{
 		Members:          members,
 		SwapTarget:       "#member-content",
 		FragmentBasePath: "admin/members",
@@ -333,7 +360,7 @@ func (s Server) AdminMemberEnableHandler(w http.ResponseWriter, r *http.Request)
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin member editor fragment", slog.String("error", err.Error()))
 		_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
 	}
-	membersData := admin.MembersData{
+	membersData := admin.MembersContentData{
 		Members:          members,
 		SwapTarget:       "#member-content",
 		FragmentBasePath: "admin/members",
@@ -385,13 +412,13 @@ func (s Server) AdminGetNewMemberHandler(w http.ResponseWriter, r *http.Request)
 				Member:       m,
 				Subordinates: false, // TODO: Populate this
 			},
-			ContentData: admin.Data{
+			ContentData: admin.MemberRootData{
 				DropdownData: components.DropdownData{
 					Items:            adminDropdownItems,
 					SwapTarget:       "#admin-content",
 					FragmentBasePath: "admin",
 				},
-				MembersData: admin.MembersData{
+				MembersData: admin.MembersContentData{
 					Members:          members,
 					SelectedMember:   types.Member{},
 					SwapTarget:       "#member-content",
@@ -458,7 +485,7 @@ func (s Server) AdminAddMemberHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	err = s.templateRepo.RenderFragment(w, "admin_members", "members", admin.MembersData{
+	err = s.templateRepo.RenderFragment(w, "admin_members", "members", admin.MembersContentData{
 		Members:          members,
 		SelectedMember:   m,
 		SwapTarget:       "#member-content",

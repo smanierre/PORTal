@@ -45,8 +45,8 @@ func (s Server) AdminGetHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	data := admin.Data{
-		MembersData: admin.MembersData{
+	data := admin.MemberRootData{
+		MembersData: admin.MembersContentData{
 			Members:          members,
 			SwapTarget:       "#member-content",
 			FragmentBasePath: "admin/members",

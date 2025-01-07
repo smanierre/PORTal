@@ -5,12 +5,12 @@ import (
 	"PORTal/types"
 )
 
-type Data struct {
+type MemberRootData struct {
 	DropdownData components.DropdownData
-	MembersData  MembersData
+	MembersData  MembersContentData
 }
 
-type MembersData struct {
+type MembersContentData struct {
 	Members          []types.Member
 	SelectedMember   types.Member
 	SwapTarget       string

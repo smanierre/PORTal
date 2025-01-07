@@ -31,5 +31,20 @@ document.addEventListener("alpine:init", () => {
           htmx.ajax("GET", `/admin/members/${memberId}/potentialSupervisors/${e.target.value}`, {target: "#supervisor", swap: "outerHTML"})
       }
     }));
+
+    Alpine.data("adminReferenceList", () => ({
+        selected: null,
+        selectHandler(e) {
+            if(this.selected !== null) {
+                this.selected.classList.remove("searchable-list-item--selected");
+            }
+            this.selected = e.target;
+            this.selected.classList.add("searchable-list-item--selected");
+        },
+        clearSelectedReference() {
+            this.selected.classList.remove("searchable-list-item--selected");
+            this.selected = null;
+        }
+    }))
 })
 

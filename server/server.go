@@ -116,7 +116,9 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 
 	// Admin page
 	s.mux.Handle("GET /admin", http.HandlerFunc(s.AdminGetHandler))
-	s.mux.Handle("GET /admin/members", http.HandlerFunc(s.AdminMembersGetHandler))
+
+	// Admin Member Routes
+	s.mux.Handle("GET /admin/members", http.HandlerFunc(s.AdminMemberGetHandler))
 	s.mux.Handle("GET /admin/members/disabled", http.HandlerFunc(s.AdminMembersGetDisabledHandler))
 	s.mux.Handle("GET /admin/members/{id}", http.HandlerFunc(s.AdminMemberEditorGetHandler))
 	s.mux.Handle("POST /admin/members/{id}", http.HandlerFunc(s.AdminMemberUpdateHandler))
@@ -126,6 +128,8 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("POST /admin/members/add", http.HandlerFunc(s.AdminAddMemberHandler))
 	s.mux.Handle("GET /admin/members/{id}/potentialSupervisors/{grade}", http.HandlerFunc(s.AdminGetPotentialSupervisorsHandler))
 
+	// Admin Reference Routes
+	s.mux.Handle("GET /admin/references", http.HandlerFunc(s.AdminReferenceGetHandler))
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	return s
 }
