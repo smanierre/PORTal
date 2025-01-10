@@ -4,6 +4,7 @@ import (
 	"PORTal/backend"
 	"PORTal/providers/sqlite"
 	"PORTal/server"
+	"PORTal/templates"
 	"context"
 	"fmt"
 	"io"
@@ -71,6 +72,8 @@ func New(config Config, dev bool, logDest io.Writer) App {
 	if err != nil {
 		l.LogAttrs(context.Background(), slog.LevelError, "Error creating provider", slog.String("error", err.Error()))
 	}
+
+	templates.Initialize(config.Server.Organization, config.Server.Service)
 
 	b := backend.New(
 		l.With(slog.String("service", "backend")),

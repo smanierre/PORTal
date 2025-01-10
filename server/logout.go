@@ -21,15 +21,13 @@ func (s Server) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("HX-Push-URL", "/")
-	err = s.templateRepo.RenderFragment(w, "nav", "nav", templates.NavData{
+	err = templates.Nav(templates.NavData{
 		OobSwap: true,
-	})
+	}).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering nav OOB", slog.String("error", err.Error()))
 	}
-	err = s.templateRepo.RenderFragment(w, "login", "content", pages.LoginData{
-		Organization: s.config.Organization,
-	})
+	err = pages.Login().Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login fragment", slog.String("error", err.Error()))
 	}

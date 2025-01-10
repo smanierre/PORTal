@@ -14,15 +14,17 @@ document.addEventListener("alpine:init", () => {
     Alpine.data("adminMemberList", () => ({
         selected: null,
         selectHandler(e) {
-            if(this.selected !== null) {
+            if(this.selected) {
                 this.selected.classList.remove("searchable-list-item--selected");
             }
             this.selected = e.target;
             this.selected.classList.add("searchable-list-item--selected");
         },
         clearSelectedMember() {
-            this.selected.classList.remove("searchable-list-item--selected");
-            this.selected = null;
+            if(this.selected) {
+                this.selected.classList.remove("searchable-list-item--selected");
+                this.selected = null;
+            }
         }
     }));
 
@@ -35,16 +37,22 @@ document.addEventListener("alpine:init", () => {
     Alpine.data("adminReferenceList", () => ({
         selected: null,
         selectHandler(e) {
-            if(this.selected !== null) {
+            if(this.selected) {
                 this.selected.classList.remove("searchable-list-item--selected");
             }
             this.selected = e.target;
             this.selected.classList.add("searchable-list-item--selected");
         },
         clearSelectedReference() {
-            this.selected.classList.remove("searchable-list-item--selected");
-            this.selected = null;
+            if(this.selected) {
+                this.selected.classList.remove("searchable-list-item--selected");
+                this.selected = null;
+            }
         }
+    }))
+
+    Alpine.data("adminReferenceEditor", () => ({
+
     }))
 })
 

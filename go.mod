@@ -1,6 +1,8 @@
 module PORTal
 
-go 1.22.3
+go 1.23
+
+toolchain go1.23.2
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -9,3 +11,5 @@ require (
 	golang.org/x/crypto v0.24.0
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+require github.com/a-h/templ v0.3.819 // indirect

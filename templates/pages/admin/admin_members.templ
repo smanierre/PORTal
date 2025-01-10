@@ -1,0 +1,175 @@
+package admin
+
+import (
+    "PORTal/types"
+    "PORTal/templates/components"
+    "PORTal/templates"
+    "fmt"
+    )
+
+type MembersPaneData struct {
+	Members          []types.Member
+	SelectedMember   types.Member
+	MemberEditorData MemberEditorData
+	OobSwap          bool
+	DisabledMembers  bool
+}
+
+type MemberEditorData struct {
+	SelectedMember     types.Member
+	Ranks              map[types.Grade]string
+	SupervisorListData SupervisorListData
+	NewMember          bool
+}
+
+type SupervisorListData struct {
+	PotentialSupervisors []types.Member
+	SelectedMember       types.Member
+}
+
+templ MembersPane(data MembersPaneData) {
+    <div x-data="adminMemberList" id="members-list" class="searchable-list"
+     if data.OobSwap {
+        hx-swap-oob="true"
+     }>
+            <div class="member-toggle">
+                <button class={"button", templ.KV("primary", !data.DisabledMembers)}
+                        hx-get="/admin/members" hx-target="#admin-content">
+                    Enabled
+                </button>
+                <button class={"button", templ.KV("primary", data.DisabledMembers)}
+                        hx-get="/admin/members/disabled" hx-target="#admin-content">
+                    Disabled
+                </button>
+            </div>
+            <div class="searchable-list-search">
+                <input class="searchable-list-search-input" placeholder="Filter"/>
+                <button class="button primary" type="button">Clear</button>
+            </div>
+            <ul class="searchable-list-items">
+                for _, member := range data.Members {
+                    <li
+                            @click="selectHandler"
+                            if data.SelectedMember.ID == member.ID {
+                                x-init="selectHandler({target: $el})"
+                            }
+                            class={"searchable-list-item", templ.KV(data.SelectedMember.ID == member.ID, "searchable-list-item--selected")}
+                            hx-target="#member-content" hx-get={fmt.Sprintf("/admin/members/%s", member.ID)}>
+                            { templates.DisplayName(member) }
+                    </li>
+                }
+            </ul>
+            <button @click="clearSelectedMember" type="button" class="admin-new-member button primary" hx-get="/admin/members/add" hx-target="#member-content">New Member</button>
+    </div>
+    <div id="member-content">
+        if data.SelectedMember.ID != "" || data.MemberEditorData.NewMember {
+            @MemberEditor(data.MemberEditorData)
+        }
+    </div>
+}
+
+templ MemberEditor(data MemberEditorData) {
+        <form x-data="adminMemberEditor" class="editor" hx-indicator=".form-submit"
+              if data.NewMember {
+                hx-post="/admin/members/add"
+              } else {
+                hx-post={fmt.Sprintf("/admin/members/%s", data.SelectedMember.ID)}
+              }
+              hx-target="#admin-content"
+        >
+            <label>ID: <input name="id" class="editor-input" disabled value={data.SelectedMember.ID} /></label>
+            <label>Rank:
+                <select name="grade" @change={fmt.Sprintf("(e) => gradeOnChange(e, '%s')", data.SelectedMember.ID)}>
+                    for grade, rank := range data.Ranks {
+                        <option
+                        if grade == data.SelectedMember.Grade {
+                            selected
+                        }
+                        value={string(grade)}>
+                            {rank}
+                        </option>
+                    }
+                </select>
+            </label>
+            <label>First Name: <input name="first_name" value={ data.SelectedMember.FirstName } /></label>
+            <label>Last Name: <input name="last_name" value={ data.SelectedMember.LastName } /></label>
+            <label>Username: <input name="username"
+                if !data.NewMember {
+                    disabled
+                }
+                value={ data.SelectedMember.Username } /></label>
+            @SupervisorList(data.SupervisorListData)
+            <label>Admin: <input name="admin" type="checkbox"
+                if data.SelectedMember.Admin {
+                    checked
+                }></label>
+            <label>Password: <input onkeyup="this.setCustomValidity('')" hx-on:htmx:validation:validate="validatePassword(this)" name="password" type="password"/></label>
+            <label>Confirm Password: <input onkeyup="this.setCustomValidity('')" hx-on:htmx:validation:validate="validateConfirmPassword(this)" name="confirm_password" type="password">
+            </label>
+            <div style="display: flex; gap: 1rem;">
+                if data.NewMember {
+                    @components.SubmitButton("Create Member", true)
+                } else {
+                    @components.SubmitButton("UpdateMember", true)
+                }
+                if !data.NewMember {
+                <button class="button danger form-submit" type="button"
+                    hx-post={fmt.Sprintf("/admin/members/%s/%s", data.SelectedMember.ID, enableDisableToggle(data.SelectedMember.Disabled))}>
+                    <span class="form-submit--text">
+                        if data.SelectedMember.Disabled {
+                            Enable
+                        } else {
+                            Disable
+                        } Member</span>
+                    <span class="form-submit--spinner"><svg class="spinner" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_P7sC{transform-origin:center;animation:spinner_svv2 .75s infinite linear}@keyframes spinner_svv2{100%{transform:rotate(360deg)}}</style><path d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z" class="spinner_P7sC"/></svg></span>
+                </button>
+                }
+            </div>
+        </form>
+            <script type="text/javascript">
+                document.querySelector(".editor").addEventListener("change", function() {
+                    document.querySelector(".form-submit").disabled = false
+                })
+                function validatePassword(t) {
+                    if (t.value.length !== 0 && t.value.length < 8) {
+                        t.setCustomValidity("Password must be at least 8 characters long")
+                        t.classList.add("invalid")
+                    }
+                }
+
+                function validateConfirmPassword(t) {
+                    const password = htmx.find("input[name=password]")
+                    if (t.value !== password.value) {
+                        t.setCustomValidity("Passwords do not match")
+                        t.classList.add("invalid")
+                    }
+                    htmx.find(".editor").reportValidity()
+                }
+            </script>
+}
+
+func enableDisableToggle(memberDisabled bool) string {
+    if memberDisabled {
+        return "enable"
+    } else {
+        return "disable"
+    }
+}
+
+templ SupervisorList(data SupervisorListData) {
+    if len(data.PotentialSupervisors) > 0 {
+    <label id="supervisor">Supervisor:
+        <select name="supervisor">
+            <option value="">No Supervisor</option>
+            for _, supervisor := range data.PotentialSupervisors {
+                <option value={supervisor.ID}
+                if data.SelectedMember.SupervisorID == supervisor.ID {
+                    selected
+                }>{ templates.DisplayName(supervisor) }</option>
+            }
+        </select>
+    </label>
+    } else {
+        <label style="display: none" id="supervisor"></label>
+    }
+}

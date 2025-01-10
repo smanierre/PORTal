@@ -2,6 +2,7 @@ package server
 
 import (
 	"PORTal/templates"
+	"PORTal/templates/pages"
 	"PORTal/types"
 	"log"
 	"log/slog"
@@ -17,20 +18,19 @@ func (s Server) DashboardGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if checkHTMXRequest(r) {
 		w.Header().Set("HX-Push-URL", "/dashboard")
-		err := s.templateRepo.RenderFragment(w, "dashboard", "content", nil)
+		err := pages.Dashboard().Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard template", slog.String("error", err.Error()))
 			return
 		}
 	} else {
-		err := s.templateRepo.Render(w, "dashboard", &templates.TplData{
-			NavData: templates.NavData{
-				Show:         true,
-				OobSwap:      false,
-				Member:       member,
-				Subordinates: false,
-			},
-			ContentData: nil})
+		err := templates.Root(templates.NavData{
+			Show:         true,
+			OobSwap:      false,
+			Member:       member,
+			Subordinates: false,
+		},
+			pages.Dashboard()).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard page", slog.String("error", err.Error()))
 		}

@@ -4,6 +4,7 @@ import (
 	"PORTal/templates"
 	"PORTal/templates/components"
 	"PORTal/templates/pages/admin"
+	"PORTal/templates/pages/errorpages"
 	"PORTal/types"
 	"fmt"
 	"log/slog"
@@ -11,40 +12,36 @@ import (
 	"strings"
 )
 
-func (s Server) AdminMemberGetHandler(w http.ResponseWriter, r *http.Request) {
+func (s Server) AdminMembersPaneGetHandler(w http.ResponseWriter, r *http.Request) {
 	mems, err := s.backend.GetAllMembers()
 	if err != nil {
 		if checkHTMXRequest(r) {
-			err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-				Message: "Unable to get members.",
-				Danger:  true,
-			})
+			err = components.Toast("Unable to get members.", true).Render(r.Context(), w)
 			if err != nil {
 				s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 			}
 			return
 		} else {
-			err = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+			err = errorpages.GenericISE().Render(r.Context(), w)
 			if err != nil {
 				s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering error page", slog.String("error", err.Error()))
 			}
 			return
 		}
 	}
-	data := admin.MembersContentData{
+	memberPane := admin.MembersPane(admin.MembersPaneData{
 		Members:          mems,
-		SwapTarget:       "#member-content",
-		FragmentBasePath: "admin/members",
-		MemberEditorData: admin.MemberEditorData{
-			Ranks: types.GetRanks(s.config.Service),
-		},
-	}
+		SelectedMember:   types.Member{},
+		MemberEditorData: admin.MemberEditorData{},
+		OobSwap:          false,
+		DisabledMembers:  false,
+	})
 	if checkHTMXRequest(r) {
 		w.Header().Set("HX-Push-URL", "/admin/members")
-		err = s.templateRepo.RenderFragment(w, "admin_members", "members", data)
+		err = memberPane.Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin members fragment", slog.String("error", err.Error()))
-			_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 		}
 		return
 	}
@@ -54,31 +51,25 @@ func (s Server) AdminMemberGetHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/dashboard", http.StatusFound)
 		return
 	}
-	tplData := &templates.TplData{
-		NavData: templates.NavData{
-			Show:         true,
-			OobSwap:      false,
-			Member:       m,
-			Subordinates: false,
-		},
-		ContentData: admin.MemberRootData{
-			DropdownData: components.DropdownData{
-				Items:            adminDropdownItems,
-				SwapTarget:       "#admin-content",
-				FragmentBasePath: "admin",
-			},
-			MembersData: data,
-		},
+	subordinates, err := s.backend.GetSubordinates(m.ID)
+	var subordinateLength int
+	if err == nil {
+		subordinateLength = len(subordinates)
 	}
-	err = s.templateRepo.Render(w, "admin_members", tplData)
+	err = templates.Root(templates.NavData{
+		Show:         true,
+		OobSwap:      false,
+		Member:       m,
+		Subordinates: subordinateLength > 0,
+	}, admin.AdminPage("Members", memberPane)).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin members template", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "errors", "generic_ise", nil)
+		_ = errorpages.GenericISE().Render(r.Context(), w)
 		return
 	}
 }
 
-func (s Server) AdminMembersGetDisabledHandler(w http.ResponseWriter, r *http.Request) {
+func (s Server) AdminMembersPaneGetDisabledHandler(w http.ResponseWriter, r *http.Request) {
 	m, err := getMemberFromContext(r.Context())
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Unable to get member from context", slog.String("error", err.Error()))
@@ -88,47 +79,42 @@ func (s Server) AdminMembersGetDisabledHandler(w http.ResponseWriter, r *http.Re
 	disabledMembers, err := s.backend.GetDisabledMembers()
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Unable to get disabled members")
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to disable member.",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to disable member.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 		}
 		return
 	}
-	data := admin.MemberRootData{
-		DropdownData: components.DropdownData{Items: adminDropdownItems},
-		MembersData: admin.MembersContentData{
-			Members:          disabledMembers,
-			SwapTarget:       "#member-content",
-			FragmentBasePath: "admin/members",
-			MemberEditorData: admin.MemberEditorData{},
-			OobSwap:          false,
-			DisabledMembers:  true,
-		},
-	}
+	memberPane := admin.MembersPane(admin.MembersPaneData{
+		Members:          disabledMembers,
+		SelectedMember:   types.Member{},
+		MemberEditorData: admin.MemberEditorData{},
+		OobSwap:          false,
+		DisabledMembers:  true,
+	})
 	if checkHTMXRequest(r) {
 		w.Header().Set("HX-Push-URL", "/admin/members/disabled")
-		err = s.templateRepo.RenderFragment(w, "admin_members", "members", data.MembersData)
+		err = memberPane.Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin disabled members fragment", slog.String("error", err.Error()))
-			_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", data)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 		}
 		return
 	}
-	err = s.templateRepo.Render(w, "admin_members", &templates.TplData{
-		NavData: templates.NavData{
-			Show:         true,
-			OobSwap:      false,
-			Member:       m,
-			Subordinates: false, // TODO: fix this
-		},
-		ContentData: data,
-	})
+	subordinates, err := s.backend.GetSubordinates(m.ID)
+	var subordinateLength int
+	if err == nil {
+		subordinateLength = len(subordinates)
+	}
+	err = templates.Root(templates.NavData{
+		Show:         true,
+		OobSwap:      false,
+		Member:       m,
+		Subordinates: subordinateLength > 0,
+	}, admin.AdminPage("Members", memberPane)).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering disabled members page", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+		_ = errorpages.GenericISE().Render(r.Context(), w)
 	}
 }
 
@@ -142,10 +128,7 @@ func (s Server) AdminMemberEditorGetHandler(w http.ResponseWriter, r *http.Reque
 		member, err = s.backend.GetMember(r.PathValue("id"))
 	}
 	if err != nil {
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to get member.",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to get member.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 		}
@@ -153,37 +136,69 @@ func (s Server) AdminMemberEditorGetHandler(w http.ResponseWriter, r *http.Reque
 	}
 	members, err := s.backend.GetAllMembers()
 	if err != nil {
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to get members.",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to get members.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 		}
 		return
 	}
-	data := admin.MemberEditorData{
+	memberEditor := admin.MemberEditor(admin.MemberEditorData{
 		SelectedMember: member,
 		Ranks:          types.GetRanks(s.config.Service),
 		SupervisorListData: admin.SupervisorListData{
 			PotentialSupervisors: member.GetPotentialSupervisors(members),
 			SelectedMember:       member,
 		},
-	}
+		NewMember: false,
+	})
 	if checkHTMXRequest(r) {
 		if disabled {
 			w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin/members/disabled/%s", member.ID))
 		} else {
 			w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin/members/%s", r.PathValue("id")))
 		}
-		err = s.templateRepo.RenderFragment(w, "admin_members", "member-editor", data)
+		err = memberEditor.Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin member editor fragment", slog.String("error", err.Error()))
-			_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 		}
 		return
 	}
-	http.Redirect(w, r, "/admin", http.StatusFound)
+	m, err := getMemberFromContext(r.Context())
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "error getting member from context", slog.String("error", err.Error()))
+		_ = errorpages.GenericISE().Render(r.Context(), w)
+		return
+	}
+	subordinates, err := s.backend.GetSubordinates(m.ID)
+	var subordinateLength int
+	if err == nil {
+		subordinateLength = len(subordinates)
+	}
+	err = templates.Root(templates.NavData{
+		Show:         true,
+		OobSwap:      false,
+		Member:       m,
+		Subordinates: subordinateLength > 0,
+	}, admin.AdminPage("Members", admin.MembersPane(admin.MembersPaneData{
+		Members:        members,
+		SelectedMember: member,
+		MemberEditorData: admin.MemberEditorData{
+			SelectedMember: member,
+			Ranks:          types.GetRanks(s.config.Service),
+			SupervisorListData: admin.SupervisorListData{
+				PotentialSupervisors: member.GetPotentialSupervisors(members),
+				SelectedMember:       member,
+			},
+			NewMember: false,
+		},
+		OobSwap:         false,
+		DisabledMembers: false,
+	}))).Render(r.Context(), w)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering member editor page", slog.String("error", err.Error()))
+		_ = errorpages.GenericISE().Render(r.Context(), w)
+	}
 }
 
 func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request) {
@@ -216,10 +231,7 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 	}
 	updatedMember, err := s.backend.UpdateMember(newMember, forceNoSupervisor, forceNoAdmin)
 	if err != nil {
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to update member",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to update member", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 		}
@@ -227,16 +239,15 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 	}
 	members, err := s.backend.GetAllMembers()
 	if err != nil {
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to update member list, please refresh.",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to update member list, please refresh.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 		}
 		return
 	}
-	membersData := admin.MembersContentData{
+	err = admin.MembersPane(admin.MembersPaneData{
+		Members:        members,
+		SelectedMember: updatedMember,
 		MemberEditorData: admin.MemberEditorData{
 			SelectedMember: updatedMember,
 			Ranks:          types.GetRanks(s.config.Service),
@@ -246,25 +257,26 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 			},
 			NewMember: false,
 		},
-		SelectedMember:   updatedMember,
-		Members:          members,
-		SwapTarget:       "#member-content",
-		FragmentBasePath: "admin/members",
-		OobSwap:          true,
-	}
-	err = s.templateRepo.RenderFragment(w, "admin_members", "members", membersData)
+		OobSwap:         false,
+		DisabledMembers: false,
+	}).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin members fragment", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+		_ = errorpages.GenericISE().Render(r.Context(), w)
 	}
 
+	subordinates, err := s.backend.GetSubordinates(updatedMember.ID)
+	var subordinateLength int
+	if err == nil {
+		subordinateLength = len(subordinates)
+	}
 	// Update nav incase members were added/removed or rank/name changed
-	err = s.templateRepo.RenderFragment(w, "nav", "nav", templates.NavData{
+	err = templates.Nav(templates.NavData{
 		Show:         true,
 		OobSwap:      true,
 		Member:       updatedMember,
-		Subordinates: false, // TODO: determine this
-	})
+		Subordinates: subordinateLength > 0,
+	}).Render(r.Context(), w)
 }
 
 func (s Server) AdminMemberDisableHandler(w http.ResponseWriter, r *http.Request) {
@@ -276,10 +288,7 @@ func (s Server) AdminMemberDisableHandler(w http.ResponseWriter, r *http.Request
 	memberID := r.PathValue("id")
 	err := s.backend.DisableMember(memberID)
 	if err != nil {
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to disable member!",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to disable member!", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 		}
@@ -288,35 +297,32 @@ func (s Server) AdminMemberDisableHandler(w http.ResponseWriter, r *http.Request
 	members, err := s.backend.GetAllMembers()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to disable member.",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to disable member.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 		}
 		return
 	}
-	data := admin.MemberEditorData{}
+	// TODO: See if I can just render the content data
 	w.Header().Set("HX-Push-URL", "/admin/members")
-	err = s.templateRepo.RenderFragment(w, "admin_members", "member-editor", data)
+	err = admin.MemberEditor(admin.MemberEditorData{}).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin member editor fragment", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+		_ = errorpages.GenericISE().Render(r.Context(), w)
 	}
-	membersData := admin.MembersContentData{
+	err = admin.MembersPane(admin.MembersPaneData{
 		Members:          members,
-		SwapTarget:       "#member-content",
-		FragmentBasePath: "admin/members",
+		SelectedMember:   types.Member{},
+		MemberEditorData: admin.MemberEditorData{},
 		OobSwap:          true,
-	}
-	err = s.templateRepo.RenderFragment(w, "admin_members", "members", membersData)
+		DisabledMembers:  false,
+	}).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin members fragment", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+		_ = errorpages.GenericISE().Render(r.Context(), w)
 	}
 
-	err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{Message: "Member disabled!"})
+	err = components.Toast("Member disabled!", false).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering member disable toast", slog.String("error", err.Error()))
 	}
@@ -332,111 +338,93 @@ func (s Server) AdminMemberEnableHandler(w http.ResponseWriter, r *http.Request)
 	err := s.backend.EnableMember(memberID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Error enabling member",
-			Danger:  true,
-		})
+		err = components.Toast("Error enabling member", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
-			_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 		}
 		return
 	}
 	members, err := s.backend.GetDisabledMembers()
 	if err != nil {
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to update list of members, please refresh.",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to update list of members, please refresh.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 		}
 		return
 	}
-	data := admin.MemberEditorData{}
 	w.Header().Set("HX-Push-URL", "/admin/members/disabled")
-	err = s.templateRepo.RenderFragment(w, "admin_members", "member-editor", data)
+	// TODO: See if I can just render the member pane instead of both
+	err = admin.MemberEditor(admin.MemberEditorData{}).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin member editor fragment", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+		_ = errorpages.GenericISE().Render(r.Context(), w)
 	}
-	membersData := admin.MembersContentData{
-		Members:          members,
-		SwapTarget:       "#member-content",
-		FragmentBasePath: "admin/members",
-		OobSwap:          true,
-		DisabledMembers:  true,
-	}
-	err = s.templateRepo.RenderFragment(w, "admin_members", "members", membersData)
+	err = admin.MembersPane(admin.MembersPaneData{
+		Members:         members,
+		OobSwap:         true,
+		DisabledMembers: true,
+	}).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin members fragment", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Error updating page after enabling member.",
-			Danger:  true,
-		})
+		_ = components.Toast("Error updating page after enabling member.", true).Render(r.Context(), w)
 		return
 	}
-	err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-		Message: "Enabled member!",
-	})
+	err = components.Toast("Enabled member!", false).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering success toast", slog.String("error", err.Error()))
 		return
 	}
 }
 
-func (s Server) AdminGetNewMemberHandler(w http.ResponseWriter, r *http.Request) {
+func (s Server) AdminNewMemberHandler(w http.ResponseWriter, r *http.Request) {
 	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Sending back empty member editor")
 	var err error
 	if checkHTMXRequest(r) {
 		w.Header().Set("HX-Push-URL", "/admin/members/add")
-		err = s.templateRepo.RenderFragment(w, "admin_members", "member-editor", admin.MemberEditorData{
+		err = admin.MemberEditor(admin.MemberEditorData{
 			NewMember: true,
 			Ranks:     types.GetRanks(s.config.Service),
-		})
+		}).Render(r.Context(), w)
 	} else {
 		m, err := getMemberFromContext(r.Context())
 		if err != nil {
-			_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 			return
 		}
 		members, err := s.backend.GetAllMembers()
 		if err != nil {
-			_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 			return
 		}
-		err = s.templateRepo.Render(w, "admin_members", &templates.TplData{
-			NavData: templates.NavData{
-				Show:         true,
-				OobSwap:      false,
-				Member:       m,
-				Subordinates: false, // TODO: Populate this
+		subordinates, err := s.backend.GetSubordinates(m.ID)
+		var subordinateLength int
+		if err == nil {
+			subordinateLength = len(subordinates)
+		}
+		err = templates.Root(templates.NavData{
+			Show:         true,
+			OobSwap:      false,
+			Member:       m,
+			Subordinates: subordinateLength > 0,
+		}, admin.AdminPage("Members", admin.MembersPane(admin.MembersPaneData{
+			Members:        members,
+			SelectedMember: types.Member{},
+			MemberEditorData: admin.MemberEditorData{
+				Ranks:     types.GetRanks(s.config.Service),
+				NewMember: true,
 			},
-			ContentData: admin.MemberRootData{
-				DropdownData: components.DropdownData{
-					Items:            adminDropdownItems,
-					SwapTarget:       "#admin-content",
-					FragmentBasePath: "admin",
-				},
-				MembersData: admin.MembersContentData{
-					Members:          members,
-					SelectedMember:   types.Member{},
-					SwapTarget:       "#member-content",
-					FragmentBasePath: "admin/members",
-					MemberEditorData: admin.MemberEditorData{NewMember: true, Ranks: types.GetRanks(s.config.Service)},
-					OobSwap:          false,
-					DisabledMembers:  false,
-				},
-			},
-		})
+			OobSwap:         false,
+			DisabledMembers: false,
+		}))).Render(r.Context(), w)
 	}
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering new member fragment", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+		_ = errorpages.GenericISE().Render(r.Context(), w)
 	}
 }
 
-func (s Server) AdminAddMemberHandler(w http.ResponseWriter, r *http.Request) {
+func (s Server) AdminMemberAddHandler(w http.ResponseWriter, r *http.Request) {
 	if !checkHTMXRequest(r) {
 		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Non-HTMX request to add member, redirecting to the dashboard")
 		http.Redirect(w, r, "/dashboard", http.StatusFound)
@@ -446,13 +434,10 @@ func (s Server) AdminAddMemberHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Unable to parse form data for new member", slog.String("error", err.Error()))
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to add new member.",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to add new member.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
-			_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 		}
 		return
 	}
@@ -467,29 +452,22 @@ func (s Server) AdminAddMemberHandler(w http.ResponseWriter, r *http.Request) {
 
 	m, err = s.backend.AddMember(m)
 	if err != nil {
-		err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to create member.",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to create member.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
-			_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 			return
 		}
 	}
 	members, err := s.backend.GetAllMembers()
 	if err != nil {
-		_ = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to update page, please refresh.",
-			Danger:  true,
-		})
+		_ = components.Toast("Unable to update page, please refresh.", true).Render(r.Context(), w)
 		return
 	}
-	err = s.templateRepo.RenderFragment(w, "admin_members", "members", admin.MembersContentData{
-		Members:          members,
-		SelectedMember:   m,
-		SwapTarget:       "#member-content",
-		FragmentBasePath: "admin/members",
+	w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin/members/%s", m.ID))
+	err = admin.MembersPane(admin.MembersPaneData{
+		Members:        members,
+		SelectedMember: m,
 		MemberEditorData: admin.MemberEditorData{
 			SelectedMember: m,
 			Ranks:          types.GetRanks(s.config.Service),
@@ -501,16 +479,13 @@ func (s Server) AdminAddMemberHandler(w http.ResponseWriter, r *http.Request) {
 		},
 		OobSwap:         false,
 		DisabledMembers: false,
-	})
+	}).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering member_editor for created member", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to update page, please refresh.",
-			Danger:  true,
-		})
+		_ = components.Toast("Unable to update page, please refresh.", true).Render(r.Context(), w)
 		return
 	}
-	err = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{Message: "User Successfully create!"})
+	err = components.Toast("Member successfully created!", false).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering user creation toast", slog.String("error", err.Error()))
 	}
@@ -528,31 +503,22 @@ func (s Server) AdminGetPotentialSupervisorsHandler(w http.ResponseWriter, r *ht
 	member, err := s.backend.GetMember(memberID)
 	member.Grade = types.Grade(grade)
 	if err != nil {
-		_ = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to update list of potential supervisors based on selected rank.",
-			Danger:  true,
-		})
+		_ = components.Toast("Unable to update list of potential supervisors based on selected rank.", true).Render(r.Context(), w)
 		return
 	}
 	members, err := s.backend.GetAllMembers()
 	if err != nil {
-		_ = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to update list of potential supervisors based on selected rank.",
-			Danger:  true,
-		})
+		_ = components.Toast("Unable to update list of potential supervisors based on selected rank.", true).Render(r.Context(), w)
 		return
 	}
 	data := admin.SupervisorListData{
 		PotentialSupervisors: member.GetPotentialSupervisors(members),
 		SelectedMember:       member,
 	}
-	err = s.templateRepo.RenderFragment(w, "admin_members", "supervisor_list", data)
+	err = admin.SupervisorList(data).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering list of potential supervisors", slog.String("error", err.Error()))
-		_ = s.templateRepo.RenderFragment(w, "admin_members", "toast", components.ToastData{
-			Message: "Unable to update list of potential supervisors based on selected rank.",
-			Danger:  true,
-		})
+		_ = components.Toast("Unable to update list of potential supervisors based on selected rank.", true).Render(r.Context(), w)
 		return
 	}
 }

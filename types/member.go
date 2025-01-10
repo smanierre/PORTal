@@ -35,16 +35,16 @@ func (m Member) ToApiMember() ApiMember {
 	return m.ApiMember
 }
 
-func (m Member) GetRank(service string) string {
+func GetRank(member Member, service string) string {
 	switch service {
 	case "f":
-		return AfRankMap[m.Grade]
+		return AfRankMap[member.Grade]
 	case "a":
-		return ArmyRankMap[m.Grade]
+		return ArmyRankMap[member.Grade]
 	case "m":
-		return MarineRankMap[m.Grade]
+		return MarineRankMap[member.Grade]
 	case "n":
-		return NavyRankMap[m.Grade]
+		return NavyRankMap[member.Grade]
 	default:
 		return ""
 	}

@@ -4,28 +4,10 @@ import (
 	"PORTal/templates"
 	"PORTal/templates/components"
 	"PORTal/templates/pages/admin"
+	"PORTal/templates/pages/errorpages"
 	"log/slog"
 	"net/http"
 )
-
-var adminDropdownItems = []components.DropdownItem{
-	{
-		DisplayName: "Members",
-		Value:       "members",
-	},
-	{
-		DisplayName: "Qualifications",
-		Value:       "qualifications",
-	},
-	{
-		DisplayName: "Requirements",
-		Value:       "requirements",
-	},
-	{
-		DisplayName: "References",
-		Value:       "references",
-	},
-}
 
 func (s Server) AdminGetHandler(w http.ResponseWriter, r *http.Request) {
 	member, err := getMemberFromContext(r.Context())
@@ -36,48 +18,43 @@ func (s Server) AdminGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	members, err := s.backend.GetAllMembers()
 	if err != nil {
-		err = s.templateRepo.RenderFragment(w, "admin", "toast", components.ToastData{
-			Message: "Unable to get members.",
-			Danger:  true,
-		})
+		err = components.Toast("Unable to get members.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 		}
 		return
 	}
-	data := admin.MemberRootData{
-		MembersData: admin.MembersContentData{
-			Members:          members,
-			SwapTarget:       "#member-content",
-			FragmentBasePath: "admin/members",
-		},
-		DropdownData: components.DropdownData{
-			Items:            adminDropdownItems,
-			SwapTarget:       "#admin-content",
-			FragmentBasePath: "admin",
-		}}
+	membersPane := admin.MembersPane(admin.MembersPaneData{
+		Members:          members,
+		SelectedMember:   member,
+		MemberEditorData: admin.MemberEditorData{},
+		OobSwap:          false,
+		DisabledMembers:  false,
+	})
 	if checkHTMXRequest(r) {
-
 		w.Header().Set("HX-Push-URL", "/admin/members")
-		err := s.templateRepo.RenderFragment(w, "admin_members", "content", data)
+		err := admin.AdminPage("Members", membersPane).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin fragment", slog.String("error", err.Error()))
-			_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", data)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 		}
 		return
 	} else {
-		err = s.templateRepo.Render(w, "admin_members", &templates.TplData{
-			NavData: templates.NavData{
-				Show:         true,
-				OobSwap:      false,
-				Member:       member,
-				Subordinates: false,
-			},
-			ContentData: data,
-		})
+		subordinates, err := s.backend.GetSubordinates(member.ID)
+		var subordinateLength int
+		if err == nil {
+			subordinateLength = len(subordinates)
+		}
+		err = templates.Root(templates.NavData{
+			Show:         true,
+			OobSwap:      false,
+			Member:       member,
+			Subordinates: subordinateLength > 0,
+		},
+			admin.AdminPage("Members", membersPane)).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin template", slog.String("error", err.Error()))
-			_ = s.templateRepo.RenderFragment(w, "errors", "generic_ise", nil)
+			_ = errorpages.GenericISE().Render(r.Context(), w)
 		}
 	}
 }

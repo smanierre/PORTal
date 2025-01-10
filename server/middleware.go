@@ -4,7 +4,7 @@ import (
 	"PORTal/backend"
 	"PORTal/templates"
 	"PORTal/templates/pages"
-	"PORTal/types"
+	"PORTal/templates/pages/errorpages"
 	"context"
 	"errors"
 	"log/slog"
@@ -56,7 +56,7 @@ func (s Server) sessionRequiredMiddleware(next http.Handler) http.Handler {
 			removeCookie(w, SessionCookieName, s.config.Domain)
 			w.Header().Set("HX-Push-URL", "/")
 			if checkHTMXRequest(r) {
-				err = s.templateRepo.RenderFragment(w, "login", "content", pages.LoginData{Organization: s.config.Organization})
+				err = pages.Login().Render(r.Context(), w)
 			} else {
 				http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 				return
@@ -95,21 +95,27 @@ func (s Server) adminRequiredMiddleware(next http.Handler) http.Handler {
 			// Ensure that member doesn't have the admin option in the Nav
 			var err error
 			if checkHTMXRequest(r) {
-				err = s.templateRepo.RenderFragment(w, "dashboard", "content", nil)
+				err = pages.Dashboard().Render(r.Context(), w)
 			} else {
 				http.Redirect(w, r, "/dashboard", http.StatusFound)
 			}
 			if err != nil {
 				s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard fragment", slog.String("error", err.Error()))
-				_ = s.templateRepo.RenderFragment(w, "error", "generic_ise", nil)
+				_ = errorpages.GenericISE().Render(r.Context(), w)
 			}
+			var subordinateLength int
+			subordinates, err := s.backend.GetSubordinates(m.ID)
+			if err == nil {
+				subordinateLength = len(subordinates)
+			}
+
 			if !checkHTMXRequest(r) {
-				err = s.templateRepo.RenderFragment(w, "nav", "nav", templates.NavData{
+				err = templates.Nav(templates.NavData{
 					Show:         true,
 					OobSwap:      true,
-					Member:       types.Member{},
-					Subordinates: false, // TODO: Get subordinates
-				})
+					Member:       m,
+					Subordinates: subordinateLength > 0,
+				}).Render(r.Context(), w)
 				if err != nil {
 					s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering nav OOB", slog.String("error", err.Error()))
 				}

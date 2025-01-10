@@ -1,0 +1,39 @@
+package components
+
+import "fmt"
+
+type DropdownItem struct {
+	DisplayName string
+	Value       string
+}
+
+var adminDropdownItems = []DropdownItem{
+	{
+		DisplayName: "Members",
+		Value:       "members",
+	},
+	{
+		DisplayName: "Qualifications",
+		Value:       "qualifications",
+	},
+	{
+		DisplayName: "Requirements",
+		Value:       "requirements",
+	},
+	{
+		DisplayName: "References",
+		Value:       "references",
+	},
+}
+
+templ Dropdown(selected string) {
+    <div style="padding: 5px" x-data="dropdown" x-init={fmt.Sprintf("selected=\"%s\"", selected)}>
+        <button type="button" class="button primary" @click="toggle" x-text="selected"></button>
+        <ul class="dropdown-content" x-show="open" @click.outside="toggle" x-transition>
+        for _, item := range adminDropdownItems {
+           <li class="dropdown-item" @click={fmt.Sprintf("() => {selectHandler(\"%s\")}", item.DisplayName)} hx-target="#admin-content"
+            hx-get={fmt.Sprintf("/admin/%s", item.Value)}>{ item.DisplayName }</li>
+        }
+        </ul>
+    </div>
+}

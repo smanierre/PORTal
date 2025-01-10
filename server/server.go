@@ -1,14 +1,12 @@
 package server
 
 import (
-	"PORTal/templates"
 	"PORTal/types"
 	"context"
 	"embed"
 	"errors"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -71,33 +69,22 @@ type Config struct {
 }
 
 type Server struct {
-	logger       *slog.Logger
-	backend      Backend
-	mux          *http.ServeMux
-	dev          bool
-	config       Config
-	templateRepo *templates.TemplateRepo
+	logger  *slog.Logger
+	backend Backend
+	mux     *http.ServeMux
+	dev     bool
+	config  Config
 }
 
 func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Loading templates...")
-	rootData := templates.RootData{
-		Organization: config.Organization,
-	}
-	var t *templates.TemplateRepo
-	if dev {
-		t = templates.New(os.DirFS("templates"), rootData, config.Service)
-	} else {
-		t = templates.New(templates.TemplateDir, rootData, config.Service)
-	}
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Creating new server")
 	s := Server{
-		logger:       logger,
-		backend:      backend,
-		mux:          http.NewServeMux(),
-		dev:          dev,
-		config:       config,
-		templateRepo: t,
+		logger:  logger,
+		backend: backend,
+		mux:     http.NewServeMux(),
+		dev:     dev,
+		config:  config,
 	}
 
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Registering routes...")
@@ -106,9 +93,7 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 
 	// Index is the login page
 	s.mux.Handle("GET /", http.HandlerFunc(s.LoginGetHandler))
-	// Handle login requests
 	s.mux.Handle("POST /", http.HandlerFunc(s.LoginPostHandler))
-	// Logout request
 	s.mux.Handle("GET /logout", http.HandlerFunc(s.LogoutHandler))
 
 	// Dashboard
@@ -118,18 +103,25 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("GET /admin", http.HandlerFunc(s.AdminGetHandler))
 
 	// Admin Member Routes
-	s.mux.Handle("GET /admin/members", http.HandlerFunc(s.AdminMemberGetHandler))
-	s.mux.Handle("GET /admin/members/disabled", http.HandlerFunc(s.AdminMembersGetDisabledHandler))
+	s.mux.Handle("GET /admin/members", http.HandlerFunc(s.AdminMembersPaneGetHandler))
+	s.mux.Handle("GET /admin/members/disabled", http.HandlerFunc(s.AdminMembersPaneGetDisabledHandler))
 	s.mux.Handle("GET /admin/members/{id}", http.HandlerFunc(s.AdminMemberEditorGetHandler))
 	s.mux.Handle("POST /admin/members/{id}", http.HandlerFunc(s.AdminMemberUpdateHandler))
 	s.mux.Handle("POST /admin/members/{id}/disable", http.HandlerFunc(s.AdminMemberDisableHandler))
 	s.mux.Handle("POST /admin/members/{id}/enable", http.HandlerFunc(s.AdminMemberEnableHandler))
-	s.mux.Handle("GET /admin/members/add", http.HandlerFunc(s.AdminGetNewMemberHandler))
-	s.mux.Handle("POST /admin/members/add", http.HandlerFunc(s.AdminAddMemberHandler))
+	s.mux.Handle("GET /admin/members/add", http.HandlerFunc(s.AdminNewMemberHandler))
+	s.mux.Handle("POST /admin/members/add", http.HandlerFunc(s.AdminMemberAddHandler))
 	s.mux.Handle("GET /admin/members/{id}/potentialSupervisors/{grade}", http.HandlerFunc(s.AdminGetPotentialSupervisorsHandler))
+
+	// Admin Requirement Routes
+	s.mux.Handle("GET /admin/requirements", http.HandlerFunc(s.AdminRequirementsPaneGetHandler))
 
 	// Admin Reference Routes
 	s.mux.Handle("GET /admin/references", http.HandlerFunc(s.AdminReferenceGetHandler))
+	s.mux.Handle("GET /admin/references/{id}", http.HandlerFunc(s.AdminReferenceEditorGetHandler))
+	s.mux.Handle("POST /admin/references/{id}", http.HandlerFunc(s.AdminReferenceUpdateHandler))
+	s.mux.Handle("GET /admin/references/add", http.HandlerFunc(s.AdminNewReferenceHandler))
+	s.mux.Handle("POST /admin/references/add", http.HandlerFunc(s.AdminReferenceAddHandler))
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	return s
 }
