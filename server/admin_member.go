@@ -447,7 +447,7 @@ func (s Server) AdminMemberAddHandler(w http.ResponseWriter, r *http.Request) {
 	m.LastName = r.Form.Get("last_name")
 	m.Password = r.Form.Get("password")
 	m.Grade = types.Grade(r.Form.Get("grade"))
-	m.Admin = r.Form.Get("admin") == "true"
+	m.Admin = r.Form.Get("admin") == "on"
 	m.SupervisorID = r.Form.Get("supervisor_id")
 
 	m, err = s.backend.AddMember(m)

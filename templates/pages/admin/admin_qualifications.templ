@@ -1,0 +1,117 @@
+package admin
+
+import "strconv"
+
+import (
+    "PORTal/types"
+    "PORTal/templates/components"
+    "fmt"
+    "slices"
+    )
+
+type QualificationPaneData struct {
+	Qualifications          []types.Qualification
+	SelectedQualification   types.Qualification
+	QualificationEditorData QualificationEditorData
+	OobSwap          bool
+}
+
+type QualificationEditorData struct {
+	SelectedQualification     types.Qualification
+	PotentialInitialRequirements []types.Requirement
+	PotentialRecurringRequirements []types.Requirement
+	NewQualification          bool
+}
+
+
+templ QualificationPane(data QualificationPaneData) {
+    <div x-data="adminQualificationList" id="qualifications-list" class="searchable-list"
+     if data.OobSwap {
+        hx-swap-oob="true"
+     }>
+            <div class="searchable-list-search">
+                <input class="searchable-list-search-input" placeholder="Filter"/>
+                <button class="button primary" type="button">Clear</button>
+            </div>
+            <ul class="searchable-list-items">
+                for _, qualification := range data.Qualifications {
+                    <li
+                            @click="selectHandler"
+                            if data.SelectedQualification.ID == qualification.ID {
+                                x-init="selectHandler({target: $el})"
+                            }
+                            class={"searchable-list-item", templ.KV(data.SelectedQualification.ID == qualification.ID, "searchable-list-item--selected")}
+                            hx-target="#qualification-content" hx-get={fmt.Sprintf("/admin/qualifications/%s", qualification.ID)}>
+                            { qualification.Name }
+                    </li>
+                }
+            </ul>
+            <button @click="clearSelectedQualification" type="button" class="admin-new-member button primary" hx-get="/admin/qualifications/add" hx-target="#qualification-content">New Qualification</button>
+    </div>
+    <div id="qualification-content">
+        if data.SelectedQualification.ID != "" || data.QualificationEditorData.NewQualification {
+            @QualificationEditor(data.QualificationEditorData)
+        }
+    </div>
+}
+
+templ QualificationEditor(data QualificationEditorData) {
+        <form x-data="adminQualificationEditor" class="editor" hx-indicator=".form-submit"
+              if data.NewQualification {
+                hx-post="/admin/qualifications/add"
+              } else {
+                hx-post={fmt.Sprintf("/admin/qualifications/%s", data.SelectedQualification.ID)}
+              }
+              hx-target="#admin-content"
+        >
+            <label>ID: <input name="id" class="editor-input" disabled value={data.SelectedQualification.ID} /></label>
+            <label>Name: <input name="name" value={ data.SelectedQualification.Name } /></label>
+            <label>Notes: <textarea name="notes">{data.SelectedQualification.Notes}</textarea></label>
+            <label>Expires: <input name="expires" type="checkbox"
+                if data.SelectedQualification.Expires {
+                    checked
+                }/>
+            </label>
+            // if data.SelectedQualification.Expires {
+            <label>Expiration Days: <input type="number" name="expiration_days" value={strconv.Itoa(data.SelectedQualification.ExpirationDays)} /> </label>
+            //}
+            <label>Initial Requirements:
+                <select multiple name="initial_requirements">
+                    for _, req := range data.PotentialInitialRequirements {
+                        <option
+                            if slices.Contains(data.SelectedQualification.InitialRequirements, req) {
+                                selected
+                            }
+                                value={req.ID}
+                        >{req.Name}</option>
+                    }
+                </select>
+            </label>
+            <label>Recurring Requirements:
+                <select multiple name="recurring_requirements">
+                    for _, req := range data.PotentialRecurringRequirements { FIGURE OUT WHY THESE AREN'T DISPLAYING
+                        <option
+                            if slices.Contains(data.SelectedQualification.RecurringRequirements, req) {
+                                selected
+                            }
+                                value={req.ID}
+                        >{req.Name}</option>
+                    }
+                </select>
+            </label>
+            <div style="display: flex; gap: 1rem;">
+                if data.NewQualification {
+                    @components.SubmitButton("Create Qualification", true)
+                } else {
+                    @components.SubmitButton("Update Qualification", true)
+                }
+                if !data.NewQualification {
+                }
+            </div>
+        </form>
+            <script type="text/javascript">
+                document.querySelector(".editor").addEventListener("change", function() {
+                    document.querySelector(".form-submit").disabled = false
+                })
+            </script>
+}

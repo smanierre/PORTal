@@ -113,8 +113,19 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("POST /admin/members/add", http.HandlerFunc(s.AdminMemberAddHandler))
 	s.mux.Handle("GET /admin/members/{id}/potentialSupervisors/{grade}", http.HandlerFunc(s.AdminGetPotentialSupervisorsHandler))
 
+	// Admin Qualification Routes
+	s.mux.Handle("GET /admin/qualifications", http.HandlerFunc(s.AdminQualificationsPaneGetHandler))
+	s.mux.Handle("GET /admin/qualifications/{id}", http.HandlerFunc(s.AdminQualificationEditorGetHandler))
+	s.mux.Handle("POST /admin/qualifications/{id}", http.HandlerFunc(s.AdminQualificationUpdateHandler))
+	s.mux.Handle("GET /admin/qualifications/add", http.HandlerFunc(s.AdminNewQualificationHandler))
+	s.mux.Handle("POST /admin/qualifications/add", http.HandlerFunc(s.AdminQualificationAddHandler))
+
 	// Admin Requirement Routes
 	s.mux.Handle("GET /admin/requirements", http.HandlerFunc(s.AdminRequirementsPaneGetHandler))
+	s.mux.Handle("GET /admin/requirements/{id}", http.HandlerFunc(s.AdminRequirementEditorGetHandler))
+	s.mux.Handle("POST /admin/requirements/{id}", http.HandlerFunc(s.AdminRequirementUpdateHandler))
+	s.mux.Handle("GET /admin/requirements/add", http.HandlerFunc(s.AdminNewRequirementHandler))
+	s.mux.Handle("POST /admin/requirements/add", http.HandlerFunc(s.AdminRequirementAddHandler))
 
 	// Admin Reference Routes
 	s.mux.Handle("GET /admin/references", http.HandlerFunc(s.AdminReferenceGetHandler))
@@ -122,6 +133,7 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("POST /admin/references/{id}", http.HandlerFunc(s.AdminReferenceUpdateHandler))
 	s.mux.Handle("GET /admin/references/add", http.HandlerFunc(s.AdminNewReferenceHandler))
 	s.mux.Handle("POST /admin/references/add", http.HandlerFunc(s.AdminReferenceAddHandler))
+
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	return s
 }

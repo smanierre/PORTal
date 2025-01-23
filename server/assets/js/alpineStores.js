@@ -49,10 +49,42 @@ document.addEventListener("alpine:init", () => {
                 this.selected = null;
             }
         }
-    }))
+    }));
 
-    Alpine.data("adminReferenceEditor", () => ({
+    Alpine.data("adminRequirementList", () => ({
+        selected: null,
+        selectHandler(e) {
+            if(this.selected) {
+                this.selected.classList.remove("searchable-list-item--selected");
+            }
+            this.selected = e.target;
+            this.selected.classList.add("searchable-list-item--selected");
+        },
+        clearSelectedRequirement() {
+            if(this.selected) {
+                this.selected.classList.remove("searchable-list-item--selected");
+                this.selected = null;
+            }
+        }
+    }));
 
-    }))
+    Alpine.data("adminQualificationList", () => ({
+        selected: null,
+        selectHandler(e) {
+            if(this.selected) {
+                this.selected.classList.remove("searchable-list-item--selected");
+            }
+            this.selected = e.target;
+            this.selected.classList.add("searchable-list-item--selected");
+        },
+        clearSelectedQualification() {
+            if (this.selected) {
+                this.selected.classList.remove("searchable-list-item--selected");
+                this.selected = null;
+            }
+        }
+    }));
+
+    Alpine.data("adminQualificationEditor", () => ({}));
 })
 

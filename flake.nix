@@ -18,7 +18,7 @@
             pkgs.delve
             pkgs.gotools
             pkgs.golangci-lint
-            pkgs.sqlite            pkgs.nodejs_20
+            pkgs.sqlite
             pkgs.libgcc
           ];
         };

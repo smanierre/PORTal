@@ -52,7 +52,7 @@ templ ReferencesPane(data ReferencePaneData) {
 }
 
 templ ReferenceEditor(data ReferenceEditorData) {
-    <form x-data="adminReferenceEditor" class="editor" hx-indicator=".form-submit"
+    <form class="editor" hx-indicator=".form-submit"
         if data.NewReference {
         hx-post="/admin/references/add"
         } else {
@@ -68,13 +68,13 @@ templ ReferenceEditor(data ReferenceEditorData) {
             if data.NewReference {
                 @components.SubmitButton("Create Reference", true)
             } else {
-                @components.SubmitButton("UpdateReference", true)
+                @components.SubmitButton("Update Reference", true)
             }
         </div>
     </form>
-                <script type="text/javascript">
-                    document.querySelector(".editor").addEventListener("change", function() {
-                        document.querySelector(".form-submit").disabled = false
-                    })
-                </script>
+    <script type="text/javascript">
+        document.querySelector(".editor").addEventListener("change", function() {
+            document.querySelector(".form-submit").disabled = false
+        })
+    </script>
 }
