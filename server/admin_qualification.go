@@ -151,6 +151,7 @@ func (s Server) AdminQualificationUpdateHandler(w http.ResponseWriter, r *http.R
 		http.Redirect(w, r, "/dashboard", http.StatusFound)
 		return
 	}
+
 	qualificationID := r.PathValue("id")
 	err := r.ParseForm()
 	if err != nil {
@@ -158,6 +159,7 @@ func (s Server) AdminQualificationUpdateHandler(w http.ResponseWriter, r *http.R
 		_ = errorpages.GenericISE().Render(r.Context(), w) // TOOD: Probably something more graceful
 		return
 	}
+
 	expirationDays, err := strconv.Atoi(r.Form.Get("expiration_days"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -169,19 +171,30 @@ func (s Server) AdminQualificationUpdateHandler(w http.ResponseWriter, r *http.R
 		}
 		return
 	}
+
+	initialRequirementIds := r.Form["initial_requirements"]
+	recurringRequirementIds := r.Form["recurring_requirements"]
+	newInitialRequirements := []types.Requirement{}
+	newRecurringRequirements := []types.Requirement{}
+	for _, id := range initialRequirementIds {
+		newInitialRequirements = append(newInitialRequirements, types.Requirement{ID: id})
+	}
+	for _, id := range recurringRequirementIds {
+		newRecurringRequirements = append(newRecurringRequirements, types.Requirement{ID: id})
+	}
+
 	newQualification := types.Qualification{
 		ID:                    qualificationID,
 		Name:                  r.Form.Get("name"),
-		InitialRequirements:   nil,
-		RecurringRequirements: nil,
+		InitialRequirements:   newInitialRequirements,
+		RecurringRequirements: newRecurringRequirements,
 		Notes:                 r.Form.Get("notes"),
 		Expires:               r.Form.Get("expires") == "on",
 		ExpirationDays:        expirationDays,
 	}
-	fmt.Printf("\n\n%+v\n\n", newQualification)
-	// TODO: Get rid of this force arg, and all others. Not needed with the way it works now.
-	updatedQualification, err := s.backend.UpdateQualification(newQualification, true)
+	updatedQualification, err := s.backend.UpdateQualification(newQualification)
 	if err != nil {
+		w.Header().Set("HX-Retarget", "#toast")
 		err = components.Toast("Unable to update qualification", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))

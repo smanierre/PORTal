@@ -35,7 +35,7 @@ type Backend interface {
 	AddQualification(q types.Qualification) (types.Qualification, error)
 	GetQualification(id string) (types.Qualification, error)
 	GetAllQualifications() ([]types.Qualification, error)
-	UpdateQualification(q types.Qualification, forceExpirationUpdate bool) (types.Qualification, error)
+	UpdateQualification(q types.Qualification) (types.Qualification, error)
 	DeleteQualification(id string) error
 
 	AssignMemberQualification(memberID, qualID string) error

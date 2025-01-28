@@ -1,0 +1,26 @@
+package webcomponents
+
+templ MultiSelect(name string) {
+	<multi-select>
+		<style>
+			multi-select {
+			    select {
+					overflow: scroll;
+				}
+			    option {
+					padding: 0.5rem;
+					background-color: pink;
+					&:hover {
+					    cursor: pointer;
+					}
+				}
+				.selected {
+				    background-color: green;
+				}
+			}
+		</style>
+		<select multiple name={ name }>
+			{ children... }
+		</select>
+	</multi-select>
+}

@@ -47,31 +47,6 @@ func (q Qualification) LogValue() slog.Value {
 		q.ID, q.Name, q.Notes, q.Expires, q.ExpirationDays, q.InitialRequirements, q.RecurringRequirements))
 }
 
-func (q Qualification) MergeIn(incoming Qualification, forceUpdateExpiration bool) Qualification {
-	if incoming.Name != "" {
-		q.Name = incoming.Name
-	}
-	if incoming.InitialRequirements != nil {
-		q.InitialRequirements = incoming.InitialRequirements
-	}
-	if incoming.RecurringRequirements != nil {
-		q.RecurringRequirements = incoming.RecurringRequirements
-	}
-	if incoming.Notes != "" {
-		q.Notes = incoming.Notes
-	}
-	if incoming.Expires == false && incoming.ExpirationDays == 0 && forceUpdateExpiration {
-		q.Expires = false
-		q.ExpirationDays = 0
-	} else if incoming.Expires == true {
-		q.Expires = true
-	}
-	if incoming.ExpirationDays != 0 && (q.Expires == true || incoming.Expires == true) {
-		q.ExpirationDays = incoming.ExpirationDays
-	}
-	return q
-}
-
 type Requirement struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`

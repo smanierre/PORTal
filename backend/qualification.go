@@ -4,8 +4,9 @@ import (
 	"PORTal/types"
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"log/slog"
+
+	"github.com/google/uuid"
 )
 
 func (b Backend) AddQualification(q types.Qualification) (types.Qualification, error) {
@@ -37,22 +38,20 @@ func (b Backend) GetAllQualifications() ([]types.Qualification, error) {
 	return quals, nil
 }
 
-func (b Backend) UpdateQualification(q types.Qualification, forceExpirationUpdate bool) (types.Qualification, error) {
+func (b Backend) UpdateQualification(q types.Qualification) (types.Qualification, error) {
 	if q.Expires && q.ExpirationDays == 0 {
 		b.logger.LogAttrs(context.Background(), slog.LevelWarn, "Invalid expiration days")
 		return types.Qualification{}, fmt.Errorf("%w: invalid expiration days", ErrBadUpdate)
 	}
-	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting existing qualification to merge in updates")
-	qual, err := b.qualificationProvider.GetQualification(q.ID)
+	err := b.qualificationProvider.UpdateQualification(q)
 	if err != nil {
 		return types.Qualification{}, err
 	}
-	qual = qual.MergeIn(q, forceExpirationUpdate)
-	err = b.qualificationProvider.UpdateQualification(qual)
+	newQual, err := b.qualificationProvider.GetQualification(q.ID)
 	if err != nil {
 		return types.Qualification{}, err
 	}
-	return qual, nil
+	return newQual, nil
 }
 
 func (b Backend) DeleteQualification(id string) error {

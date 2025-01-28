@@ -121,8 +121,7 @@ func (s Server) updateQualification(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	forceExpiration := q.Expires == false
-	qualification, err := s.backend.UpdateQualification(q, forceExpiration)
+	qualification, err := s.backend.UpdateQualification(q)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
