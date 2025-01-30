@@ -11,6 +11,7 @@ CREATE TABLE member(
     supervisor_id string,
     admin integer,
     hash string,
+    disabled integer,
     FOREIGN KEY (supervisor_id) REFERENCES member(id) ON DELETE SET NULL
 );
 
@@ -67,8 +68,9 @@ CREATE TABLE qualification_recurring_requirement(
 
 CREATE TABLE session(
     id string PRIMARY KEY,
-    expiration datetime,
-    user_agent string
+    user_agent string,
+    ip_address string,
+    expiration datetime
 );
 
 CREATE TABLE member_session(
@@ -88,14 +90,18 @@ CREATE TABLE reference(
 
 INSERT INTO versions VALUES(1);`
 
-	insertMemberQuery           = "INSERT INTO member(id, first_name, last_name, rank, user_name, supervisor_id, admin, hash) VALUES($1, $2, $3, $4, $5, $6, $7, $8);"
-	getMemberQuery              = "SELECT * FROM member WHERE id=$1;"
-	getMemberByUsernameQuery    = "SELECT * FROM member where user_name=$1;"
-	getAllMembersQuery          = "SELECT * FROM member;"
-	getSubordinatesQuery        = "SELECT * FROM member WHERE supervisor_id=$1;"
+	insertMemberQuery           = "INSERT INTO member(id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled) VALUES($1, $2, $3, $4, $5, $6, $7, $8, 0);"
+	getMemberQuery              = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled FROM member WHERE id=$1;"
+	getMemberByUsernameQuery    = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled FROM member WHERE user_name=$1;"
+	getAllMembersQuery          = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE disabled != 1;"
+	getDisabledMembersQuery     = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE disabled=1;"
+	getSubordinatesQuery        = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE supervisor_id=$1 AND disabled != 1;"
+	removeSubordinatesQuery     = "UPDATE member SET supervisor_id=null WHERE supervisor_id=$1;"
 	updateMemberQuery           = "UPDATE member SET first_name=$1, last_name=$2, rank=$3, supervisor_id=$4, admin=$5, hash=$6 WHERE ID=$7;"
 	deleteMemberQuery           = "DELETE FROM member WHERE id=$1;"
 	deleteMemberByUsernameQuery = "DELETE FROM member WHERE user_name=$1;"
+	disableMemberQuery          = "UPDATE member SET disabled=1 WHERE id=$1;"
+	enableMemberQuery           = "UPDATE member set disabled=0 WHERE id=$1;"
 
 	insertQualificationQuery                     = "INSERT INTO qualification(id, name, notes, expires, expiration_days) VALUES($1, $2, $3, $4, $5);"
 	getQualificationQuery                        = "SELECT * FROM qualification WHERE id=$1;"
@@ -116,7 +122,7 @@ INSERT INTO versions VALUES(1);`
 
 	addRequirementQuery                  = "INSERT INTO requirement(id, name, notes, days_valid_for, reference_id) VALUES($1, $2, $3, $4, $5);"
 	getRequirementQuery                  = "SELECT * FROM requirement r FULL JOIN reference re ON r.reference_id = re.id WHERE r.id = $1;"
-	getAllRequirementsQuery              = "SELECT * FROM requirement r FULL JOIN reference re ON r.reference_id = re.id;"
+	getAllRequirementsQuery              = "SELECT * FROM requirement r FULL JOIN reference re ON r.reference_id = re.id WHERE r.id IS NOT NULL;"
 	getQualificationsForRequirementQuery = "SELECT qualification_id FROM qualification_initial_requirement  WHERE requirement_id=$1 UNION SELECT qualification_id FROM qualification_recurring_requirement WHERE requirement_id=$1;"
 	updateRequirementQuery               = "UPDATE requirement SET name=$1, notes=$2, days_valid_for=$3, reference_id=$4 WHERE id=$6;"
 	deleteRequirementQuery               = "DELETE FROM requirement WHERE id=$1;"
@@ -127,9 +133,9 @@ INSERT INTO versions VALUES(1);`
 	updateReferenceQuery = "UPDATE reference SET name=$1, volume=$2, paragraph=$3 WHERE id=$4;"
 	deleteReferenceQuery = "DELETE FROM reference WHERE id=$1;"
 
-	insertSessionQuery       = "INSERT INTO session(id, expiration, user_agent) VALUES($1, $2, $3);"
-	insertMemberSessionQuery = "INSERT INTO member_session(member_id, session_id) VALUES($1, $2);"
-	getSessionQuery          = "SELECT * FROM session WHERE id=$1;"
-	deleteSessionQuery       = "DELETE FROM session WHERE id=$1;"
-	getMemberSessionQuery    = "SELECT * FROM member_session WHERE member_id=$1 AND session_id=$2;"
+	insertSessionQuery        = "INSERT INTO session(id, user_agent, ip_address, expiration) VALUES($1, $2, $3, $4);"
+	insertMemberSessionQuery  = "INSERT INTO member_session(member_id, session_id) VALUES($1, $2);"
+	getSessionQuery           = "SELECT id, expiration, user_agent, ip_address FROM session WHERE id=$1;"
+	deleteSessionQuery        = "DELETE FROM session WHERE id=$1;"
+	getMemberFromSessionQuery = "SELECT member_id FROM member_session WHERE session_id=$2;"
 )

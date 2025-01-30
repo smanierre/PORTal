@@ -42,29 +42,9 @@ type Qualification struct {
 	ExpirationDays        int                        `json:"expiration_days"`
 }
 
-func (q Qualification) MergeIn(incoming Qualification, forceUpdateExpiration bool) Qualification {
-	if incoming.Name != "" {
-		q.Name = incoming.Name
-	}
-	if incoming.InitialRequirements != nil {
-		q.InitialRequirements = incoming.InitialRequirements
-	}
-	if incoming.RecurringRequirements != nil {
-		q.RecurringRequirements = incoming.RecurringRequirements
-	}
-	if incoming.Notes != "" {
-		q.Notes = incoming.Notes
-	}
-	if incoming.Expires == false && incoming.ExpirationDays == 0 && forceUpdateExpiration {
-		q.Expires = false
-		q.ExpirationDays = 0
-	} else if incoming.Expires == true {
-		q.Expires = true
-	}
-	if incoming.ExpirationDays != 0 && (q.Expires == true || incoming.Expires == true) {
-		q.ExpirationDays = incoming.ExpirationDays
-	}
-	return q
+func (q Qualification) LogValue() slog.Value {
+	return slog.StringValue(fmt.Sprintf("ID: %s, Name: %s, Notes: %s, Expires: %t, Expiration Days: %d, Initial Requirements: %v, Recurring Requirements: %v",
+		q.ID, q.Name, q.Notes, q.Expires, q.ExpirationDays, q.InitialRequirements, q.RecurringRequirements))
 }
 
 type Requirement struct {
@@ -77,22 +57,6 @@ type Requirement struct {
 
 func (r Requirement) LogValue() slog.Value {
 	return slog.StringValue(fmt.Sprintf("ID: %s Name: %s Notes: %s DaysValidFor: %d", r.ID, r.Name, r.Notes, r.DaysValidFor))
-}
-
-func (r Requirement) MergeIn(incoming Requirement) Requirement {
-	if incoming.Name != "" {
-		r.Name = incoming.Name
-	}
-	if incoming.Notes != "" {
-		r.Notes = incoming.Notes
-	}
-	if incoming.DaysValidFor != 0 {
-		r.DaysValidFor = incoming.DaysValidFor
-	}
-	if incoming.Reference.ID != "" && incoming.Reference.ID != r.Reference.ID {
-		r.Reference = incoming.Reference
-	}
-	return r
 }
 
 type MemberRequirement struct {
@@ -111,19 +75,4 @@ type Reference struct {
 
 func (r Reference) LogValue() slog.Value {
 	return slog.StringValue(fmt.Sprintf("ID: %s, Name: %s, Volume: %d, Paragraph: %s", r.ID, r.Name, r.Volume, r.Paragraph))
-}
-
-func (r Reference) MergeIn(incoming Reference, overrideNoVolume bool) Reference {
-	if incoming.Name != "" {
-		r.Name = incoming.Name
-	}
-	if incoming.Volume == 0 && overrideNoVolume {
-		r.Volume = 0
-	} else if incoming.Volume > 0 {
-		r.Volume = incoming.Volume
-	}
-	if incoming.Paragraph != "" {
-		r.Paragraph = incoming.Paragraph
-	}
-	return r
 }

@@ -25,17 +25,15 @@ func (b Backend) GetRequirement(id string) (types.Requirement, error) {
 }
 
 func (b Backend) GetAllRequirements() ([]types.Requirement, error) {
-	return b.requirementProvider.GetAllRequirements()
+	reqs, err := b.requirementProvider.GetAllRequirements()
+	if err != nil {
+		return nil, err
+	}
+	return reqs, nil
 }
 
 func (b Backend) UpdateRequirement(r types.Requirement) (types.Requirement, error) {
-	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting existing requirement to determine updates")
-	existingReq, err := b.GetRequirement(r.ID)
-	if err != nil {
-		return types.Requirement{}, err
-	}
-	existingReq = existingReq.MergeIn(r)
-	err = b.requirementProvider.UpdateRequirement(existingReq)
+	err := b.requirementProvider.UpdateRequirement(r)
 	if err != nil {
 		return types.Requirement{}, err
 	}

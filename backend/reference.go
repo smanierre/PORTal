@@ -26,18 +26,16 @@ func (b Backend) GetReferences() ([]types.Reference, error) {
 	return b.requirementProvider.GetReferences()
 }
 
-func (b Backend) UpdateReference(r types.Reference, overrideNoVolume bool) (types.Reference, error) {
-	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting reference to determine updates")
-	ref, err := b.GetReference(r.ID)
+func (b Backend) UpdateReference(r types.Reference) (types.Reference, error) {
+	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Updating reference", slog.Any("new_reference", r))
+	if err := b.requirementProvider.UpdateReference(r); err != nil {
+		return types.Reference{}, err
+	}
+	updatedReference, err := b.requirementProvider.GetReference(r.ID)
 	if err != nil {
 		return types.Reference{}, err
 	}
-	ref = ref.MergeIn(r, overrideNoVolume)
-	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Updating reference", slog.Any("new_reference", ref))
-	if err := b.requirementProvider.UpdateReference(ref); err != nil {
-		return types.Reference{}, err
-	}
-	return ref, nil
+	return updatedReference, nil
 }
 
 func (b Backend) DeleteReference(id string) error {

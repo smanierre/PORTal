@@ -24,6 +24,7 @@ type Member struct {
 	ApiMember
 	Password string `json:"password,omitempty"`
 	Hash     string
+	Disabled bool
 }
 
 func (m Member) LogValue() slog.Value {
@@ -34,28 +35,29 @@ func (m Member) ToApiMember() ApiMember {
 	return m.ApiMember
 }
 
-func (m Member) MergeIn(new Member, forceNoSupervisor bool) Member {
-	if new.FirstName != "" {
-		m.FirstName = new.FirstName
+func GetRank(member Member, service string) string {
+	switch service {
+	case "f":
+		return AfRankMap[member.Grade]
+	case "a":
+		return ArmyRankMap[member.Grade]
+	case "m":
+		return MarineRankMap[member.Grade]
+	case "n":
+		return NavyRankMap[member.Grade]
+	default:
+		return ""
 	}
-	if new.LastName != "" {
-		m.LastName = new.LastName
+}
+
+func (m Member) GetPotentialSupervisors(members []Member) []Member {
+	var ps []Member
+	for _, member := range members {
+		if m.Grade <= member.Grade && member.ID != m.ID {
+			ps = append(ps, member)
+		}
 	}
-	if new.Grade != "" {
-		m.Grade = new.Grade
-	}
-	if new.SupervisorID == "" && forceNoSupervisor {
-		m.SupervisorID = ""
-	} else if new.SupervisorID != "" {
-		m.SupervisorID = new.SupervisorID
-	}
-	if new.Username != "" {
-		m.Username = new.Username
-	}
-	if new.Password != "" {
-		m.Password = new.Password
-	}
-	return m
+	return ps
 }
 
 type ApiMember struct {
@@ -71,5 +73,6 @@ type ApiMember struct {
 type Session struct {
 	SessionID string
 	UserAgent string
+	IpAddress string
 	Expires   time.Time
 }

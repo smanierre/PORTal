@@ -1,0 +1,86 @@
+@import "button.css";
+@import "login.css";
+@import "admin.css";
+@import "searchable-list.css";
+@import "dropdown.css";
+@import "toast.css";
+
+:root {
+    --background: 229 50% 28%;
+    --background-dark: 229 50% 20%;
+    --background-light: 229 50% 42%;
+    --foreground: 0 0% 100%;
+    --accent: 0 0% 100%;
+    --primary: 0 0 100%;
+    --primary-dark: 0 0 90%;
+    --error-dark: 351 100% 38%;
+    --error: 351 100% 44%;
+    --success: 120 67% 45%;
+    --nav-height: 40px;
+}
+
+@font-face {
+    font-family: "Geist";
+    src: url("Geist-Regular.woff2") format("woff2");
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Geist";
+    src: url("Geist-Bold.woff2") format("woff2");
+    font-weight: bold;
+    font-style: normal;
+}
+
+body {
+    font-family: "Geist";
+}
+
+.layout {
+    height: 100vh;
+    width: 100vw;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: var(--nav-height) 1fr;
+}
+
+.nav {
+    position: sticky;
+    display: flex;
+    align-items: center;
+    width: 100vw;
+    top: 0;
+    background-color: hsl(var(--background))
+}
+
+.nav-item {
+    display: flex;
+    width: fit-content;
+    color: hsl(var(--primary));
+    cursor: pointer;
+    height: 100%;
+    padding: 0 1rem;
+    align-items: center;
+
+    &:hover {
+        background-color: hsl(var(--background-dark));
+    }
+}
+
+.nav-right-items {
+    display: flex;
+    margin-left: auto;
+    width: fit-content;
+    height: 100%
+}
+
+.nav-display-name {
+    display: flex;
+    align-items: center;
+    color: hsl(var(--primary));
+    margin-right: 1rem;
+}
+
+
+

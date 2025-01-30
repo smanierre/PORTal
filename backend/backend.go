@@ -18,21 +18,27 @@ const (
 const MinimumPwLength = 8
 
 type Backend struct {
-	memberProvider        MemberProvider
-	qualificationProvider QualificationProvider
-	requirementProvider   RequirementProvider
-	clock                 Clock
-	logger                *slog.Logger
-	config                Config
+	memberProvider         MemberProvider
+	qualificationProvider  QualificationProvider
+	requirementProvider    RequirementProvider
+	authenticationProvider AuthenticationProvider
+	clock                  Clock
+	logger                 *slog.Logger
+	config                 Config
 }
 
 type MemberProvider interface {
 	AddMember(m types.Member) error
 	GetMember(identifier string, method ProviderMethod) (types.Member, error)
+	GetMemberFromSession(sessionID string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
+	GetDisabledMembers() ([]types.Member, error)
 	GetSubordinates(memberID string) ([]types.Member, error)
+	RemoveSubordinates(memberID string) error
 	UpdateMember(member types.Member) error
 	DeleteMember(identifier string, method ProviderMethod) error
+	DisableMember(id string) error
+	EnableMember(id string) error
 	AssignMemberQualification(memberID, qualificationID string) error
 	GetMemberQualification(memberID, qualificationID string) (types.Qualification, error)
 	GetMemberQualifications(memberID string) ([]types.Qualification, error)
@@ -61,13 +67,20 @@ type RequirementProvider interface {
 	DeleteReference(id string) error
 }
 
+type AuthenticationProvider interface {
+	CreateSession(memberID, sessionID, userAgent, ipAddress string, expiration time.Time) error
+	GetSession(sessionID string) (types.Session, error)
+	DeleteSession(sessionID string) error
+}
+
 type Clock interface {
 	Now() time.Time
 }
 
 type Config struct {
-	DbFile     string `yaml:"DbFile"`
-	BcryptCost int    `yaml:"BcryptCost"`
+	DbFile         string `yaml:"DbFile"`
+	BcryptCost     int    `yaml:"BcryptCost"`
+	SessionTimeout int    `yaml:"SessionTimeout"`
 }
 
 type realTime struct{}
@@ -77,18 +90,19 @@ func (r realTime) Now() time.Time {
 }
 
 func New(logger *slog.Logger, memberProvider MemberProvider, qualificationProvider QualificationProvider,
-	requirementProvider RequirementProvider, config Config, clock Clock) Backend {
+	requirementProvider RequirementProvider, authenticationProvider AuthenticationProvider, config Config, clock Clock) Backend {
 	if clock == nil {
 		clock = realTime{}
 	}
 
 	logger.LogAttrs(context.Background(), slog.LevelInfo, fmt.Sprintf("Using bcrypt cost: %d", config.BcryptCost))
 	return Backend{
-		memberProvider:        memberProvider,
-		qualificationProvider: qualificationProvider,
-		requirementProvider:   requirementProvider,
-		clock:                 clock,
-		logger:                logger,
-		config:                config,
+		memberProvider:         memberProvider,
+		qualificationProvider:  qualificationProvider,
+		requirementProvider:    requirementProvider,
+		authenticationProvider: authenticationProvider,
+		clock:                  clock,
+		logger:                 logger,
+		config:                 config,
 	}
 }

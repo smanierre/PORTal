@@ -43,7 +43,7 @@ func (p Provider) GetReferences() ([]types.Reference, error) {
 		p.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting references from database", slog.String("error", err.Error()))
 		return nil, err
 	}
-	var refs []types.Reference
+	var refs types.JSONSafeSlice[types.Reference]
 	var ref types.Reference
 	for rows.Next() {
 		err = rows.Scan(&ref.ID, &ref.Name, &ref.Volume, &ref.Paragraph)

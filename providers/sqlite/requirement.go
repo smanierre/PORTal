@@ -49,7 +49,7 @@ func (p Provider) GetAllRequirements() ([]types.Requirement, error) {
 		p.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting all requirements from database: %s", slog.String("error", err.Error()))
 		return nil, err
 	}
-	var reqs []types.Requirement
+	var reqs types.JSONSafeSlice[types.Requirement]
 	var r types.Requirement
 	var unUsedRefId string
 	for rows.Next() {
