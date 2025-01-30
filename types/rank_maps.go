@@ -1,6 +1,28 @@
 package types
 
-func GetRanks(service string) map[Grade]string {
+type RankMap map[Grade]string
+
+type RankTuple struct {
+	Grade Grade
+	Rank  string
+}
+
+func (r RankMap) SortedRanks() []RankTuple {
+	// Not the prettiest, but it won't need to change and isn't worth over complicating
+	return []RankTuple{
+		{Grade: E1, Rank: r[E1]},
+		{Grade: E2, Rank: r[E2]},
+		{Grade: E3, Rank: r[E3]},
+		{Grade: E4, Rank: r[E4]},
+		{Grade: E5, Rank: r[E5]},
+		{Grade: E6, Rank: r[E6]},
+		{Grade: E7, Rank: r[E7]},
+		{Grade: E8, Rank: r[E8]},
+		{Grade: E9, Rank: r[E9]},
+	}
+}
+
+func GetRanks(service string) RankMap {
 	switch service {
 	case "f":
 		return AfRankMap
@@ -14,7 +36,7 @@ func GetRanks(service string) map[Grade]string {
 	return map[Grade]string{}
 }
 
-var AfRankMap = map[Grade]string{
+var AfRankMap RankMap = map[Grade]string{
 	E1: "AB",
 	E2: "Amn",
 	E3: "A1C",
@@ -26,7 +48,7 @@ var AfRankMap = map[Grade]string{
 	E9: "CMSgt",
 }
 
-var ArmyRankMap = map[Grade]string{
+var ArmyRankMap RankMap = map[Grade]string{
 	E1: "PVT",
 	E2: "PV2",
 	E3: "PFC",
@@ -38,7 +60,7 @@ var ArmyRankMap = map[Grade]string{
 	E9: "SGM",
 }
 
-var MarineRankMap = map[Grade]string{
+var MarineRankMap RankMap = map[Grade]string{
 	E1: "PVT",
 	E2: "PFC",
 	E3: "LCpl",
@@ -50,7 +72,7 @@ var MarineRankMap = map[Grade]string{
 	E9: "MgySgt",
 }
 
-var NavyRankMap = map[Grade]string{
+var NavyRankMap RankMap = map[Grade]string{
 	E1: "SR",
 	E2: "SA",
 	E3: "SN",

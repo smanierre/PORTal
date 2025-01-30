@@ -215,21 +215,12 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 			LastName:     r.FormValue("last_name"),
 			Grade:        types.Grade(r.FormValue("grade")),
 			SupervisorID: r.FormValue("supervisor"),
+			Admin:        r.FormValue("admin") == "on",
 		},
 		Password: r.FormValue("password"),
 		//TODO: Handle thisDisabled: ,
 	}
-	var forceNoAdmin bool
-	if r.FormValue("admin") == "on" {
-		newMember.Admin = true
-	} else {
-		forceNoAdmin = true
-	}
-	var forceNoSupervisor bool
-	if newMember.SupervisorID == "" {
-		forceNoSupervisor = true
-	}
-	updatedMember, err := s.backend.UpdateMember(newMember, forceNoSupervisor, forceNoAdmin)
+	updatedMember, err := s.backend.UpdateMember(newMember)
 	if err != nil {
 		err = components.Toast("Unable to update member", true).Render(r.Context(), w)
 		if err != nil {
@@ -265,7 +256,21 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 		_ = errorpages.GenericISE().Render(r.Context(), w)
 	}
 
-	subordinates, err := s.backend.GetSubordinates(updatedMember.ID)
+	loggedInMember, err := getMemberFromContext(r.Context())
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error getting member from context", slog.String("error", err.Error()))
+		err = components.Toast("Unable to update page, please refresh.", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
+		}
+		return
+	}
+	// Check if the logged in member was updated, if so, use the updated member for the nav update
+	if loggedInMember.ID == updatedMember.ID {
+		loggedInMember = updatedMember
+	}
+	
+	subordinates, err := s.backend.GetSubordinates(loggedInMember.ID)
 	var subordinateLength int
 	if err == nil {
 		subordinateLength = len(subordinates)
@@ -274,9 +279,18 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 	err = templates.Nav(templates.NavData{
 		Show:         true,
 		OobSwap:      true,
-		Member:       updatedMember,
+		Member:       loggedInMember,
 		Subordinates: subordinateLength > 0,
 	}).Render(r.Context(), w)
+
+	if err != nil {
+		_ = components.Toast("Error updating page, please refresh", true).Render(r.Context(), w)
+		return
+	}
+	err = components.Toast("Successfully updated member!", false).Render(r.Context(), w)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering member updated toast", slog.String("error", err.Error()))
+	}
 }
 
 func (s Server) AdminMemberDisableHandler(w http.ResponseWriter, r *http.Request) {

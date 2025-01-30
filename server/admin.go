@@ -5,6 +5,7 @@ import (
 	"PORTal/templates/components"
 	"PORTal/templates/pages/admin"
 	"PORTal/templates/pages/errorpages"
+	"PORTal/types"
 	"log/slog"
 	"net/http"
 )
@@ -26,7 +27,7 @@ func (s Server) AdminGetHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	membersPane := admin.MembersPane(admin.MembersPaneData{
 		Members:          members,
-		SelectedMember:   member,
+		SelectedMember:   types.Member{},
 		MemberEditorData: admin.MemberEditorData{},
 		OobSwap:          false,
 		DisabledMembers:  false,

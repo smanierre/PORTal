@@ -60,35 +60,6 @@ func (m Member) GetPotentialSupervisors(members []Member) []Member {
 	return ps
 }
 
-func (m Member) MergeIn(new Member, forceNoSupervisor, forceNoAdmin bool) Member {
-	if new.FirstName != "" {
-		m.FirstName = new.FirstName
-	}
-	if new.LastName != "" {
-		m.LastName = new.LastName
-	}
-	if new.Grade != "" {
-		m.Grade = new.Grade
-	}
-	if new.SupervisorID == "" && forceNoSupervisor {
-		m.SupervisorID = ""
-	} else if new.SupervisorID != "" {
-		m.SupervisorID = new.SupervisorID
-	}
-	if new.Username != "" {
-		m.Username = new.Username
-	}
-	if new.Password != "" {
-		m.Password = new.Password
-	}
-	if !new.Admin && forceNoAdmin {
-		m.Admin = false
-	} else if new.Admin {
-		m.Admin = true
-	}
-	return m
-}
-
 type ApiMember struct {
 	ID           string `json:"id"`
 	FirstName    string `json:"first_name"`

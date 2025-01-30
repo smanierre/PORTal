@@ -139,7 +139,76 @@ func (s Server) AdminRequirementEditorGetHandler(w http.ResponseWriter, r *http.
 }
 
 func (s Server) AdminRequirementUpdateHandler(w http.ResponseWriter, r *http.Request) {
-	
+	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Updating requirement")
+	id := r.PathValue("id")
+	err := r.ParseForm()
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error parsing form", slog.String("error", err.Error()))
+		_ = errorpages.GenericISE().Render(r.Context(), w) // TODO: Probably make this cleaner?
+	}
+	daysValidFor, err := strconv.Atoi(r.Form.Get("days_valid_for"))
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Invalid value parsed for days valid for", slog.String("error", err.Error()))
+		err = components.Toast("Invalid value provided for Expiration Days", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
+		}
+		return
+	}
+	req := types.Requirement{
+		ID:           id,
+		Name:         r.Form.Get("name"),
+		Reference:    types.Reference{ID: r.Form.Get("reference")},
+		Notes:        r.Form.Get("notes"),
+		DaysValidFor: daysValidFor,
+	}
+
+	updatedReq, err := s.backend.UpdateRequirement(req)
+	if err != nil {
+		err = components.Toast("Unable to update requirement", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
+		}
+		return
+	}
+
+	requirements, err := s.backend.GetAllRequirements()
+	if err != nil {
+		err = components.Toast("Unable to update page, please refresh.", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
+		}
+		return
+	}
+
+	references, err := s.backend.GetReferences()
+	if err != nil {
+		err = components.Toast("Unable to update page, please refresh.", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
+		}
+		return
+	}
+
+	err = admin.RequirementsPane(admin.RequirementPaneData{
+		SelectedRequirement: updatedReq,
+		Requirements:        requirements,
+		OobSwap:             false,
+		RequirementEditorData: admin.RequirementEditorData{
+			SelectedRequirement: updatedReq,
+			References:          references,
+			NewRequirement:      false,
+		},
+	}).Render(r.Context(), w)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering requirements pane", slog.String("error", err.Error()))
+		_ = errorpages.GenericISE().Render(r.Context(), w)
+		return
+	}
+	err = components.Toast("Successfully updated requirement", false).Render(r.Context(), w)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering requirement updated toast", slog.String("error", err.Error()))
+	}
 }
 
 func (s Server) AdminNewRequirementHandler(w http.ResponseWriter, r *http.Request) {

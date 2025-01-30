@@ -17,7 +17,7 @@ type MembersPaneData struct {
 
 type MemberEditorData struct {
 	SelectedMember     types.Member
-	Ranks              map[types.Grade]string
+	Ranks              types.RankMap
 	SupervisorListData SupervisorListData
 	NewMember          bool
 }
@@ -80,13 +80,13 @@ templ MemberEditor(data MemberEditorData) {
             <label>ID: <input name="id" class="editor-input" disabled value={data.SelectedMember.ID} /></label>
             <label>Rank:
                 <select name="grade" @change={fmt.Sprintf("(e) => gradeOnChange(e, '%s')", data.SelectedMember.ID)}>
-                    for grade, rank := range data.Ranks {
+                    for _, tuple := range data.Ranks.SortedRanks() {
                         <option
-                        if grade == data.SelectedMember.Grade {
+                        if tuple.Grade == data.SelectedMember.Grade {
                             selected
                         }
-                        value={string(grade)}>
-                            {rank}
+                        value={string(tuple.Grade)}>
+                            {tuple.Rank}
                         </option>
                     }
                 </select>

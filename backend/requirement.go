@@ -33,13 +33,7 @@ func (b Backend) GetAllRequirements() ([]types.Requirement, error) {
 }
 
 func (b Backend) UpdateRequirement(r types.Requirement) (types.Requirement, error) {
-	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting existing requirement to determine updates")
-	existingReq, err := b.GetRequirement(r.ID)
-	if err != nil {
-		return types.Requirement{}, err
-	}
-	existingReq = existingReq.MergeIn(r)
-	err = b.requirementProvider.UpdateRequirement(existingReq)
+	err := b.requirementProvider.UpdateRequirement(r)
 	if err != nil {
 		return types.Requirement{}, err
 	}

@@ -59,22 +59,6 @@ func (r Requirement) LogValue() slog.Value {
 	return slog.StringValue(fmt.Sprintf("ID: %s Name: %s Notes: %s DaysValidFor: %d", r.ID, r.Name, r.Notes, r.DaysValidFor))
 }
 
-func (r Requirement) MergeIn(incoming Requirement) Requirement {
-	if incoming.Name != "" {
-		r.Name = incoming.Name
-	}
-	if incoming.Notes != "" {
-		r.Notes = incoming.Notes
-	}
-	if incoming.DaysValidFor != 0 {
-		r.DaysValidFor = incoming.DaysValidFor
-	}
-	if incoming.Reference.ID != "" && incoming.Reference.ID != r.Reference.ID {
-		r.Reference = incoming.Reference
-	}
-	return r
-}
-
 type MemberRequirement struct {
 	MemberID      string `json:"member_id"`
 	Requirement   `json:"requirement"`
@@ -91,19 +75,4 @@ type Reference struct {
 
 func (r Reference) LogValue() slog.Value {
 	return slog.StringValue(fmt.Sprintf("ID: %s, Name: %s, Volume: %d, Paragraph: %s", r.ID, r.Name, r.Volume, r.Paragraph))
-}
-
-func (r Reference) MergeIn(incoming Reference, overrideNoVolume bool) Reference {
-	if incoming.Name != "" {
-		r.Name = incoming.Name
-	}
-	if incoming.Volume == 0 && overrideNoVolume {
-		r.Volume = 0
-	} else if incoming.Volume > 0 {
-		r.Volume = incoming.Volume
-	}
-	if incoming.Paragraph != "" {
-		r.Paragraph = incoming.Paragraph
-	}
-	return r
 }

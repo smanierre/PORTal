@@ -148,7 +148,7 @@ func (s Server) AdminReferenceUpdateHandler(w http.ResponseWriter, r *http.Reque
 		Volume:    volume,
 		Paragraph: r.FormValue("paragraph"),
 	}
-	updatedReference, err := s.backend.UpdateReference(newReference, false)
+	updatedReference, err := s.backend.UpdateReference(newReference)
 	if err != nil {
 		err = components.Toast("Unable to update reference", true).Render(r.Context(), w)
 		if err != nil {
@@ -176,6 +176,11 @@ func (s Server) AdminReferenceUpdateHandler(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin references fragment", slog.String("error", err.Error()))
 		_ = errorpages.GenericISE().Render(r.Context(), w)
+		return
+	}
+	err = components.Toast("Reference updated successfully!", false).Render(r.Context(), w)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering reference update success toast", slog.String("error", err.Error()))
 	}
 }
 

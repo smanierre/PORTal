@@ -107,24 +107,16 @@ func (b Backend) GetSubordinates(memberID string) ([]types.Member, error) {
 	return b.memberProvider.GetSubordinates(memberID)
 }
 
-func (b Backend) UpdateMember(m types.Member, forceNoSupervisor, forceNoAdmin bool) (types.Member, error) {
+func (b Backend) UpdateMember(m types.Member) (types.Member, error) {
 	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Updating member")
-	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting previous member to determine updates")
-	previousMember, err := b.memberProvider.GetMember(m.ID, ById)
-	if err != nil {
-		b.logger.LogAttrs(context.Background(), slog.LevelError, "Unable to get previous member to compare updates")
-		return types.Member{}, err
-	}
-	b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Merging members to determine updates")
-	updateMember := previousMember.MergeIn(m, forceNoSupervisor, forceNoAdmin)
-	if updateMember.Password != "" {
+	if m.Password != "" {
 		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "New password provided, verifying it meets requirements")
 		if len(m.Password) < MinimumPwLength {
 			b.logger.LogAttrs(context.Background(), slog.LevelInfo, fmt.Sprintf("Password length %d does not meet minimum length of %d", len(m.Password), MinimumPwLength))
 			return types.Member{}, ErrWeakPassword
 		}
 		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Hashing new password")
-		hash, err := bcrypt.GenerateFromPassword([]byte(updateMember.Password), b.config.BcryptCost)
+		hash, err := bcrypt.GenerateFromPassword([]byte(m.Password), b.config.BcryptCost)
 		if err != nil {
 			if errors.Is(err, bcrypt.ErrPasswordTooLong) {
 				b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Provided password is too long", slog.Int("length", len(m.Password)))
@@ -135,14 +127,18 @@ func (b Backend) UpdateMember(m types.Member, forceNoSupervisor, forceNoAdmin bo
 				return types.Member{}, err
 			}
 		}
-		updateMember.Hash = string(hash)
-		updateMember.Password = ""
+		m.Hash = string(hash)
+		m.Password = ""
 	}
-	err = b.memberProvider.UpdateMember(updateMember)
+	err := b.memberProvider.UpdateMember(m)
 	if err != nil {
 		return types.Member{}, err
 	}
-	return updateMember, nil
+	updatedMember, err := b.memberProvider.GetMember(m.ID, ById)
+	if err != nil {
+		return types.Member{}, err
+	}
+	return updatedMember, nil
 }
 
 func (b Backend) DeleteMember(identifier string) error {

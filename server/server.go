@@ -27,7 +27,7 @@ type Backend interface {
 	GetAllMembers() ([]types.Member, error)
 	GetDisabledMembers() ([]types.Member, error)
 	GetSubordinates(memberID string) ([]types.Member, error)
-	UpdateMember(m types.Member, forceNoSupervisor, forceNoAdmin bool) (types.Member, error)
+	UpdateMember(m types.Member) (types.Member, error)
 	DeleteMember(id string) error
 	DisableMember(id string) error
 	EnableMember(id string) error
@@ -52,7 +52,7 @@ type Backend interface {
 	AddReference(r types.Reference) (types.Reference, error)
 	GetReference(id string) (types.Reference, error)
 	GetReferences() ([]types.Reference, error)
-	UpdateReference(reference types.Reference, overrideNoVolume bool) (types.Reference, error)
+	UpdateReference(reference types.Reference) (types.Reference, error)
 	DeleteReference(id string) error
 
 	Login(username, password string) (types.Member, error)

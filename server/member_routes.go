@@ -162,12 +162,7 @@ func (s Server) updateMember(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	forceNoSupervisor := false
-	if m.SupervisorID == "" {
-		forceNoSupervisor = true
-		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Supervisor is blank in request, forcing removal")
-	}
-	member, err := s.backend.UpdateMember(m, forceNoSupervisor, false)
+	member, err := s.backend.UpdateMember(m)
 	if errors.Is(err, backend.ErrMemberNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
