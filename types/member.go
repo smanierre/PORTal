@@ -21,7 +21,13 @@ const (
 )
 
 type Member struct {
-	ApiMember
+	ID           string `json:"id"`
+	FirstName    string `json:"first_name"`
+	LastName     string `json:"last_name"`
+	Username     string `json:"username"`
+	Grade        Grade  `json:"grade"`
+	SupervisorID string `json:"supervisor_id"`
+	Admin        bool   `json:"admin"`
 	Password string `json:"password,omitempty"`
 	Hash     string
 	Disabled bool
@@ -29,10 +35,6 @@ type Member struct {
 
 func (m Member) LogValue() slog.Value {
 	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s Admin: %t", m.ID, m.Grade, m.FirstName, m.LastName, m.Username, m.SupervisorID, m.Admin))
-}
-
-func (m Member) ToApiMember() ApiMember {
-	return m.ApiMember
 }
 
 func GetRank(member Member, service string) string {
@@ -58,16 +60,6 @@ func (m Member) GetPotentialSupervisors(members []Member) []Member {
 		}
 	}
 	return ps
-}
-
-type ApiMember struct {
-	ID           string `json:"id"`
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	Username     string `json:"username"`
-	Grade        Grade  `json:"grade"`
-	SupervisorID string `json:"supervisor_id"`
-	Admin        bool   `json:"admin"`
 }
 
 type Session struct {

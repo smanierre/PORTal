@@ -200,7 +200,7 @@ func (s Server) AdminMemberEditorGetHandler(w http.ResponseWriter, r *http.Reque
 		_ = errorpages.GenericISE().Render(r.Context(), w)
 	}
 }
-
+// fix enabling/disabling member rendering
 func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if !checkHTMXRequest(r) {
 		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Attempted member update without HTMX, redirecting to dashboard")
@@ -209,14 +209,12 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 	}
 	memberID := r.PathValue("id")
 	newMember := types.Member{
-		ApiMember: types.ApiMember{
 			ID:           memberID,
 			FirstName:    r.FormValue("first_name"),
 			LastName:     r.FormValue("last_name"),
 			Grade:        types.Grade(r.FormValue("grade")),
 			SupervisorID: r.FormValue("supervisor"),
 			Admin:        r.FormValue("admin") == "on",
-		},
 		Password: r.FormValue("password"),
 		//TODO: Handle thisDisabled: ,
 	}
