@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func (s Server) AdminQualificationsPaneGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +161,7 @@ func (s Server) AdminQualificationUpdateHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	expirationDays, err := strconv.Atoi(r.Form.Get("expiration_days"))
+	expirationDays, err := strconv.Atoi(r.Form.Get("expiration_interval"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error parsing expiration date", slog.String("error", err.Error()))
@@ -190,7 +191,7 @@ func (s Server) AdminQualificationUpdateHandler(w http.ResponseWriter, r *http.R
 		RecurringRequirements: newRecurringRequirements,
 		Notes:                 r.Form.Get("notes"),
 		Expires:               r.Form.Get("expires") == "on",
-		ExpirationDays:        expirationDays,
+		ExpirationInterval:    time.Duration(expirationDays*24) * time.Hour,
 	}
 	updatedQualification, err := s.backend.UpdateQualification(newQualification)
 	if err != nil {
@@ -312,7 +313,7 @@ func (s Server) AdminQualificationAddHandler(w http.ResponseWriter, r *http.Requ
 	qual.Name = r.Form.Get("name")
 	qual.Notes = r.Form.Get("notes")
 	qual.Expires = r.Form.Get("expires") == "on"
-	qual.ExpirationDays, err = strconv.Atoi(r.Form.Get("expiration_days"))
+	expirationDays, err := strconv.Atoi(r.Form.Get("expiration_interval"))
 	if err != nil {
 		err = components.Toast("Unable to parse expiration days field, it must be a number.", true).Render(r.Context(), w)
 		if err != nil {
@@ -320,6 +321,8 @@ func (s Server) AdminQualificationAddHandler(w http.ResponseWriter, r *http.Requ
 		}
 		return
 	}
+	qual.ExpirationInterval = time.Duration(expirationDays) * 24 * time.Hour
+
 	for _, id := range r.Form["initial_requirements"] {
 		qual.InitialRequirements = append(qual.InitialRequirements, types.Requirement{ID: id})
 	}

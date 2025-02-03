@@ -156,8 +156,8 @@ func validateQualification(q types.Qualification) error {
 	if q.Name == "" {
 		errs = append(errs, "Name")
 	}
-	if q.Expires && q.ExpirationDays == 0 {
-		errs = append(errs, "ExpirationDays")
+	if q.Expires && q.ExpirationInterval == 0 {
+		errs = append(errs, "ExpirationInterval")
 	}
 	if len(errs) > 0 {
 		return fmt.Errorf("missing required values: %s", errs)

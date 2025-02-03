@@ -127,7 +127,7 @@ func TestAddAndGetQualification(t *testing.T) {
 
 	for _, tt := range tc {
 		t.Run(tt.Name, func(t *testing.T) {
-			qual, err := b.AddQualification(types.Qualification{Name: tt.Name, Notes: tt.Notes, Expires: tt.Expires, ExpirationDays: tt.ExpirationDays,
+			qual, err := b.AddQualification(types.Qualification{Name: tt.Name, Notes: tt.Notes, Expires: tt.Expires, ExpirationInterval: tt.ExpirationDays,
 				InitialRequirements: tt.InitialReqs, RecurringRequirements: tt.RecurringReqs})
 			if tt.ExpectedError == nil && err != nil {
 				t.Errorf("Expected no error but got: %s", err.Error())
@@ -316,7 +316,7 @@ func TestUpdateQualification(t *testing.T) {
 				RecurringRequirements: []types.Requirement{newReq2},
 				Notes:                 "New notes",
 				Expires:               true,
-				ExpirationDays:        1000,
+				ExpirationInterval:    1000,
 			},
 			expectedResult: types.Qualification{
 				ID:                    original.ID,
@@ -325,7 +325,7 @@ func TestUpdateQualification(t *testing.T) {
 				RecurringRequirements: []types.Requirement{newReq2},
 				Notes:                 "New notes",
 				Expires:               true,
-				ExpirationDays:        1000,
+				ExpirationInterval:    1000,
 			},
 			expectedError: nil,
 		},
@@ -338,7 +338,7 @@ func TestUpdateQualification(t *testing.T) {
 				RecurringRequirements: []types.Requirement{newReq2, usedReq2},
 				Notes:                 "New notes 2",
 				Expires:               false,
-				ExpirationDays:        0,
+				ExpirationInterval:    0,
 			},
 			forceExpirationUpdate: true,
 			expectedResult: types.Qualification{
@@ -348,7 +348,7 @@ func TestUpdateQualification(t *testing.T) {
 				RecurringRequirements: []types.Requirement{newReq2, usedReq2},
 				Notes:                 "New notes 2",
 				Expires:               false,
-				ExpirationDays:        0,
+				ExpirationInterval:    0,
 			},
 			expectedError: nil,
 		},
@@ -366,7 +366,7 @@ func TestUpdateQualification(t *testing.T) {
 				RecurringRequirements: nil,
 				Notes:                 "New notes 2",
 				Expires:               false,
-				ExpirationDays:        0,
+				ExpirationInterval:    0,
 			},
 			expectedError: nil,
 		},
@@ -383,7 +383,7 @@ func TestUpdateQualification(t *testing.T) {
 				RecurringRequirements: nil,
 				Notes:                 "New Notes 4",
 				Expires:               false,
-				ExpirationDays:        0,
+				ExpirationInterval:    0,
 			},
 			expectedError: nil,
 		},

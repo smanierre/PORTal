@@ -1,12 +1,12 @@
 package admin
 
 import (
+    "PORTal/templates"
 	"PORTal/templates/components"
 	"PORTal/templates/components/webcomponents"
 	"PORTal/types"
 	"fmt"
 	"slices"
-	"strconv"
 )
 
 type QualificationPaneData struct {
@@ -77,6 +77,7 @@ templ QualificationEditor(data QualificationEditorData) {
 		<label>Notes: <textarea name="notes">{ data.SelectedQualification.Notes }</textarea></label>
 		<label>
 			Expires: <input
+			@click="handleExpiresClick"
 	name="expires"
 	type="checkbox"
 	if data.SelectedQualification.Expires {
@@ -84,9 +85,12 @@ templ QualificationEditor(data QualificationEditorData) {
 	}
 />
 		</label>
-		// if data.SelectedQualification.Expires {
-		<label>Expiration Days: <input type="number" name="expiration_days" value={ strconv.Itoa(data.SelectedQualification.ExpirationDays) }/> </label>
-		//}
+
+		<label x-ref="expires"
+		if !data.SelectedQualification.Expires {
+		    hidden
+		}
+		>Expiration Interval: <input type="number" name="expiration_interval" value={ templates.DaysFromDuration(data.SelectedQualification.ExpirationInterval)}/></label>
 		<label>
 			Initial Requirements:
 			@webcomponents.MultiSelect("initial_requirements") {

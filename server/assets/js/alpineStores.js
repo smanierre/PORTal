@@ -85,6 +85,14 @@ document.addEventListener("alpine:init", () => {
         }
     }));
 
-    Alpine.data("adminQualificationEditor", () => ({}));
+    Alpine.data("adminQualificationEditor", () => ({
+        handleExpiresClick(e) {
+            if(e.target.checked) {
+                this.$refs.expires.hidden = false;
+            } else {
+                this.$refs.expires.hidden = true;
+            }
+        }
+    }));
 })
 

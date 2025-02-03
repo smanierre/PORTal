@@ -39,8 +39,8 @@ func CheckQualificationForMissingArgs(q types.Qualification) error {
 	if q.Name == "" {
 		missing = append(missing, "Name")
 	}
-	if q.Expires && q.ExpirationDays == 0 {
-		missing = append(missing, "ExpirationDays")
+	if q.Expires && q.ExpirationInterval == 0 {
+		missing = append(missing, "ExpirationInterval")
 	}
 	if len(missing) > 0 {
 		return fmt.Errorf("%w: %s", ErrMissingArgs, missing)
@@ -56,25 +56,8 @@ func CheckRequirementForMissingArgs(r types.Requirement) error {
 	if r.DaysValidFor == 0 {
 		errors = append(errors, "DaysValidFor")
 	}
-	if r.Reference.ID == "" {
+	if r.Reference == "" {
 		errors = append(errors, "ReferenceID")
-	}
-	if len(errors) > 0 {
-		return fmt.Errorf("%w: %s", ErrMissingArgs, errors)
-	}
-	return nil
-}
-
-func CheckReferenceForMissingArgs(r types.Reference) error {
-	var errors []string
-	if r.ID == "" {
-		errors = append(errors, "ID")
-	}
-	if r.Name == "" {
-		errors = append(errors, "Name")
-	}
-	if r.Paragraph == "" {
-		errors = append(errors, "Paragraph")
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%w: %s", ErrMissingArgs, errors)

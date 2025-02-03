@@ -17,8 +17,8 @@ func (b Backend) AddQualification(q types.Qualification) (types.Qualification, e
 		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Missing required arguments", slog.String("error", err.Error()))
 		return types.Qualification{}, err
 	}
-	if q.Expires && q.ExpirationDays < 1 {
-		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Provided expiration days is invalid", slog.Int("days", q.ExpirationDays))
+	if q.Expires && q.ExpirationInterval < 1 {
+		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Provided expiration days is invalid", slog.Duration("days", q.ExpirationInterval))
 		return types.Qualification{}, ErrInvalidQualExpiration
 	}
 	return q, b.qualificationProvider.AddQualification(q)
@@ -39,9 +39,12 @@ func (b Backend) GetAllQualifications() ([]types.Qualification, error) {
 }
 
 func (b Backend) UpdateQualification(q types.Qualification) (types.Qualification, error) {
-	if q.Expires && q.ExpirationDays == 0 {
+	if q.Expires && q.ExpirationInterval == 0 {
 		b.logger.LogAttrs(context.Background(), slog.LevelWarn, "Invalid expiration days")
 		return types.Qualification{}, fmt.Errorf("%w: invalid expiration days", ErrBadUpdate)
+	}
+	if q.Expires {
+		q.ExpirationInterval = 0
 	}
 	err := b.qualificationProvider.UpdateQualification(q)
 	if err != nil {
