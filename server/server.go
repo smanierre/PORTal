@@ -49,12 +49,6 @@ type Backend interface {
 	UpdateRequirement(r types.Requirement) (types.Requirement, error)
 	DeleteRequirement(id string) error
 
-	AddReference(r types.Reference) (types.Reference, error)
-	GetReference(id string) (types.Reference, error)
-	GetReferences() ([]types.Reference, error)
-	UpdateReference(reference types.Reference) (types.Reference, error)
-	DeleteReference(id string) error
-
 	Login(username, password string) (types.Member, error)
 	CreateSession(memberID, userAgent, ipAddress string) (string, time.Time)
 	ValidateSession(sessionID, userAgent, ipAddress string) (types.Member, error)
@@ -126,13 +120,6 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("POST /admin/requirements/{id}", http.HandlerFunc(s.AdminRequirementUpdateHandler))
 	s.mux.Handle("GET /admin/requirements/add", http.HandlerFunc(s.AdminNewRequirementHandler))
 	s.mux.Handle("POST /admin/requirements/add", http.HandlerFunc(s.AdminRequirementAddHandler))
-
-	// Admin Reference Routes
-	s.mux.Handle("GET /admin/references", http.HandlerFunc(s.AdminReferenceGetHandler))
-	s.mux.Handle("GET /admin/references/{id}", http.HandlerFunc(s.AdminReferenceEditorGetHandler))
-	s.mux.Handle("POST /admin/references/{id}", http.HandlerFunc(s.AdminReferenceUpdateHandler))
-	s.mux.Handle("GET /admin/references/add", http.HandlerFunc(s.AdminNewReferenceHandler))
-	s.mux.Handle("POST /admin/references/add", http.HandlerFunc(s.AdminReferenceAddHandler))
 
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	return s

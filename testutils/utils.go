@@ -50,7 +50,7 @@ func RandomQualification() types.Qualification {
 		RecurringRequirements: nil,
 		Notes:                 RandomString(),
 		Expires:               expires,
-		ExpirationDays:        days,
+		ExpirationInterval:    days,
 	}
 }
 

@@ -129,6 +129,13 @@ func (b Backend) UpdateMember(m types.Member) (types.Member, error) {
 		}
 		m.Hash = string(hash)
 		m.Password = ""
+	} else {
+		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting previous hash so it doesn't get blanked out.")
+		currentMember, err := b.memberProvider.GetMember(m.ID, ById)
+		if err != nil {
+			return types.Member{}, fmt.Errorf("error getting previous hash for member: %w", err)
+		}
+		m.Hash = currentMember.Hash
 	}
 	err := b.memberProvider.UpdateMember(m)
 	if err != nil {

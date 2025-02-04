@@ -20,7 +20,7 @@ CREATE TABLE qualification(
     name string UNIQUE,
     notes string,
     expires integer,
-    expiration_days integer
+    expiration_interval integer
 );
 
 CREATE TABLE member_qualification(
@@ -36,8 +36,8 @@ CREATE TABLE requirement(
     name string UNIQUE,
     notes string,
     days_valid_for integer,
-    reference_id string,
-    FOREIGN KEY (reference_id) REFERENCES reference(id) ON DELETE SET NULL 
+    reference string,
+    type string NOT NULL
 );
 
 CREATE TABLE member_requirement(
@@ -81,61 +81,48 @@ CREATE TABLE member_session(
     PRIMARY KEY (member_id, session_id)
 );
 
-CREATE TABLE reference(
-    id string PRIMARY KEY,
-    name string UNIQUE,
-    volume int,
-    paragraph string
-);
-
 INSERT INTO versions VALUES(1);`
 
-	insertMemberQuery           = "INSERT INTO member(id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled) VALUES($1, $2, $3, $4, $5, $6, $7, $8, 0);"
-	getMemberQuery              = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled FROM member WHERE id=$1;"
-	getMemberByUsernameQuery    = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled FROM member WHERE user_name=$1;"
+	insertMemberQuery           = "INSERT INTO member(id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled) VALUES(?, ?, ?, ?, ?, ?, ?, ?, 00);"
+	getMemberQuery              = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled FROM member WHERE id=?;"
+	getMemberByUsernameQuery    = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash, disabled FROM member WHERE user_name=?;"
 	getAllMembersQuery          = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE disabled != 1;"
 	getDisabledMembersQuery     = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE disabled=1;"
-	getSubordinatesQuery        = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE supervisor_id=$1 AND disabled != 1;"
-	removeSubordinatesQuery     = "UPDATE member SET supervisor_id=null WHERE supervisor_id=$1;"
-	updateMemberQuery           = "UPDATE member SET first_name=$1, last_name=$2, rank=$3, supervisor_id=$4, admin=$5, hash=$6 WHERE ID=$7;"
-	deleteMemberQuery           = "DELETE FROM member WHERE id=$1;"
-	deleteMemberByUsernameQuery = "DELETE FROM member WHERE user_name=$1;"
-	disableMemberQuery          = "UPDATE member SET disabled=1 WHERE id=$1;"
-	enableMemberQuery           = "UPDATE member set disabled=0 WHERE id=$1;"
+	getSubordinatesQuery        = "SELECT id, first_name, last_name, rank, user_name, supervisor_id, admin, hash FROM member WHERE supervisor_id=? AND disabled != 1;"
+	removeSubordinatesQuery     = "UPDATE member SET supervisor_id=null WHERE supervisor_id=?;"
+	updateMemberQuery           = "UPDATE member SET first_name=?, last_name=?, rank=?, supervisor_id=?, admin=?, hash=? WHERE ID=?;"
+	deleteMemberQuery           = "DELETE FROM member WHERE id=?;"
+	deleteMemberByUsernameQuery = "DELETE FROM member WHERE user_name=?;"
+	disableMemberQuery          = "UPDATE member SET disabled=1 WHERE id=?;"
+	enableMemberQuery           = "UPDATE member set disabled=0 WHERE id=?;"
 
-	insertQualificationQuery                     = "INSERT INTO qualification(id, name, notes, expires, expiration_days) VALUES($1, $2, $3, $4, $5);"
-	getQualificationQuery                        = "SELECT * FROM qualification WHERE id=$1;"
+	insertQualificationQuery                     = "INSERT INTO qualification(id, name, notes, expires, expiration_interval) VALUES(?, ?, ?, ?, ?);"
+	getQualificationQuery                        = "SELECT * FROM qualification WHERE id=?;"
 	getAllQualificationIDsQuery                  = "SELECT id FROM qualification;"
-	updateQualificationQuery                     = "UPDATE qualification SET name=$1, notes=$2, expires=$3, expiration_days=$4 WHERE ID=$6;"
-	deleteQualificationQuery                     = "DELETE FROM qualification WHERE id=$1;"
-	insertQualificationInitialRequirementQuery   = "INSERT INTO qualification_initial_requirement(qualification_id, requirement_id) VALUES($1, $2);"
-	insertQualificationRecurringRequirementQuery = "INSERT INTO qualification_recurring_requirement(qualification_id, requirement_id) VALUES($1, $2);"
-	getInitialRequirementIdsQuery                = "SELECT requirement_id FROM qualification_initial_requirement WHERE qualification_id=$1;"
-	getRecurringRequirementIdsQuery              = "SELECT requirement_id FROM qualification_recurring_requirement WHERE qualification_id=$1;"
-	deleteQualificationRecurringRequirementQuery = "DELETE FROM qualification_recurring_requirement WHERE requirement_id=$1;"
-	deleteQualificationInitialRequirementQuery   = "DELETE FROM qualification_initial_requirement WHERE requirement_id=$1;"
+	updateQualificationQuery                     = "UPDATE qualification SET name=?, notes=?, expires=?, expiration_interval=? WHERE ID=?;"
+	deleteQualificationQuery                     = "DELETE FROM qualification WHERE id=?;"
+	insertQualificationInitialRequirementQuery   = "INSERT INTO qualification_initial_requirement(qualification_id, requirement_id) VALUES(?, ?);"
+	insertQualificationRecurringRequirementQuery = "INSERT INTO qualification_recurring_requirement(qualification_id, requirement_id) VALUES(?, ?);"
+	getInitialRequirementIdsQuery                = "SELECT requirement_id FROM qualification_initial_requirement WHERE qualification_id=?;"
+	getRecurringRequirementIdsQuery              = "SELECT requirement_id FROM qualification_recurring_requirement WHERE qualification_id=?;"
+	deleteQualificationRecurringRequirementQuery = "DELETE FROM qualification_recurring_requirement WHERE requirement_id=?;"
+	deleteQualificationInitialRequirementQuery   = "DELETE FROM qualification_initial_requirement WHERE requirement_id=?;"
 
-	addMemberQualificationQuery    = "INSERT INTO member_qualification(member_id, qualification_id) VALUES($1, $2);"
-	checkMemberQualificationQuery  = "SELECT COUNT(*) FROM member_qualification WHERE member_id=$1 AND qualification_id=$2;"
-	getMemberQualificationIDsQuery = "SELECT qualification_id FROM member_qualification WHERE member_id=$1;"
-	removeMemberQualificationQuery = "DELETE FROM member_qualification WHERE member_id=$1 AND qualification_ID=$2;"
+	addMemberQualificationQuery    = "INSERT INTO member_qualification(member_id, qualification_id) VALUES(?, ?);"
+	checkMemberQualificationQuery  = "SELECT COUNT(*) FROM member_qualification WHERE member_id=? AND qualification_id=?;"
+	getMemberQualificationIDsQuery = "SELECT qualification_id FROM member_qualification WHERE member_id=?;"
+	removeMemberQualificationQuery = "DELETE FROM member_qualification WHERE member_id=? AND qualification_ID=?;"
 
-	addRequirementQuery                  = "INSERT INTO requirement(id, name, notes, days_valid_for, reference_id) VALUES($1, $2, $3, $4, $5);"
-	getRequirementQuery                  = "SELECT * FROM requirement r FULL JOIN reference re ON r.reference_id = re.id WHERE r.id = $1;"
-	getAllRequirementsQuery              = "SELECT * FROM requirement r FULL JOIN reference re ON r.reference_id = re.id WHERE r.id IS NOT NULL;"
-	getQualificationsForRequirementQuery = "SELECT qualification_id FROM qualification_initial_requirement  WHERE requirement_id=$1 UNION SELECT qualification_id FROM qualification_recurring_requirement WHERE requirement_id=$1;"
-	updateRequirementQuery               = "UPDATE requirement SET name=$1, notes=$2, days_valid_for=$3, reference_id=$4 WHERE id=$6;"
-	deleteRequirementQuery               = "DELETE FROM requirement WHERE id=$1;"
+	addRequirementQuery                  = "INSERT INTO requirement(id, name, notes, days_valid_for, reference, type) VALUES(?, ?, ?, ?, ?, ?);"
+	getRequirementQuery                  = "SELECT * FROM requirement WHERE id=?;"
+	getAllRequirementsQuery              = "SELECT * FROM requirement WHERE id IS NOT NULL;"
+	getQualificationsForRequirementQuery = "SELECT qualification_id FROM qualification_initial_requirement WHERE requirement_id=? UNION SELECT qualification_id FROM qualification_recurring_requirement WHERE requirement_id=?;"
+	updateRequirementQuery               = "UPDATE requirement SET name=?, notes=?, days_valid_for=?, reference=?, type=? WHERE id=?;"
+	deleteRequirementQuery               = "DELETE FROM requirement WHERE id=?;"
 
-	addReferenceQuery    = "INSERT INTO reference(id, name, volume, paragraph) VALUES($1, $2, $3, $4);"
-	getReferenceQuery    = "SELECT * FROM reference WHERE id=$1;"
-	getReferencesQuery   = "SELECT * FROM reference;"
-	updateReferenceQuery = "UPDATE reference SET name=$1, volume=$2, paragraph=$3 WHERE id=$4;"
-	deleteReferenceQuery = "DELETE FROM reference WHERE id=$1;"
-
-	insertSessionQuery        = "INSERT INTO session(id, user_agent, ip_address, expiration) VALUES($1, $2, $3, $4);"
-	insertMemberSessionQuery  = "INSERT INTO member_session(member_id, session_id) VALUES($1, $2);"
-	getSessionQuery           = "SELECT id, expiration, user_agent, ip_address FROM session WHERE id=$1;"
-	deleteSessionQuery        = "DELETE FROM session WHERE id=$1;"
-	getMemberFromSessionQuery = "SELECT member_id FROM member_session WHERE session_id=$2;"
+	insertSessionQuery        = "INSERT INTO session(id, user_agent, ip_address, expiration) VALUES(?, ?, ?, ?);"
+	insertMemberSessionQuery  = "INSERT INTO member_session(member_id, session_id) VALUES(?, ?);"
+	getSessionQuery           = "SELECT id, expiration, user_agent, ip_address FROM session WHERE id=?;"
+	deleteSessionQuery        = "DELETE FROM session WHERE id=?;"
+	getMemberFromSessionQuery = "SELECT member_id FROM member_session WHERE session_id=?;"
 )

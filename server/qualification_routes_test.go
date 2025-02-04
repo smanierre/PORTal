@@ -93,7 +93,7 @@ func TestGetQualification(t *testing.T) {
 		RecurringRequirements: nil,
 		Notes:                 "these are some test notes",
 		Expires:               true,
-		ExpirationDays:        347,
+		ExpirationInterval:    347,
 	}
 	b := newMockBackend()
 
@@ -165,7 +165,7 @@ func TestGetAllQualifications(t *testing.T) {
 		RecurringRequirements: nil,
 		Notes:                 "these are some test notes",
 		Expires:               true,
-		ExpirationDays:        347,
+		ExpirationInterval:    347,
 	}
 	testQualification2 := types.Qualification{
 		ID:                    uuid.NewString(),
@@ -174,7 +174,7 @@ func TestGetAllQualifications(t *testing.T) {
 		RecurringRequirements: nil,
 		Notes:                 "these are some other test notes",
 		Expires:               false,
-		ExpirationDays:        0,
+		ExpirationInterval:    0,
 	}
 
 	b := newMockBackend()
@@ -236,7 +236,7 @@ func TestUpdateQualification(t *testing.T) {
 		RecurringRequirements: nil,
 		Notes:                 "old notes",
 		Expires:               false,
-		ExpirationDays:        0,
+		ExpirationInterval:    0,
 	}
 	b := newMockBackend()
 	b.updateQualificationOverride = func(q types.Qualification, forceUpdateExpiration bool) (types.Qualification, error) {

@@ -17,7 +17,7 @@ func (b Backend) Login(username, password string) (types.Member, error) {
 		return types.Member{}, ErrAuthenticationFailed
 	}
 	if err = bcrypt.CompareHashAndPassword([]byte(member.Hash), []byte(password)); err != nil {
-		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Password validation failed")
+		b.logger.LogAttrs(context.Background(), slog.LevelInfo, "Password validation failed", slog.String("error", err.Error()))
 		return types.Member{}, ErrAuthenticationFailed
 	}
 	return member, nil

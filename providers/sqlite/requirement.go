@@ -12,7 +12,7 @@ import (
 
 func (p Provider) AddRequirement(r types.Requirement) error {
 	p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Adding requirement to database", slog.Any("requirement", r))
-	_, err := p.Db.Exec(addRequirementQuery, r.ID, r.Name, r.Notes, r.DaysValidFor, r.Reference.ID)
+	_, err := p.Db.Exec(addRequirementQuery, r.ID, r.Name, r.Notes, r.DaysValidFor, r.Reference, r.Type)
 	if err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed: requirement.name") {
 		p.logger.LogAttrs(context.Background(), slog.LevelWarn, "Requirement with given name already exists")
 		return backend.ErrDuplicateRequirement
@@ -29,8 +29,7 @@ func (p Provider) GetRequirement(id string) (types.Requirement, error) {
 	p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting requirement from database", slog.String("requirement_id", id))
 	row := p.Db.QueryRow(getRequirementQuery, id)
 	r := types.Requirement{}
-	unUsedRefId := ""
-	err := row.Scan(&r.ID, &r.Name, &r.Notes, &r.DaysValidFor, &unUsedRefId, &r.Reference.ID, &r.Reference.Name, &r.Reference.Volume, &r.Reference.Paragraph)
+	err := row.Scan(&r.ID, &r.Name, &r.Notes, &r.DaysValidFor, &r.Reference, &r.Type)
 	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
 		p.logger.LogAttrs(context.Background(), slog.LevelWarn, "No results found for requirement with given id")
 		return types.Requirement{}, fmt.Errorf("%w: requirement_id=%s", backend.ErrRequirementNotFound, id)
@@ -49,11 +48,10 @@ func (p Provider) GetAllRequirements() ([]types.Requirement, error) {
 		p.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting all requirements from database: %s", slog.String("error", err.Error()))
 		return nil, err
 	}
-	var reqs types.JSONSafeSlice[types.Requirement]
+	var reqs []types.Requirement
 	var r types.Requirement
-	var unUsedRefId string
 	for rows.Next() {
-		err := rows.Scan(&r.ID, &r.Name, &r.Notes, &r.DaysValidFor, &unUsedRefId, &r.Reference.ID, &r.Reference.Name, &r.Reference.Volume, &r.Reference.Paragraph)
+		err := rows.Scan(&r.ID, &r.Name, &r.Notes, &r.DaysValidFor, &r.Reference, &r.Type)
 		if err != nil {
 			p.logger.LogAttrs(context.Background(), slog.LevelError, "Error scanning requirement into struct", slog.String("error", err.Error()))
 			continue
@@ -85,7 +83,7 @@ func (p Provider) GetQualificationIDsForRequirement(requirementID string) ([]str
 
 func (p Provider) UpdateRequirement(r types.Requirement) error {
 	p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Updating requirement", slog.Any("new_requirement", r))
-	res, err := p.Db.Exec(updateRequirementQuery, r.Name, r.Notes, r.DaysValidFor, r.Reference.ID, r.ID)
+	res, err := p.Db.Exec(updateRequirementQuery, r.Name, r.Notes, r.DaysValidFor, r.Reference, r.Type, r.ID)
 	if err != nil && strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
 		p.logger.LogAttrs(context.Background(), slog.LevelError, "Provided reference doesn't exist")
 		return backend.ErrReferenceNotFound

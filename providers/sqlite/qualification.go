@@ -10,7 +10,7 @@ import (
 )
 
 func (p Provider) AddQualification(q types.Qualification) error {
-	_, err := p.Db.Exec(insertQualificationQuery, q.ID, q.Name, q.Notes, q.Expires, q.ExpirationDays)
+	_, err := p.Db.Exec(insertQualificationQuery, q.ID, q.Name, q.Notes, q.Expires, q.ExpirationInterval)
 	if err != nil {
 		p.logger.LogAttrs(context.Background(), slog.LevelError, "Error inserting qualification into database", slog.String("error", err.Error()))
 		return err
@@ -39,7 +39,7 @@ func (p Provider) AddQualification(q types.Qualification) error {
 func (p Provider) GetQualification(id string) (types.Qualification, error) {
 	row := p.Db.QueryRow(getQualificationQuery, id)
 	var q types.Qualification
-	err := row.Scan(&q.ID, &q.Name, &q.Notes, &q.Expires, &q.ExpirationDays)
+	err := row.Scan(&q.ID, &q.Name, &q.Notes, &q.Expires, &q.ExpirationInterval)
 	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
 		p.logger.LogAttrs(context.Background(), slog.LevelWarn, "Could not find qualification with given id")
 		return types.Qualification{}, backend.ErrQualificationNotFound
@@ -126,7 +126,7 @@ func (p Provider) UpdateQualification(q types.Qualification) error {
 	if err != nil {
 		p.logger.LogAttrs(context.Background(), slog.LevelError, "Error creating transaction for UpdateQualification", slog.String("error", err.Error()))
 	}
-	res, err := tx.Exec(updateQualificationQuery, q.Name, q.Notes, q.Expires, q.ExpirationDays, q.ID)
+	res, err := tx.Exec(updateQualificationQuery, q.Name, q.Notes, q.Expires, q.ExpirationInterval, q.ID)
 	if err != nil {
 		p.logger.LogAttrs(context.Background(), slog.LevelError, "Error updating qualification in database", slog.String("error", err.Error()))
 		p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Rolling back transaction")

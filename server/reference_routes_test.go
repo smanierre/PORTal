@@ -227,7 +227,7 @@ func TestGetAllReferences(t *testing.T) {
 //		RecurringRequirements: nil,
 //		Notes:                 "old notes",
 //		Expires:               false,
-//		ExpirationDays:        0,
+//		ExpirationInterval:        0,
 //	}
 //	b := newMockBackend()
 //	b.updateQualificationOverride = func(q types.Qualification, forceUpdateExpiration bool) (types.Qualification, error) {

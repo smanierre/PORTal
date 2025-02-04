@@ -201,6 +201,7 @@ func (s Server) AdminMemberEditorGetHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// fix enabling/disabling member rendering
 func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	if !checkHTMXRequest(r) {
 		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Attempted member update without HTMX, redirecting to dashboard")
@@ -209,15 +210,13 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 	}
 	memberID := r.PathValue("id")
 	newMember := types.Member{
-		ApiMember: types.ApiMember{
-			ID:           memberID,
-			FirstName:    r.FormValue("first_name"),
-			LastName:     r.FormValue("last_name"),
-			Grade:        types.Grade(r.FormValue("grade")),
-			SupervisorID: r.FormValue("supervisor"),
-			Admin:        r.FormValue("admin") == "on",
-		},
-		Password: r.FormValue("password"),
+		ID:           memberID,
+		FirstName:    r.FormValue("first_name"),
+		LastName:     r.FormValue("last_name"),
+		Grade:        types.Grade(r.FormValue("grade")),
+		SupervisorID: r.FormValue("supervisor"),
+		Admin:        r.FormValue("admin") == "on",
+		Password:     r.FormValue("password"),
 		//TODO: Handle thisDisabled: ,
 	}
 	updatedMember, err := s.backend.UpdateMember(newMember)
@@ -269,7 +268,7 @@ func (s Server) AdminMemberUpdateHandler(w http.ResponseWriter, r *http.Request)
 	if loggedInMember.ID == updatedMember.ID {
 		loggedInMember = updatedMember
 	}
-	
+
 	subordinates, err := s.backend.GetSubordinates(loggedInMember.ID)
 	var subordinateLength int
 	if err == nil {

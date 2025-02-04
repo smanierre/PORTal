@@ -60,11 +60,6 @@ type RequirementProvider interface {
 	GetQualificationIDsForRequirement(requirementID string) ([]string, error)
 	UpdateRequirement(r types.Requirement) error
 	DeleteRequirement(id string) error
-	AddReference(r types.Reference) error
-	GetReference(id string) (types.Reference, error)
-	GetReferences() ([]types.Reference, error)
-	UpdateReference(r types.Reference) error
-	DeleteReference(id string) error
 }
 
 type AuthenticationProvider interface {

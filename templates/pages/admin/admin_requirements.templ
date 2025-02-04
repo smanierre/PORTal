@@ -16,7 +16,6 @@ type RequirementPaneData struct {
 
 type RequirementEditorData struct{
     SelectedRequirement types.Requirement
-    References []types.Reference
     NewRequirement bool
 }
 
@@ -65,18 +64,7 @@ templ RequirementEditor(data RequirementEditorData) {
         <label>Name: <input name="name" value={ data.SelectedRequirement.Name } /></label>
         <label>Notes: <textarea name="notes">{data.SelectedRequirement.Notes}</textarea></label>
         <label>Days Valid For: <input name="days_valid_for" type="number" value={ strconv.Itoa(data.SelectedRequirement.DaysValidFor)} /></label>
-        <label>Reference:
-            <select name="reference">
-                for _, ref := range data.References {
-                    <option
-                        if ref.ID == data.SelectedRequirement.Reference.ID {
-                            selected
-                        }
-                        value={ref.ID}
-                        >{ref.Name}</option>
-                }
-            </select>
-        </label>
+        <label>Reference: <input name="reference" value={data.SelectedRequirement.Reference} placeholder="e.g. AFI 24-605V2 2.8"/> </label>
         <div style="display: flex; gap: 1rem;">
             if data.NewRequirement {
                 @components.SubmitButton("Create Requirement", true)
