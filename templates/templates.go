@@ -3,8 +3,6 @@ package templates
 import (
 	"PORTal/types"
 	"fmt"
-	"strconv"
-	"time"
 )
 
 type config struct {
@@ -24,9 +22,4 @@ func DisplayName(m types.Member) string {
 
 func GetOrg() string {
 	return cfg.Organization
-}
-
-func DaysFromDuration(d time.Duration) string {
-	days := d.Hours() / 24
-	return strconv.Itoa(int(days))
 }

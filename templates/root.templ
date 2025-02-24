@@ -1,6 +1,8 @@
 package templates
 
-import "PORTal/templates/components/webcomponents"
+import (
+"PORTal/templates/components/webcomponents"
+)
 
 templ Root(navData NavData, content templ.Component) {
 	<!DOCTYPE html>
@@ -17,6 +19,9 @@ templ Root(navData NavData, content templ.Component) {
 			<script src="/assets/js/alpineStores.js"></script>
 			<script src="/assets/js/errors.js"></script>
 			<script defer src="/assets/js/webcomponents/multiSelect.js"></script>
+			<script defer src="/assets/js/webcomponents/requirementSelector.js"></script>
+			<script defer src="/assets/js/webcomponents/requirementItem.js"></script>
+			<script defer src="/assets/js/webcomponents/requirementEditor.js"></script>
 			<link rel="icon" type="image/png" href="/assets/images/port_dawg.png"/>
 			<link rel="stylesheet" href="/assets/css/reset.css"/>
 			<link rel="stylesheet" href="/assets/css/index.css"/>

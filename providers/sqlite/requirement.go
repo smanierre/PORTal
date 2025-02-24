@@ -63,7 +63,7 @@ func (p Provider) GetAllRequirements() ([]types.Requirement, error) {
 }
 
 func (p Provider) GetQualificationIDsForRequirement(requirementID string) ([]string, error) {
-	rows, err := p.Db.Query(getQualificationsForRequirementQuery, requirementID)
+	rows, err := p.Db.Query(getQualificationsForRequirementQuery, requirementID, requirementID)
 	if err != nil {
 		p.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting qualifications for requirement", slog.String("error", err.Error()))
 		return nil, err

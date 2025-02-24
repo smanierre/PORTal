@@ -1,12 +1,12 @@
 package admin
 
 import (
-    "PORTal/templates"
 	"PORTal/templates/components"
 	"PORTal/templates/components/webcomponents"
 	"PORTal/types"
 	"fmt"
 	"slices"
+	"PORTal/templates/helpers"
 )
 
 type QualificationPaneData struct {
@@ -70,7 +70,6 @@ templ QualificationEditor(data QualificationEditorData) {
 		} else {
 			hx-post={ fmt.Sprintf("/admin/qualifications/%s", data.SelectedQualification.ID) }
 		}
-		hx-target="#admin-content"
 	>
 		<label>ID: <input name="id" class="editor-input" disabled value={ data.SelectedQualification.ID }/></label>
 		<label>Name: <input name="name" value={ data.SelectedQualification.Name }/></label>
@@ -78,31 +77,35 @@ templ QualificationEditor(data QualificationEditorData) {
 		<label>
 			Expires: <input
 			@click="handleExpiresClick"
-	name="expires"
-	type="checkbox"
-	if data.SelectedQualification.Expires {
-		checked
-	}
-/>
+	        name="expires"
+	        type="checkbox"
+	        if data.SelectedQualification.Expires {
+		        checked
+	        }
+        />
 		</label>
-
 		<label x-ref="expires"
 		if !data.SelectedQualification.Expires {
 		    hidden
 		}
-		>Expiration Interval: <input type="number" name="expiration_interval" value={ templates.DaysFromDuration(data.SelectedQualification.ExpirationInterval)}/></label>
+		>Expiration Interval: <input type="number" name="expiration_interval" value={ helpers.DaysFromDuration(data.SelectedQualification.ExpirationInterval)}/>
+		</label>
 		<label>
 			Initial Requirements:
-			@webcomponents.MultiSelect("initial_requirements") {
-				for _, req := range data.PotentialInitialRequirements {
-					<option
-						if slices.Contains(data.SelectedQualification.InitialRequirements, req) {
-							selected="true"
-						}
-						value={ req.ID }
-					>{ req.Name }</option>
-				}
-			}
+            @webcomponents.RequirementSelector("initial_requirements", data.SelectedQualification.InitialRequirements)
+            //{
+                //for _, req := range data.SelectedQualification.InitialRequirements {
+                //    @components.RequirementItem(req.Name, req.ID)
+                //}
+                //<button data-id="9cb2617a-045d-4b1f-9bf4-b024f8caf24c" type="button" class="requirement-item">
+                //    First
+                //    @icons.X("remove-requirement-button")
+                //</button>
+                //<button data-id="second_id" type="button" class="requirement-item">
+                //    Second
+                //    @icons.X("remove-requirement-button")
+                // </button>
+			//}
 		</label>
 		<label>
 			Recurring Requirements:

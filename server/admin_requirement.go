@@ -1,7 +1,6 @@
 package server
 
 import (
-	"PORTal/templates"
 	"PORTal/templates/components"
 	"PORTal/templates/pages/admin"
 	"PORTal/templates/pages/errorpages"
@@ -12,63 +11,10 @@ import (
 	"strconv"
 )
 
-func (s Server) AdminRequirementsPaneGetHandler(w http.ResponseWriter, r *http.Request) {
-	reqs, err := s.backend.GetAllRequirements()
-	if err != nil {
-		if checkHTMXRequest(r) {
-			err = components.Toast("Unable to get requirements.", true).Render(r.Context(), w)
-			if err != nil {
-				s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
-			}
-			return
-		} else {
-			err = errorpages.GenericISE().Render(r.Context(), w)
-			if err != nil {
-				s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering error page", slog.String("error", err.Error()))
-			}
-			return
-		}
-	}
-	requirementsPane := admin.RequirementsPane(admin.RequirementPaneData{
-		SelectedRequirement: types.Requirement{},
-		Requirements:        reqs,
-		OobSwap:             false,
-	})
-	if checkHTMXRequest(r) {
-		w.Header().Set("HX-Push-URL", "/admin/requirements")
-		err = requirementsPane.Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin requirements fragment", slog.String("error", err.Error()))
-			_ = errorpages.GenericISE().Render(r.Context(), w)
-		}
-		return
-	}
-	m, err := getMemberFromContext(r.Context())
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error getting member from context", slog.String("error", err.Error()))
-		http.Redirect(w, r, "/dashboard", http.StatusFound)
-		return
-	}
-	subordinates, err := s.backend.GetSubordinates(m.ID)
-	var subordinateLength int
-	if err == nil {
-		subordinateLength = len(subordinates)
-	}
-	err = templates.Root(templates.NavData{
-		Show:         true,
-		OobSwap:      false,
-		Member:       m,
-		Subordinates: subordinateLength > 0,
-	}, admin.AdminPage("Requirements", requirementsPane)).Render(r.Context(), w)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin reference page", slog.String("error", err.Error()))
-		_ = errorpages.GenericISE().Render(r.Context(), w)
-	}
-}
-
 func (s Server) AdminRequirementEditorGetHandler(w http.ResponseWriter, r *http.Request) {
 	requirement, err := s.backend.GetRequirement(r.PathValue("id"))
 	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
 		err = components.Toast("Unable to get requirement.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
@@ -80,47 +26,10 @@ func (s Server) AdminRequirementEditorGetHandler(w http.ResponseWriter, r *http.
 		SelectedRequirement: requirement,
 		NewRequirement:      false,
 	})
-	if checkHTMXRequest(r) {
-		w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin/requirements/%s", r.PathValue("id")))
-		err = requirementEditor.Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin requirement editor fragment", slog.String("error", err.Error()))
-			_ = errorpages.GenericISE().Render(r.Context(), w)
-		}
-		return
-	}
-	m, err := getMemberFromContext(r.Context())
+	w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin/requirements/%s", r.PathValue("id")))
+	err = requirementEditor.Render(r.Context(), w)
 	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "error getting member from context", slog.String("error", err.Error()))
-		_ = errorpages.GenericISE().Render(r.Context(), w)
-		return
-	}
-	requirements, err := s.backend.GetAllRequirements()
-	if err != nil {
-		_ = errorpages.GenericISE().Render(r.Context(), w)
-		return
-	}
-	subordinates, err := s.backend.GetSubordinates(m.ID)
-	var subordinateLength int
-	if err == nil {
-		subordinateLength = len(subordinates)
-	}
-	err = templates.Root(templates.NavData{
-		Show:         true,
-		OobSwap:      false,
-		Member:       m,
-		Subordinates: subordinateLength > 0,
-	}, admin.AdminPage("Requirements", admin.RequirementsPane(admin.RequirementPaneData{
-		SelectedRequirement: requirement,
-		Requirements:        requirements,
-		OobSwap:             false,
-		RequirementEditorData: admin.RequirementEditorData{
-			SelectedRequirement: requirement,
-			NewRequirement:      false,
-		},
-	}))).Render(r.Context(), w)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering requirement editor page", slog.String("error", err.Error()))
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering admin requirement editor fragment", slog.String("error", err.Error()))
 		_ = errorpages.GenericISE().Render(r.Context(), w)
 	}
 }
@@ -148,6 +57,7 @@ func (s Server) AdminRequirementUpdateHandler(w http.ResponseWriter, r *http.Req
 		Reference:    r.Form.Get("reference"),
 		Notes:        r.Form.Get("notes"),
 		DaysValidFor: daysValidFor,
+		Type:         types.RequirementType(r.Form.Get("type")),
 	}
 
 	updatedReq, err := s.backend.UpdateRequirement(req)
@@ -159,75 +69,27 @@ func (s Server) AdminRequirementUpdateHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	requirements, err := s.backend.GetAllRequirements()
-	if err != nil {
-		err = components.Toast("Unable to update page, please refresh.", true).Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
-		}
-		return
-	}
-
-	err = admin.RequirementsPane(admin.RequirementPaneData{
+	err = admin.RequirementEditor(admin.RequirementEditorData{
 		SelectedRequirement: updatedReq,
-		Requirements:        requirements,
-		OobSwap:             false,
-		RequirementEditorData: admin.RequirementEditorData{
-			SelectedRequirement: updatedReq,
-			NewRequirement:      false,
-		},
+		NewRequirement:      false,
 	}).Render(r.Context(), w)
 	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering requirements pane", slog.String("error", err.Error()))
-		_ = errorpages.GenericISE().Render(r.Context(), w)
-		return
-	}
-	err = components.Toast("Successfully updated requirement", false).Render(r.Context(), w)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering requirement updated toast", slog.String("error", err.Error()))
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering updated requirement", slog.String("error", err.Error()))
+		// TODO: Figure out toast for the modal?
 	}
 }
 
 func (s Server) AdminNewRequirementHandler(w http.ResponseWriter, r *http.Request) {
-	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Sending back empty requirement editor")
-	var err error
-	if checkHTMXRequest(r) {
-		w.Header().Set("HX-Push-URL", "/admin/requirements/add")
-		err = admin.RequirementEditor(admin.RequirementEditorData{
-			SelectedRequirement: types.Requirement{},
-			NewRequirement:      true,
-		}).Render(r.Context(), w)
-	} else {
-		m, err := getMemberFromContext(r.Context())
-		if err != nil {
-			_ = errorpages.GenericISE().Render(r.Context(), w)
-			return
-		}
-		requirements, err := s.backend.GetAllRequirements()
-		if err != nil {
-			_ = errorpages.GenericISE().Render(r.Context(), w)
-			return
-		}
-		subordinates, err := s.backend.GetSubordinates(m.ID)
-		var subordinateLength int
-		if err == nil {
-			subordinateLength = len(subordinates)
-		}
-		err = templates.Root(templates.NavData{
-			Show:         true,
-			OobSwap:      false,
-			Member:       m,
-			Subordinates: subordinateLength > 0,
-		}, admin.AdminPage("Requirements", admin.RequirementsPane(admin.RequirementPaneData{
-			SelectedRequirement: types.Requirement{},
-			Requirements:        requirements,
-			OobSwap:             false,
-			RequirementEditorData: admin.RequirementEditorData{
-				SelectedRequirement: types.Requirement{},
-				NewRequirement:      true,
-			},
-		}))).Render(r.Context(), w)
+	if !checkHTMXRequest(r) {
+		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Non-HTMX get request for new requirement, redirecting to qualification pane")
+		http.Redirect(w, r, "/admin/qualifications", http.StatusFound)
+		return
 	}
+	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Sending back empty requirement editor")
+	err := admin.RequirementEditor(admin.RequirementEditorData{
+		SelectedRequirement: types.Requirement{},
+		NewRequirement:      true,
+	}).Render(r.Context(), w)
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering new requirement page/fragment", slog.String("error", err.Error()))
 		_ = errorpages.GenericISE().Render(r.Context(), w)
@@ -235,14 +97,10 @@ func (s Server) AdminNewRequirementHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (s Server) AdminRequirementAddHandler(w http.ResponseWriter, r *http.Request) {
-	if !checkHTMXRequest(r) {
-		s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Non-HTMX request to add requirement, redirecting to the dashboard")
-		http.Redirect(w, r, "/dashboard", http.StatusFound)
-		return
-	}
 	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Creating new requirement")
 	err := r.ParseForm()
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Unable to parse form data for new requirement", slog.String("error", err.Error()))
 		err = components.Toast("Unable to add new requirement.", true).Render(r.Context(), w)
 		if err != nil {
@@ -254,8 +112,10 @@ func (s Server) AdminRequirementAddHandler(w http.ResponseWriter, r *http.Reques
 	req := types.Requirement{}
 	req.Name = r.Form.Get("name")
 	req.Notes = r.Form.Get("notes")
+	req.Type = types.RequirementType(r.Form.Get("type"))
 	req.DaysValidFor, err = strconv.Atoi(r.Form.Get("days_valid_for"))
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		err = components.Toast("Unable to parse days valid for field, it must be a number.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
@@ -263,9 +123,11 @@ func (s Server) AdminRequirementAddHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	req.Reference = r.Form.Get("reference")
+	req.Type = types.RequirementType(r.Form.Get("type"))
 
 	req, err = s.backend.AddRequirement(req)
 	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 		err = components.Toast("Unable to create Requirement.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
@@ -273,28 +135,22 @@ func (s Server) AdminRequirementAddHandler(w http.ResponseWriter, r *http.Reques
 		}
 		return
 	}
-	reqs, err := s.backend.GetAllRequirements()
+
+	err = components.RequirementItem(req.Name, req.ID).Render(r.Context(), w)
 	if err != nil {
-		_ = components.Toast("Unable to update page, please refresh.", true).Render(r.Context(), w)
-		return
+		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering requirement item", slog.String("error", err.Error()))
 	}
-	w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin/requirements/%s", req.ID))
-	err = admin.RequirementsPane(admin.RequirementPaneData{
-		SelectedRequirement: req,
-		Requirements:        reqs,
-		OobSwap:             false,
-		RequirementEditorData: admin.RequirementEditorData{
-			SelectedRequirement: req,
-			NewRequirement:      false,
-		},
-	}).Render(r.Context(), w)
+}
+
+func (s Server) AdminRequirementDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Handling request to remove requirement")
+	id := r.PathValue("id")
+	err := s.backend.DeleteRequirement(id)
 	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering RequirementPane for created Requirement", slog.String("error", err.Error()))
-		_ = components.Toast("Unable to update page, please refresh.", true).Render(r.Context(), w)
-		return
-	}
-	err = components.Toast("Requirement successfully created!", false).Render(r.Context(), w)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering requirement creation toast", slog.String("error", err.Error()))
+		err = components.Toast("Unable to remove requirement.", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
+			_ = errorpages.GenericISE().Render(r.Context(), w)
+		}
 	}
 }

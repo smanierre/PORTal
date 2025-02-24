@@ -14,13 +14,9 @@ const (
 	GradeType         RequirementType = "Grade"
 )
 
-var Never time.Time
-
-func init() {
-	var err error
-	Never, err = time.Parse(time.DateOnly, "9999-12-31")
-	if err != nil {
-		panic(fmt.Sprintf("Error initializing never value: %s", err.Error()))
+func GetRequirementTypes() []RequirementType {
+	return []RequirementType{
+		QualificationType, WbtType, GradeType,
 	}
 }
 

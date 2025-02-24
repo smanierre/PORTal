@@ -3,79 +3,41 @@ package admin
 import (
     "PORTal/templates/components"
     "PORTal/types"
-    "fmt"
     "strconv"
 )
-
-type RequirementPaneData struct {
-	SelectedRequirement   types.Requirement
-	Requirements          []types.Requirement
-	OobSwap             bool
-	RequirementEditorData RequirementEditorData
-}
 
 type RequirementEditorData struct{
     SelectedRequirement types.Requirement
     NewRequirement bool
 }
 
-
-templ RequirementsPane(data RequirementPaneData) {
-    <div x-data="adminRequirementList" id="requirements-list" class="searchable-list"
-        if data.OobSwap {
-            hx-swap-oob="true"
-        }>
-        <div class="searchable-list-search">
-            <input class="searchable-list-search-input" placeholder="Filter"/>
-            <button class="button primary" type="button">Clear</button>
-        </div>
-        <ul class="searchable-list-items">
-            for _, requirement := range data.Requirements {
-                <li
-                        @click="selectHandler"
-                        if data.SelectedRequirement.ID == requirement.ID {
-                            x-init="selectHandler({target: $el})"
-                        }
-                        class={"searchable-list-item", templ.KV("searchable-list-item--selected", data.SelectedRequirement.ID == requirement.ID)}
-                        hx-target="#requirement-content" hx-get={fmt.Sprintf("/admin/requirements/%s", requirement.ID)}>
-                            { requirement.Name }
-                </li>
-            }
-        </ul>
-        <button @click="clearSelectedRequirement" type="button" class="admin-new-member button primary" hx-get="/admin/requirements/add" hx-target="#requirement-content">New Requirement</button>
-    </div>
-    <div id="requirement-content">
-        if data.SelectedRequirement.ID!= "" || data.RequirementEditorData.NewRequirement {
-            @RequirementEditor(data.RequirementEditorData)
-        }
-    </div>
-}
-
 templ RequirementEditor(data RequirementEditorData) {
-    <form class="editor" hx-indicator=".form-submit"
-        if data.NewRequirement {
-        hx-post="/admin/requirements/add"
-        } else {
-        hx-post={fmt.Sprintf("/admin/requirements/%s", data.SelectedRequirement.ID)}
-        }
-        hx-target="#admin-content"
-    >
-        <label>ID: <input name="id" class="editor-input" disabled value={data.SelectedRequirement.ID} /></label>
-        <label>Name: <input name="name" value={ data.SelectedRequirement.Name } /></label>
-        <label>Notes: <textarea name="notes">{data.SelectedRequirement.Notes}</textarea></label>
-        <label>Days Valid For: <input name="days_valid_for" type="number" value={ strconv.Itoa(data.SelectedRequirement.DaysValidFor)} /></label>
-        <label>Reference: <input name="reference" value={data.SelectedRequirement.Reference} placeholder="e.g. AFI 24-605V2 2.8"/> </label>
-        <div style="display: flex; gap: 1rem;">
-            if data.NewRequirement {
-                @components.SubmitButton("Create Requirement", true)
-            } else {
-                @components.SubmitButton("Update Requirement", true)
-            }
-        </div>
-    </form>
-    <script type="text/javascript">
-        document.querySelector(".editor").addEventListener("change", function() {
-            document.querySelector(".form-submit").disabled = false
-        })
-    </script>
+    <requirement-editor>
+        <form class="editor" method="POST" action="/admin/requirements/add">
+            <label>ID: <input name="id" class="editor-input" disabled value={data.SelectedRequirement.ID} /></label>
+            <label>Type:
+                <select name="type">
+                    for _, t := range types.GetRequirementTypes() {
+                        <option value={string(t)}
+                        if data.SelectedRequirement.Type == t {
+                            selected
+                        }
+                        >{string(t)}</option>
+                    }
+                </select>
+            </label>
+            <label>Name: <input name="name" value={ data.SelectedRequirement.Name } /></label>
+            <label>Notes: <textarea name="notes">{data.SelectedRequirement.Notes}</textarea></label>
+            <label>Days Valid For: <input name="days_valid_for" type="number" value={ strconv.Itoa(data.SelectedRequirement.DaysValidFor)} /></label>
+            <label>Reference: <input name="reference" value={data.SelectedRequirement.Reference} placeholder="e.g. AFI 24-605V2 2.8"/> </label>
+            <div style="display: flex; gap: 1rem; margin-left: auto;">
+                <button class="button danger" type="button">Cancel</button>
+                if data.NewRequirement {
+                    @components.SubmitButton("Create", true)
+                } else {
+                    @components.SubmitButton("Update", true)
+                }
+            </div>
+        </form>
+    </requirement-editor>
 }

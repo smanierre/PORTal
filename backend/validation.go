@@ -57,7 +57,10 @@ func CheckRequirementForMissingArgs(r types.Requirement) error {
 		errors = append(errors, "DaysValidFor")
 	}
 	if r.Reference == "" {
-		errors = append(errors, "ReferenceID")
+		errors = append(errors, "Reference")
+	}
+	if r.Type == "" {
+		errors = append(errors, "Type")
 	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%w: %s", ErrMissingArgs, errors)

@@ -1,4 +1,5 @@
 document.addEventListener("alpine:init", () => {
+
     Alpine.data("dropdown", () => ({
         open: false,
         selected: "Members",
@@ -34,39 +35,6 @@ document.addEventListener("alpine:init", () => {
       }
     }));
 
-    Alpine.data("adminReferenceList", () => ({
-        selected: null,
-        selectHandler(e) {
-            if(this.selected) {
-                this.selected.classList.remove("searchable-list-item--selected");
-            }
-            this.selected = e.target;
-            this.selected.classList.add("searchable-list-item--selected");
-        },
-        clearSelectedReference() {
-            if(this.selected) {
-                this.selected.classList.remove("searchable-list-item--selected");
-                this.selected = null;
-            }
-        }
-    }));
-
-    Alpine.data("adminRequirementList", () => ({
-        selected: null,
-        selectHandler(e) {
-            if(this.selected) {
-                this.selected.classList.remove("searchable-list-item--selected");
-            }
-            this.selected = e.target;
-            this.selected.classList.add("searchable-list-item--selected");
-        },
-        clearSelectedRequirement() {
-            if(this.selected) {
-                this.selected.classList.remove("searchable-list-item--selected");
-                this.selected = null;
-            }
-        }
-    }));
 
     Alpine.data("adminQualificationList", () => ({
         selected: null,
