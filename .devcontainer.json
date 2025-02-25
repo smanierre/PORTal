@@ -1,0 +1,5 @@
+{
+	"name": "PORTal",
+	"forwardPorts": [8080],
+	"image": "golang:1.23.6-bookworm"
+}
