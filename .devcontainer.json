@@ -4,6 +4,6 @@
 	"image": "golang:1.23.6-bookworm",
 	"features": {
 		"ghcr.io/swift-server-community/swift-devcontainer-features/sqlite:1": []
-	}
+	},
 	"onCreateCommand": ["go install github.com/air-verse/air@latest", "go install github.com/a-h/templ/cmd/templ@latest"]
 }
