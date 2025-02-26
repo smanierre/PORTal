@@ -1,0 +1,9 @@
+{
+	"name": "PORTal",
+	"forwardPorts": [8080],
+	"image": "golang:1.23.6-bookworm",
+	"features": {
+		"ghcr.io/swift-server-community/swift-devcontainer-features/sqlite:1": []
+	},
+	"postCreateCommand": "sh .devcontainer/postCreateCommand.sh" 
+}
