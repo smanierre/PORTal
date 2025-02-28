@@ -14,9 +14,9 @@ type RequirementEditorData struct{
 templ RequirementEditor(data RequirementEditorData) {
     <requirement-editor>
         <form class="editor" method="POST" action="/admin/requirements/add">
-            <label>ID: <input name="id" class="editor-input" disabled value={data.SelectedRequirement.ID} /></label>
+            <label>ID: <input name="ID" class="editor-input" disabled value={data.SelectedRequirement.ID} /></label>
             <label>Type:
-                <select name="type">
+                <select name="Type">
                     for _, t := range types.GetRequirementTypes() {
                         <option value={string(t)}
                         if data.SelectedRequirement.Type == t {
@@ -26,17 +26,13 @@ templ RequirementEditor(data RequirementEditorData) {
                     }
                 </select>
             </label>
-            <label>Name: <input name="name" value={ data.SelectedRequirement.Name } /></label>
-            <label>Notes: <textarea name="notes">{data.SelectedRequirement.Notes}</textarea></label>
-            <label>Days Valid For: <input name="days_valid_for" type="number" value={ strconv.Itoa(data.SelectedRequirement.DaysValidFor)} /></label>
-            <label>Reference: <input name="reference" value={data.SelectedRequirement.Reference} placeholder="e.g. AFI 24-605V2 2.8"/> </label>
+            <label>Name: <input name="Name" value={ data.SelectedRequirement.Name } /></label>
+            <label>Notes: <textarea name="Notes">{data.SelectedRequirement.Notes}</textarea></label>
+            <label>Days Valid For: <input name="DaysValidFor" type="number" value={ strconv.Itoa(data.SelectedRequirement.DaysValidFor)} /></label>
+            <label>Reference: <input name="Reference" value={data.SelectedRequirement.Reference} placeholder="e.g. AFI 24-605V2 2.8"/> </label>
             <div style="display: flex; gap: 1rem; margin-left: auto;">
                 <button class="button danger" type="button">Cancel</button>
-                if data.NewRequirement {
-                    @components.SubmitButton("Create", true)
-                } else {
-                    @components.SubmitButton("Update", true)
-                }
+                @components.SubmitButton("Create", true)
             </div>
         </form>
     </requirement-editor>

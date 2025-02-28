@@ -3,5 +3,5 @@ package components
 import "PORTal/templates/components/icons"
 
 templ RequirementItem(name, id string) {
-    <button data-id={id} type="button" class="requirement-item">{name} @icons.X("remove-requirement-button")</button>
+    <button data-id={id} type="button" class="requirement-item"><span class="name">{name}</span> @icons.X("remove-requirement-button")</button>
 }

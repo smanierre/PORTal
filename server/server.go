@@ -114,15 +114,10 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	s.mux.Handle("GET /admin/qualifications/add", http.HandlerFunc(s.AdminNewQualificationHandler))
 	s.mux.Handle("POST /admin/qualifications/add", http.HandlerFunc(s.AdminQualificationAddHandler))
 
-	// Admin Requirement Routes
-	s.mux.Handle("GET /admin/requirements/{id}", http.HandlerFunc(s.AdminRequirementEditorGetHandler))
-	s.mux.Handle("POST /admin/requirements/{id}", http.HandlerFunc(s.AdminRequirementUpdateHandler))
-	s.mux.Handle("GET /admin/requirements/add", http.HandlerFunc(s.AdminNewRequirementHandler))
-	s.mux.Handle("POST /admin/requirements/add", http.HandlerFunc(s.AdminRequirementAddHandler))
-	s.mux.Handle("DELETE /admin/requirements/{id}", http.HandlerFunc(s.AdminRequirementDeleteHandler))
-
 	// Component Routes
 	s.mux.Handle("GET /components/requirementItem", http.HandlerFunc(s.RequirementItemComponent))
+	s.mux.Handle("GET /components/requirementEditor", http.HandlerFunc(s.RequirementEditorComponent))
+
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	return s
 }

@@ -1,0 +1,61 @@
+package webcomponents
+
+import (
+    "PORTal/templates/helpers"
+    "PORTal/types"
+    "PORTal/templates/components"
+)
+
+type QualificationEditorData struct {
+	SelectedQualification          types.Qualification
+	PotentialInitialRequirements   []types.Requirement
+	PotentialRecurringRequirements []types.Requirement
+	NewQualification               bool
+}
+
+templ QualificationEditor(data QualificationEditorData) {
+    <qualification-editor>
+	    <form class="editor">
+		    <label>ID: <input name="id" class="editor-input" disabled value={ data.SelectedQualification.ID }/></label>
+		    <label>Name: <input name="name" value={ data.SelectedQualification.Name }/></label>
+		    <label>Notes: <textarea name="notes">{ data.SelectedQualification.Notes }</textarea></label>
+		    <label>
+			    Expires: <input
+	            name="expires"
+	            type="checkbox"
+	            if data.SelectedQualification.Expires {
+		            checked
+	            }
+            />
+		    </label>
+		    <label
+		    if !data.SelectedQualification.Expires {
+		        hidden
+		    }
+		    >Expiration Interval: <input type="number" name="expiration_interval" value={ helpers.DaysFromDuration(data.SelectedQualification.ExpirationInterval)}/>
+		    </label>
+		    <label>
+			    Initial Requirements:
+                @RequirementSelector("initial_requirements", data.SelectedQualification.InitialRequirements)
+		    </label>
+		    <label>
+			    Recurring Requirements:
+			    @RequirementSelector("recurring_requirements", data.SelectedQualification.RecurringRequirements)
+		    </label>
+		    <div style="display: flex; gap: 1rem;">
+			    if data.NewQualification {
+				    @components.SubmitButton("Create Qualification", true)
+			    } else {
+				    @components.SubmitButton("Update Qualification", true)
+			    }
+			        if !data.NewQualification {
+			    }
+		    </div>
+	    </form>
+	    <script type="text/javascript">
+            document.querySelector(".editor").addEventListener("change", function() {
+                document.querySelector(".form-submit").disabled = false
+            })
+        </script>
+    </qualification-editor>
+}

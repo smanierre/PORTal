@@ -12,7 +12,7 @@ func DaysFromDuration(d time.Duration) string {
 	return strconv.Itoa(int(days))
 }
 
-func RequirementsToDisplayItems(requirements []types.Requirement) string {
+func RequirementsToJSON(requirements []types.Requirement) string {
 	if len(requirements) == 0 {
 		return "[]"
 	}

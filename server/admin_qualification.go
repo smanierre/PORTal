@@ -3,6 +3,7 @@ package server
 import (
 	"PORTal/templates"
 	"PORTal/templates/components"
+	"PORTal/templates/components/webcomponents"
 	"PORTal/templates/pages/admin"
 	"PORTal/templates/pages/errorpages"
 	"PORTal/types"
@@ -93,7 +94,7 @@ func (s Server) AdminQualificationEditorGetHandler(w http.ResponseWriter, r *htt
 		return
 	}
 	initialRequirements, recurringRequirements := getPotentialInitialAndRecurringRequirements(requirements)
-	qualificationEditor := admin.QualificationEditor(admin.QualificationEditorData{
+	qualificationEditor := webcomponents.QualificationEditor(webcomponents.QualificationEditorData{
 		SelectedQualification:          qual,
 		PotentialInitialRequirements:   initialRequirements,
 		PotentialRecurringRequirements: recurringRequirements,
@@ -131,7 +132,7 @@ func (s Server) AdminQualificationEditorGetHandler(w http.ResponseWriter, r *htt
 		Subordinates: subordinateLength > 0,
 	}, admin.AdminPage("Qualifications", admin.QualificationPane(admin.QualificationPaneData{
 		SelectedQualification: qual,
-		QualificationEditorData: admin.QualificationEditorData{
+		QualificationEditorData: webcomponents.QualificationEditorData{
 			SelectedQualification:          qual,
 			PotentialInitialRequirements:   initialRequirements,
 			PotentialRecurringRequirements: recurringRequirements,
@@ -221,7 +222,7 @@ func (s Server) AdminQualificationUpdateHandler(w http.ResponseWriter, r *http.R
 	err = admin.QualificationPane(admin.QualificationPaneData{
 		Qualifications:        qualifications,
 		SelectedQualification: updatedQualification,
-		QualificationEditorData: admin.QualificationEditorData{
+		QualificationEditorData: webcomponents.QualificationEditorData{
 			SelectedQualification:          updatedQualification,
 			PotentialInitialRequirements:   initialRequirements,
 			PotentialRecurringRequirements: recurringRequirements,
@@ -249,7 +250,7 @@ func (s Server) AdminNewQualificationHandler(w http.ResponseWriter, r *http.Requ
 	initialRequirements, recurringRequirements := getPotentialInitialAndRecurringRequirements(requirements)
 	if checkHTMXRequest(r) {
 		w.Header().Set("HX-Push-URL", "/admin/qualifications/add")
-		err = admin.QualificationEditor(admin.QualificationEditorData{
+		err = webcomponents.QualificationEditor(webcomponents.QualificationEditorData{
 			NewQualification:               true,
 			PotentialInitialRequirements:   initialRequirements,
 			PotentialRecurringRequirements: recurringRequirements,
@@ -278,7 +279,7 @@ func (s Server) AdminNewQualificationHandler(w http.ResponseWriter, r *http.Requ
 		}, admin.AdminPage("Qualifications", admin.QualificationPane(admin.QualificationPaneData{
 			Qualifications:        qualifications,
 			SelectedQualification: types.Qualification{},
-			QualificationEditorData: admin.QualificationEditorData{
+			QualificationEditorData: webcomponents.QualificationEditorData{
 				PotentialInitialRequirements:   initialRequirements,
 				PotentialRecurringRequirements: recurringRequirements,
 				NewQualification:               true,
@@ -360,7 +361,7 @@ func (s Server) AdminQualificationAddHandler(w http.ResponseWriter, r *http.Requ
 		Qualifications:        qualifications,
 		SelectedQualification: qual,
 		OobSwap:               false,
-		QualificationEditorData: admin.QualificationEditorData{
+		QualificationEditorData: webcomponents.QualificationEditorData{
 			SelectedQualification:          qual,
 			PotentialInitialRequirements:   initialRequirements,
 			PotentialRecurringRequirements: recurringRequirements,

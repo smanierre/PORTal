@@ -114,6 +114,7 @@ func (s Server) deleteRequirement(w http.ResponseWriter, r *http.Request) {
 	//l := s.logger.With(slog.String("path", fmt.Sprintf("%s %s", r.Method, r.URL.Path)))
 	id := r.PathValue("id")
 	err := s.backend.DeleteRequirement(id)
+	fmt.Println(err)
 	if errors.Is(err, backend.ErrRequirementNotFound) {
 		w.WriteHeader(http.StatusNotFound)
 		return
