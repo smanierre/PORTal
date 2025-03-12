@@ -66,6 +66,14 @@ CREATE TABLE qualification_recurring_requirement(
     FOREIGN KEY (requirement_id) REFERENCES requirement(id) ON DELETE CASCADE
 );
 
+CREATE TABLE qualification_requirement(
+    requirement_id string,
+    qualification_id string,
+    PRIMARY KEY (requirement_id, qualification_id),
+    FOREIGN KEY (requirement_id) REFERENCES requirement(id) ON DELETE CASCADE,
+    FOREIGN KEY (qualification_id) REFERENCES qualification(id) ON DELETE CASCADE
+);
+
 CREATE TABLE session(
     id string PRIMARY KEY,
     user_agent string,

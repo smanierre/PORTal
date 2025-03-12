@@ -47,6 +47,14 @@ func (m Member) GetPotentialSupervisors(members []Member) []Member {
 	return ps
 }
 
+func (m Member) GetID() string {
+	return m.ID
+}
+
+func (m Member) Display() string {
+	return fmt.Sprintf("%s %s", m.FirstName, m.LastName)
+}
+
 func GetRank(member Member, service string) string {
 	switch service {
 	case "f":

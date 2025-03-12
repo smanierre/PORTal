@@ -117,7 +117,6 @@ func New(logger *slog.Logger, backend Backend, dev bool, config Config) Server {
 	// Component Routes
 	s.mux.Handle("GET /components/requirementItem", http.HandlerFunc(s.RequirementItemComponent))
 	s.mux.Handle("GET /components/requirementEditor", http.HandlerFunc(s.RequirementEditorComponent))
-
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully registered routes")
 	return s
 }

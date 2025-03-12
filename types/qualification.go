@@ -35,13 +35,22 @@ func (q Qualification) LogValue() slog.Value {
 		q.ID, q.Name, q.Notes, q.Expires, q.ExpirationInterval, q.InitialRequirements, q.RecurringRequirements))
 }
 
+func (q Qualification) GetID() string {
+	return q.ID
+}
+
+func (q Qualification) Display() string {
+	return q.Name
+}
+
 type Requirement struct {
-	ID           string
-	Name         string
-	Reference    string
-	Notes        string
-	DaysValidFor int
-	Type         RequirementType
+	ID              string          `json:"id"`
+	Name            string          `json:"name"`
+	Reference       string          `json:"reference"`
+	QualificationID string          `json:"qualification_id"`
+	Notes           string          `json:"notes"`
+	DaysValidFor    int             `json:"days_valid_for"`
+	Type            RequirementType `json:"type"`
 }
 
 func (r Requirement) LogValue() slog.Value {

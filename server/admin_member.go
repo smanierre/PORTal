@@ -29,6 +29,7 @@ func (s Server) AdminMembersPaneGetHandler(w http.ResponseWriter, r *http.Reques
 			return
 		}
 	}
+	//update this to get selected dropdown item passed down on initial page load, along with on other pages too
 	memberPane := admin.MembersPane(admin.MembersPaneData{
 		Members:          mems,
 		SelectedMember:   types.Member{},

@@ -3,7 +3,7 @@ package admin
 import (
 	"PORTal/templates/components/webcomponents"
 	"PORTal/types"
-	"fmt"
+	"PORTal/templates"
 )
 
 type QualificationPaneData struct {
@@ -22,26 +22,7 @@ templ QualificationPane(data QualificationPaneData) {
 			hx-swap-oob="true"
 		}
 	>
-		<div class="searchable-list-search">
-			<input class="searchable-list-search-input" placeholder="Filter"/>
-			<button class="button primary" type="button">Clear</button>
-		</div>
-		<ul class="searchable-list-items">
-			for _, qualification := range data.Qualifications {
-				<li
-					@click="selectHandler"
-					if data.SelectedQualification.ID == qualification.ID {
-						x-init="selectHandler({target: $el})"
-					}
-					class={ "searchable-list-item", templ.KV(data.SelectedQualification.ID == qualification.ID, "searchable-list-item--selected") }
-					hx-target="#qualification-content"
-					hx-get={ fmt.Sprintf("/admin/qualifications/%s", qualification.ID) }
-				>
-					{ qualification.Name }
-				</li>
-			}
-		</ul>
-		<button @click="clearSelectedQualification" type="button" class="admin-new-member button primary" hx-get="/admin/qualifications/add" hx-target="#qualification-content">New Qualification</button>
+	    @webcomponents.SearchableList(templates.QualificationsToListItems(data.Qualifications), data.SelectedQualification, "#qualification-content", "/admin/qualifications", "Qualification")
 	</div>
 	<div id="qualification-content">
 		if data.SelectedQualification.ID != "" || data.QualificationEditorData.NewQualification {

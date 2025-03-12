@@ -5,10 +5,11 @@ import (
 "PORTal/templates/helpers"
 )
 
-templ RequirementSelector(reqType string, requirements []types.Requirement) {
+templ RequirementSelector(reqType string, requirements []types.Requirement, parentQualificationID string) {
     <requirement-selector
         requirements={helpers.RequirementsToJSON(requirements)}
         data-reqType={reqType}
+        data-parent-qualification-id={parentQualificationID}
     >
         <dialog class="requirement-dialog"></dialog>
         <div class="requirement-items">

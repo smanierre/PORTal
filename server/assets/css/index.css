@@ -1,7 +1,7 @@
 @import "button.css";
 @import "login.css";
 @import "admin.css";
-@import "searchable-list.css";
+@import "webcomponents/searchable-list.css";
 @import "dropdown.css";
 @import "toast.css";
 

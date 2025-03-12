@@ -4,6 +4,7 @@ import (
     "PORTal/types"
     "PORTal/templates/components"
     "PORTal/templates"
+    "PORTal/templates/components/webcomponents"
     "fmt"
     )
 
@@ -28,7 +29,7 @@ type SupervisorListData struct {
 }
 
 templ MembersPane(data MembersPaneData) {
-    <div x-data="adminMemberList" id="members-list" class="searchable-list"
+    <div id="members-list" class="searchable-list"
      if data.OobSwap {
         hx-swap-oob="true"
      }>
@@ -42,24 +43,7 @@ templ MembersPane(data MembersPaneData) {
                     Disabled
                 </button>
             </div>
-            <div class="searchable-list-search">
-                <input class="searchable-list-search-input" placeholder="Filter"/>
-                <button class="button primary" type="button">Clear</button>
-            </div>
-            <ul class="searchable-list-items">
-                for _, member := range data.Members {
-                    <li
-                            @click="selectHandler"
-                            if data.SelectedMember.ID == member.ID {
-                                x-init="selectHandler({target: $el})"
-                            }
-                            class={"searchable-list-item", templ.KV(data.SelectedMember.ID == member.ID, "searchable-list-item--selected")}
-                            hx-target="#member-content" hx-get={fmt.Sprintf("/admin/members/%s", member.ID)}>
-                            { templates.DisplayName(member) }
-                    </li>
-                }
-            </ul>
-            <button @click="clearSelectedMember" type="button" class="admin-new-member button primary" hx-get="/admin/members/add" hx-target="#member-content">New Member</button>
+            @webcomponents.SearchableList(templates.MembersToListItems(data.Members), data.SelectedMember, "#member-content", "/admin/members", "Member")
     </div>
     <div id="member-content">
         if data.SelectedMember.ID != "" || data.MemberEditorData.NewMember {
@@ -69,7 +53,7 @@ templ MembersPane(data MembersPaneData) {
 }
 
 templ MemberEditor(data MemberEditorData) {
-        <form x-data="adminMemberEditor" class="editor" hx-indicator=".form-submit"
+        <form class="editor" hx-indicator=".form-submit"
               if data.NewMember {
                 hx-post="/admin/members/add"
               } else {
@@ -79,7 +63,7 @@ templ MemberEditor(data MemberEditorData) {
         >
             <label>ID: <input name="id" class="editor-input" disabled value={data.SelectedMember.ID} /></label>
             <label>Rank:
-                <select name="grade" @change={fmt.Sprintf("(e) => gradeOnChange(e, '%s')", data.SelectedMember.ID)}>
+                <select name="grade">
                     for _, tuple := range data.Ranks.SortedRanks() {
                         <option
                         if tuple.Grade == data.SelectedMember.Grade {

@@ -4,6 +4,7 @@ import (
     "PORTal/templates/helpers"
     "PORTal/types"
     "PORTal/templates/components"
+    "fmt"
 )
 
 type QualificationEditorData struct {
@@ -15,7 +16,7 @@ type QualificationEditorData struct {
 
 templ QualificationEditor(data QualificationEditorData) {
     <qualification-editor>
-	    <form class="editor">
+	    <form class="editor" hx-post={fmt.Sprintf("/admin/qualifications/%s", data.SelectedQualification.ID)}>
 		    <label>ID: <input name="id" class="editor-input" disabled value={ data.SelectedQualification.ID }/></label>
 		    <label>Name: <input name="name" value={ data.SelectedQualification.Name }/></label>
 		    <label>Notes: <textarea name="notes">{ data.SelectedQualification.Notes }</textarea></label>
@@ -35,12 +36,14 @@ templ QualificationEditor(data QualificationEditorData) {
 		    >Expiration Interval: <input type="number" name="expiration_interval" value={ helpers.DaysFromDuration(data.SelectedQualification.ExpirationInterval)}/>
 		    </label>
 		    <label>
+		    <input name="initial_requirements" hidden type="text" />
 			    Initial Requirements:
-                @RequirementSelector("initial_requirements", data.SelectedQualification.InitialRequirements)
+                @RequirementSelector("initial_requirements", data.SelectedQualification.InitialRequirements, data.SelectedQualification.ID)
 		    </label>
 		    <label>
+		        <input name="recurring_requirements" hidden type="text" />
 			    Recurring Requirements:
-			    @RequirementSelector("recurring_requirements", data.SelectedQualification.RecurringRequirements)
+			    @RequirementSelector("recurring_requirements", data.SelectedQualification.RecurringRequirements, data.SelectedQualification.ID)
 		    </label>
 		    <div style="display: flex; gap: 1rem;">
 			    if data.NewQualification {
@@ -48,14 +51,7 @@ templ QualificationEditor(data QualificationEditorData) {
 			    } else {
 				    @components.SubmitButton("Update Qualification", true)
 			    }
-			        if !data.NewQualification {
-			    }
 		    </div>
 	    </form>
-	    <script type="text/javascript">
-            document.querySelector(".editor").addEventListener("change", function() {
-                document.querySelector(".form-submit").disabled = false
-            })
-        </script>
     </qualification-editor>
 }

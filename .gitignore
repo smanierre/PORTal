@@ -12,3 +12,5 @@ tmp
 config.yml
 .direnv
 node_modules
+bundle.js
+dist

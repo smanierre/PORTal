@@ -7,10 +7,12 @@ import (
 	"PORTal/templates/pages/admin"
 	"PORTal/templates/pages/errorpages"
 	"PORTal/types"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -174,15 +176,28 @@ func (s Server) AdminQualificationUpdateHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	initialRequirementIds := r.Form["initial_requirements"]
-	recurringRequirementIds := r.Form["recurring_requirements"]
+	initialRequirementJSON := r.Form.Get("initial_requirements")
+	recurringRequirementJSON := r.Form.Get("recurring_requirements")
 	newInitialRequirements := []types.Requirement{}
 	newRecurringRequirements := []types.Requirement{}
-	for _, id := range initialRequirementIds {
-		newInitialRequirements = append(newInitialRequirements, types.Requirement{ID: id})
+
+	err = json.NewDecoder(strings.NewReader(initialRequirementJSON)).Decode(&newInitialRequirements)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error decoding initial requirements from JSON", slog.String("error", err.Error()))
+		err = components.Toast("Unable to parse initial requirements.", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast for invalid initial requirements", slog.String("error", err.Error()))
+		}
+		return
 	}
-	for _, id := range recurringRequirementIds {
-		newRecurringRequirements = append(newRecurringRequirements, types.Requirement{ID: id})
+	err = json.NewDecoder(strings.NewReader(recurringRequirementJSON)).Decode(&newRecurringRequirements)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error decoding recurring requirements from JSON", slog.String("error", err.Error()))
+		err = components.Toast("Unable to parse recurring requirements.", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast for invalid recurring requirements", slog.String("error", err.Error()))
+		}
+		return
 	}
 
 	newQualification := types.Qualification{
