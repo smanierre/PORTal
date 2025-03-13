@@ -11,9 +11,9 @@ customElements.define("dropdown-component", Dropdown);
 customElements.define("searchable-list", SearchableList);
 
 document.addEventListener("htmx:beforeOnLoad", (evt: Event) => {
-    const e = evt as HTMXEvent
-    if (e.detail.xhr.status === 401 || e.detail.xhr.status === 500) {
-        e.detail.shouldSwap = true;
-        e.detail.isError = false;
-    }
-})
+  const e = evt as HTMXEvent;
+  if (e.detail.xhr.status === 401 || e.detail.xhr.status === 500) {
+    e.detail.shouldSwap = true;
+    e.detail.isError = false;
+  }
+});
