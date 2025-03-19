@@ -45,7 +45,7 @@ func (p Provider) GetQualification(id string) (types.Qualification, error) {
 		return types.Qualification{}, backend.ErrQualificationNotFound
 	}
 	if err != nil {
-		p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Error scanning qualification into struct", slog.String("error", err.Error()))
+		p.logger.LogAttrs(context.Background(), slog.LevelError, "Error scanning qualification into struct", slog.String("error", err.Error()))
 		return types.Qualification{}, err
 	}
 	p.logger.LogAttrs(context.Background(), slog.LevelInfo, "Retrieving initial requirements")

@@ -179,6 +179,10 @@ export class RequirementEditor extends HTMLElement {
         }
       }
     });
+    if (qualificationOptions?.length === 0) {
+      this.qualificationLabel!.hidden = true;
+      this.qualificationInput!.disabled = true;
+    }
   }
 
   disconnectedCallback() {

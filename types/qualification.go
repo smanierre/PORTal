@@ -48,6 +48,7 @@ type Requirement struct {
 	Name            string          `json:"name"`
 	Reference       string          `json:"reference"`
 	QualificationID string          `json:"qualification_id"`
+	Grade           Grade           `json:"grade"`
 	Notes           string          `json:"notes"`
 	DaysValidFor    int             `json:"days_valid_for"`
 	Type            RequirementType `json:"type"`

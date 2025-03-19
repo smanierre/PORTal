@@ -79,28 +79,9 @@ func (s Server) AdminQualificationEditorGetHandler(w http.ResponseWriter, r *htt
 		}
 		return
 	}
-	requirements, err := s.backend.GetAllRequirements()
-	if err != nil {
-		if checkHTMXRequest(r) {
-			err = components.Toast("Unable to get Qualification Editor.", true).Render(r.Context(), w)
-			if err != nil {
-				s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
-				_ = errorpages.GenericISE().Render(r.Context(), w)
-			}
-		} else {
-			err = errorpages.GenericISE().Render(r.Context(), w)
-			if err != nil {
-				s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering generic error page", slog.String("error", err.Error()))
-			}
-		}
-		return
-	}
-	initialRequirements, recurringRequirements := getPotentialInitialAndRecurringRequirements(requirements)
 	qualificationEditor := webcomponents.QualificationEditor(webcomponents.QualificationEditorData{
-		SelectedQualification:          qual,
-		PotentialInitialRequirements:   initialRequirements,
-		PotentialRecurringRequirements: recurringRequirements,
-		NewQualification:               false,
+		SelectedQualification: qual,
+		NewQualification:      false,
 	})
 	if checkHTMXRequest(r) {
 		w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin/qualifications/%s", r.PathValue("id")))
@@ -135,10 +116,8 @@ func (s Server) AdminQualificationEditorGetHandler(w http.ResponseWriter, r *htt
 	}, admin.AdminPage("Qualifications", admin.QualificationPane(admin.QualificationPaneData{
 		SelectedQualification: qual,
 		QualificationEditorData: webcomponents.QualificationEditorData{
-			SelectedQualification:          qual,
-			PotentialInitialRequirements:   initialRequirements,
-			PotentialRecurringRequirements: recurringRequirements,
-			NewQualification:               false,
+			SelectedQualification: qual,
+			NewQualification:      false,
 		},
 		OobSwap:        false,
 		Qualifications: quals,
@@ -226,22 +205,12 @@ func (s Server) AdminQualificationUpdateHandler(w http.ResponseWriter, r *http.R
 		}
 		return
 	}
-	requirements, err := s.backend.GetAllRequirements()
-	if err != nil {
-		err = components.Toast("Unable to update page, please refresh", true).Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
-		}
-	}
-	initialRequirements, recurringRequirements := getPotentialInitialAndRecurringRequirements(requirements)
 	err = admin.QualificationPane(admin.QualificationPaneData{
 		Qualifications:        qualifications,
 		SelectedQualification: updatedQualification,
 		QualificationEditorData: webcomponents.QualificationEditorData{
-			SelectedQualification:          updatedQualification,
-			PotentialInitialRequirements:   initialRequirements,
-			PotentialRecurringRequirements: recurringRequirements,
-			NewQualification:               false,
+			SelectedQualification: updatedQualification,
+			NewQualification:      false,
 		},
 		OobSwap: false,
 	}).Render(r.Context(), w)
@@ -257,19 +226,15 @@ func (s Server) AdminQualificationUpdateHandler(w http.ResponseWriter, r *http.R
 
 func (s Server) AdminNewQualificationHandler(w http.ResponseWriter, r *http.Request) {
 	s.logger.LogAttrs(r.Context(), slog.LevelInfo, "Sending back empty qualification editor")
-	requirements, err := s.backend.GetAllRequirements()
-	if err != nil {
-		_ = errorpages.GenericISE().Render(r.Context(), w)
-		return
-	}
-	initialRequirements, recurringRequirements := getPotentialInitialAndRecurringRequirements(requirements)
 	if checkHTMXRequest(r) {
 		w.Header().Set("HX-Push-URL", "/admin/qualifications/add")
-		err = webcomponents.QualificationEditor(webcomponents.QualificationEditorData{
-			NewQualification:               true,
-			PotentialInitialRequirements:   initialRequirements,
-			PotentialRecurringRequirements: recurringRequirements,
+		err := webcomponents.QualificationEditor(webcomponents.QualificationEditorData{
+			NewQualification: true,
 		}).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering Qualification editor", slog.String("error", err.Error()))
+		}
+		return
 	} else {
 		m, err := getMemberFromContext(r.Context())
 		if err != nil {
@@ -295,16 +260,13 @@ func (s Server) AdminNewQualificationHandler(w http.ResponseWriter, r *http.Requ
 			Qualifications:        qualifications,
 			SelectedQualification: types.Qualification{},
 			QualificationEditorData: webcomponents.QualificationEditorData{
-				PotentialInitialRequirements:   initialRequirements,
-				PotentialRecurringRequirements: recurringRequirements,
-				NewQualification:               true,
+				NewQualification: true,
 			},
 			OobSwap: false,
 		}))).Render(r.Context(), w)
-	}
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering new qualification fragment", slog.String("error", err.Error()))
-		_ = errorpages.GenericISE().Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering qualification page with root template", slog.String("error", err.Error()))
+		}
 	}
 }
 
@@ -339,37 +301,48 @@ func (s Server) AdminQualificationAddHandler(w http.ResponseWriter, r *http.Requ
 	}
 	qual.ExpirationInterval = time.Duration(expirationDays) * 24 * time.Hour
 
-	for _, id := range r.Form["initial_requirements"] {
-		qual.InitialRequirements = append(qual.InitialRequirements, types.Requirement{ID: id})
+	initialRequirementJSON := r.Form.Get("initial_requirements")
+	recurringRequirementJSON := r.Form.Get("recurring_requirements")
+	newInitialRequirements := []types.Requirement{}
+	newRecurringRequirements := []types.Requirement{}
+
+	err = json.NewDecoder(strings.NewReader(initialRequirementJSON)).Decode(&newInitialRequirements)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error decoding initial requirements from JSON", slog.String("error", err.Error()))
+		err = components.Toast("Unable to parse initial requirements.", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast for invalid initial requirements", slog.String("error", err.Error()))
+		}
+		return
 	}
-	for _, id := range r.Form["recurring_requirements"] {
-		qual.RecurringRequirements = append(qual.RecurringRequirements, types.Requirement{ID: id})
+	err = json.NewDecoder(strings.NewReader(recurringRequirementJSON)).Decode(&newRecurringRequirements)
+	if err != nil {
+		s.logger.LogAttrs(r.Context(), slog.LevelWarn, "Error decoding recurring requirements from JSON", slog.String("error", err.Error()))
+		err = components.Toast("Unable to parse recurring requirements.", true).Render(r.Context(), w)
+		if err != nil {
+			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast for invalid recurring requirements", slog.String("error", err.Error()))
+		}
+		return
 	}
+	qual.InitialRequirements = newInitialRequirements
+	qual.RecurringRequirements = newRecurringRequirements
 	qual, err = s.backend.AddQualification(qual)
 	if err != nil {
 		err = components.Toast("Unable to create Qualification.", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
 			_ = errorpages.GenericISE().Render(r.Context(), w)
-			return
 		}
+		return
 	}
-	requirements, err := s.backend.GetAllRequirements()
-	if err != nil {
-		err = components.Toast("Unable to update page, please refresh", true).Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
-			return
-		}
-	}
-	initialRequirements, recurringRequirements := getPotentialInitialAndRecurringRequirements(requirements)
+
 	qualifications, err := s.backend.GetAllQualifications()
 	if err != nil {
 		err = components.Toast("Unable to update page, please refresh", true).Render(r.Context(), w)
 		if err != nil {
 			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering danger toast", slog.String("error", err.Error()))
-			return
 		}
+		return
 	}
 	w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin/qualifications/%s", qual.ID))
 	err = admin.QualificationPane(admin.QualificationPaneData{
@@ -377,10 +350,8 @@ func (s Server) AdminQualificationAddHandler(w http.ResponseWriter, r *http.Requ
 		SelectedQualification: qual,
 		OobSwap:               false,
 		QualificationEditorData: webcomponents.QualificationEditorData{
-			SelectedQualification:          qual,
-			PotentialInitialRequirements:   initialRequirements,
-			PotentialRecurringRequirements: recurringRequirements,
-			NewQualification:               false,
+			SelectedQualification: qual,
+			NewQualification:      false,
 		},
 	}).Render(r.Context(), w)
 	if err != nil {
@@ -392,16 +363,4 @@ func (s Server) AdminQualificationAddHandler(w http.ResponseWriter, r *http.Requ
 	if err != nil {
 		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering reference creation toast", slog.String("error", err.Error()))
 	}
-}
-
-func getPotentialInitialAndRecurringRequirements(allReqs []types.Requirement) ([]types.Requirement, []types.Requirement) {
-	var initialRequirements, recurringRequirements []types.Requirement
-	for _, v := range allReqs {
-		if v.DaysValidFor > 0 {
-			recurringRequirements = append(recurringRequirements, v)
-		} else {
-			initialRequirements = append(initialRequirements, v)
-		}
-	}
-	return initialRequirements, recurringRequirements
 }
