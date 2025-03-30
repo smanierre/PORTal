@@ -1,38 +1,32 @@
 package server
 
 import (
+	"PORTal/server/serverutils"
 	"PORTal/templates"
-	"PORTal/templates/pages"
+	"PORTal/templates/pages/dashboard"
 	"PORTal/types"
-	"log"
 	"log/slog"
 	"net/http"
 )
 
-func (s Server) DashboardGetHandler(w http.ResponseWriter, r *http.Request) {
-	m := r.Context().Value(MemberContextKey)
-	member, ok := m.(types.Member)
-	if !ok {
-		//TODO: FIX THIS
-		log.Println("hmmmm")
-	}
-	if checkHTMXRequest(r) {
-		w.Header().Set("HX-Push-URL", "/dashboard")
-		err := pages.Dashboard().Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard template", slog.String("error", err.Error()))
+func dashboardGetHandler(logger *slog.Logger) http.Handler {
+	logger = logger.With(slog.String("route", "GET /dashboard"))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		m := r.Context().Value(serverutils.MemberContextKey)
+		member, ok := m.(types.Member)
+		if !ok {
+			logger.LogAttrs(r.Context(), slog.LevelWarn, "unable to get member from context, redirecting to login")
+			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
-	} else {
-		err := templates.Root(templates.NavData{
+		rootTemplate := templates.Root(templates.NavData{
 			Show:         true,
 			OobSwap:      false,
 			Member:       member,
 			Subordinates: false,
 		},
-			pages.Dashboard()).Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard page", slog.String("error", err.Error()))
-		}
-	}
+			dashboard.Dashboard())
+
+		serverutils.HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
+	})
 }

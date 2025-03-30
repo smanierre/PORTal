@@ -3,7 +3,7 @@ package webcomponents
 import (
     "PORTal/templates/helpers"
     "PORTal/types"
-    "PORTal/templates/components"
+    "PORTal/templates/components/button"
     "fmt"
 )
 
@@ -52,9 +52,9 @@ templ QualificationEditor(data QualificationEditorData) {
 		    </label>
 		    <div style="display: flex; gap: 1rem;">
 			    if data.NewQualification {
-				    @components.SubmitButton("Create Qualification", true)
+				    @button.Button("Create Qualification", button.Submit, true, false)
 			    } else {
-				    @components.SubmitButton("Update Qualification", true)
+				    @button.Button("Update Qualification", button.Submit, true, false)
 			    }
 		    </div>
 	    </form>

@@ -1,0 +1,35 @@
+package admin
+
+import "fmt"
+
+type Option struct {
+    Name string
+    Value string
+    }
+
+var options []Option = []Option{
+    {
+        Name: "Members",
+        Value: "members",
+    },
+    {
+        Name: "Qualifications",
+        Value: "qualifications",
+    },
+}
+
+templ AdminDropdown(dropdownValue string, oobSwap bool) {
+     <div class="dropdown-container" id="admin-dropdown" x-data="{open: false}"
+     if oobSwap {
+        hx-swap-oob="true"
+     }>
+        <button class="button primary" @click="open=!open">{dropdownValue}</button>
+        <div x-cloak x-show="open" @click.outside="open=false" class="dropdown-list">
+            for _, option := range options {
+                <a class="dropdown-item" hx-target="#admin-content" href={templ.URL(fmt.Sprintf("/admin?fragment=%s_pane", option.Value))}>
+                <span>{option.Name}</span>
+                </a>
+            }
+        </div>
+     </div>
+}

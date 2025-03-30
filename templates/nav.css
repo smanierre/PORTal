@@ -1,0 +1,36 @@
+.nav {
+    position: sticky;
+    display: flex;
+    align-items: center;
+    width: 100vw;
+    top: 0;
+    background-color: hsl(var(--background))
+}
+
+.nav-item {
+    display: flex;
+    width: fit-content;
+    color: hsl(var(--primary));
+    cursor: pointer;
+    height: 100%;
+    padding: 0 1rem;
+    align-items: center;
+
+    &:hover {
+        background-color: hsl(var(--background-dark));
+    }
+}
+
+.nav-right-items {
+    display: flex;
+    margin-left: auto;
+    width: fit-content;
+    height: 100%
+}
+
+.nav-display-name {
+    display: flex;
+    align-items: center;
+    color: hsl(var(--primary));
+    margin-right: 1rem;
+}

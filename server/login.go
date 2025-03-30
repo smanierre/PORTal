@@ -2,86 +2,96 @@ package server
 
 import (
 	"PORTal/backend"
+	"PORTal/server/serverutils"
+	"PORTal/server/stores"
 	"PORTal/templates"
-	"PORTal/templates/components"
 	"PORTal/templates/pages"
-	"PORTal/templates/pages/errorpages"
+	"PORTal/templates/pages/dashboard"
 	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
 )
 
-func (s Server) LoginGetHandler(w http.ResponseWriter, r *http.Request) {
-	loginTpl := pages.Login()
-	hx := checkHTMXRequest(r)
-	if !hx {
-		err := templates.Root(templates.NavData{}, loginTpl).Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login template: %s", slog.String("error", err.Error()))
+func LoginDirectorHandler(logger *slog.Logger, organization string, memberStore stores.MemberStore, sessionStore stores.SessionStore) http.Handler {
+	logger = logger.With(slog.String("route", "/"))
+	loginGetHandler := LoginGetHandler(logger.With(slog.String("route", "GET /")), organization)
+	loginPostHandler := LoginPostHandler(logger.With(slog.String("route", "POST /")), memberStore, sessionStore)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" && r.URL.Path == "/" {
+			loginGetHandler.ServeHTTP(w, r)
+		} else if r.Method == "POST" && r.URL.Path == "/" {
+			loginPostHandler.ServeHTTP(w, r)
+		} else {
+			logger.LogAttrs(r.Context(), slog.LevelWarn, "Requested path and method not found", slog.String("path", r.URL.Path), slog.String("method", r.Method))
+			w.WriteHeader(http.StatusNotFound)
 		}
-	} else {
-		err := loginTpl.Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login fragment: %s", slog.String("error", err.Error()))
-		}
-	}
+	})
 }
 
-func (s Server) LoginPostHandler(w http.ResponseWriter, r *http.Request) {
-	if !checkHTMXRequest(r) {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Non-HTMX request on login post endpoint, unauthorized")
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	err := r.ParseForm()
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error parsing form", slog.String("error", err.Error()))
-	}
-	m, err := s.backend.Login(r.FormValue("username"), r.FormValue("password"))
-	if errors.Is(err, backend.ErrAuthenticationFailed) {
-		w.Header().Set("HX-Retarget", "#loginError")
-		w.Header().Set("HX-Reswap", "outerHTML")
-		w.WriteHeader(http.StatusUnauthorized)
-		err = pages.LoginAuthError().Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login error fragment", slog.String("error", err.Error()))
+func LoginGetHandler(logger *slog.Logger, organization string) http.Handler {
+	logger = logger.With(slog.String("source", "LoginGetHandler"))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		loginTpl := pages.Login(organization)
+		hx := serverutils.CheckHTMXRequest(r)
+		if !hx {
+			err := templates.Root(templates.NavData{}, loginTpl).Render(r.Context(), w)
+			if err != nil {
+				logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login template: %s", slog.String("error", err.Error()))
+			}
+		} else {
+			err := loginTpl.Render(r.Context(), w)
+			if err != nil {
+				logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login fragment: %s", slog.String("error", err.Error()))
+			}
 		}
-		return
-	}
-	if err != nil {
-		w.Header().Set("HX-Retarget", "#loginError")
-		w.Header().Set("HX-Reswap", "outerHTML")
-		w.WriteHeader(http.StatusInternalServerError)
-		err = pages.LoginInternalError().Render(r.Context(), w)
+	})
+}
+
+func LoginPostHandler(logger *slog.Logger, memberStore stores.MemberStore, sessionStore stores.SessionStore) http.Handler {
+	logger = logger.With(slog.String("source", "LoginPostHandler"))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger.LogAttrs(r.Context(), slog.LevelInfo, "Handling login request")
+		err := r.ParseForm()
 		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering ISE error fragment", slog.String("error", err.Error()))
+			logger.LogAttrs(r.Context(), slog.LevelError, "Error parsing form", slog.String("error", err.Error()))
+			w.Header().Set("HX-Retarget", "#loginError")
+			w.Header().Set("HX-Reswap", "outerHTML")
+			serverutils.HandleRenderError(r.Context(), logger, pages.LoginCustomError(err.Error()).Render(r.Context(), w))
+			return
 		}
-		return
-	}
-	sessionId, expiration := s.backend.CreateSession(m.ID, r.UserAgent(), strings.Split(r.RemoteAddr, ":")[0])
-	w.Header().Set("HX-Push-URL", "/dashboard")
-	http.SetCookie(w, s.makeCookie(SessionCookieName, sessionId, expiration))
-	err = pages.Dashboard().Render(r.Context(), w)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard fragment", slog.String("error", err.Error()))
-	}
-	subordinates, err := s.backend.GetSubordinates(m.ID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		err = errorpages.GenericISE().Render(r.Context(), w)
+		member, err := memberStore.Login(r.Form.Get("username"), r.Form.Get("password"))
+		if err != nil && errors.Is(err, backend.ErrAuthenticationFailed) {
+			w.Header().Set("HX-Retarget", "#loginError")
+			w.Header().Set("HX-Reswap", "outerHTML")
+			w.WriteHeader(http.StatusUnauthorized)
+			serverutils.HandleRenderError(r.Context(), logger, pages.LoginAuthError().Render(r.Context(), w))
+			return
+		} else if err != nil {
+			logger.LogAttrs(r.Context(), slog.LevelError, "Error parsing form", slog.String("error", err.Error()))
+			w.Header().Set("HX-Retarget", "#loginError")
+			w.Header().Set("HX-Reswap", "outerHTML")
+			serverutils.HandleRenderError(r.Context(), logger, pages.LoginCustomError(err.Error()).Render(r.Context(), w))
+			return
+		}
+		sessionId, expiration := sessionStore.CreateSession(member.ID, r.UserAgent(), strings.Split(r.RemoteAddr, ":")[0])
+		w.Header().Set("HX-Push-URL", "/dashboard")
+		http.SetCookie(w, serverutils.MakeCookie(serverutils.SessionCookieName, sessionId, expiration))
+		var hasSubordinates bool
+		subordinates, err := memberStore.GetSubordinates(member.ID)
 		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering generic ise error fragment", slog.String("error", err.Error()))
+			hasSubordinates = false
 		}
-	}
-	err = templates.Nav(templates.NavData{
-		Show:         true,
-		OobSwap:      true,
-		Member:       m,
-		Subordinates: len(subordinates) > 0,
-	}).Render(r.Context(), w)
-	if err != nil {
-		s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering Nav OOB", slog.String("error", err.Error()))
-		_ = components.Toast("Error updating nav, please refresh.", true).Render(r.Context(), w)
-	}
+		if len(subordinates) > 0 {
+			hasSubordinates = true
+		}
+		navData := templates.NavData{
+			Show:         true,
+			OobSwap:      false,
+			Member:       member,
+			Subordinates: hasSubordinates,
+		}
+		content := dashboard.Dashboard()
+		serverutils.HandleRenderError(r.Context(), logger, templates.Root(navData, content).Render(r.Context(), w))
+	})
 }

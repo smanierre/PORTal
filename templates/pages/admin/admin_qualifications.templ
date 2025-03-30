@@ -13,19 +13,19 @@ type QualificationPaneData struct {
 	OobSwap                 bool
 }
 
-templ QualificationPane(data QualificationPaneData) {
+templ QualificationPane(qualifications []types.Qualification, selectedQualification types.Qualification, newQualification, oobSwap bool) {
 	<div
 		id="qualifications-list"
 		class="searchable-list"
-		if data.OobSwap {
+		if oobSwap {
 			hx-swap-oob="true"
 		}
 	>
-	    @webcomponents.SearchableList(templates.QualificationsToListItems(data.Qualifications), data.SelectedQualification, "#qualification-content", "/admin/qualifications", "Qualification")
+	    @webcomponents.SearchableList(templates.QualificationsToListItems(qualifications), selectedQualification, "#qualification-content", "/admin/qualifications", "Qualification")
 	</div>
 	<div id="qualification-content">
-		if data.SelectedQualification.ID != "" || data.QualificationEditorData.NewQualification {
-			@webcomponents.QualificationEditor(data.QualificationEditorData)
+		if selectedQualification.ID != "" || newQualification {
+			// @webcomponents.QualificationEditor()
 		}
 	</div>
 }

@@ -46,11 +46,14 @@ templ Nav(data NavData) {
                 hx-swap-oob="true"
             }>
             for _, item := range data.GetNavItems() {
-                <a class="nav-item" hx-get={ item.Href } hx-target="#content">{ item.Display }</a>
+                <a class="nav-item" href={templ.URL(item.Href)}
+                hx-select="#content"
+                hx-swap="outerHTML"
+                hx-target="#content">{ item.Display }</a>
             }
             <div class="nav-right-items">
                 <p class="nav-display-name">{ DisplayName(data.Member) }</p>
-                <a class="nav-item" hx-target="#content" hx-get="/logout">Logout</a>
+                <a class="nav-item" hx-target="body" href="/logout">Logout</a>
             </div>
         </nav>
     } else {

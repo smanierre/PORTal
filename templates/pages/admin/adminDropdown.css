@@ -1,0 +1,25 @@
+.dropdown-container {
+    margin-top: 10px;
+    margin-left: 10px;
+}
+
+.dropdown-list {
+    position:relative;
+    background-color: hsl(var(--background));
+    top: 0;
+    left: 0;
+    width: fit-content;
+}
+
+.dropdown-item {
+    height: fit-content;
+    color: hsl(var(--primary));
+    padding: 10px 20px;
+    display: flex;
+    justify-content: center;
+    vertical-align: center;
+    cursor: pointer;
+    &:hover {
+        background-color: hsl(var(--background-dark));
+    }
+}

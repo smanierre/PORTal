@@ -2,25 +2,23 @@ package main
 
 import (
 	"PORTal/app"
-	"flag"
-	"gopkg.in/yaml.v2"
+	"context"
+	"fmt"
 	"os"
+	"os/signal"
 )
 
 func main() {
-	dev := flag.Bool("dev", false, "development mode")
-	configPath := flag.String("config", "config.yml", "Path to the yaml config file")
-	flag.Parse()
-	f, err := os.Open(*configPath)
+	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
+	defer cancel()
+	a, err := app.New(ctx, os.Stdout, os.Args)
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error creating application: %s\n", err)
+		os.Exit(1)
 	}
-	var config app.Config
-	decoder := yaml.NewDecoder(f)
-	err = decoder.Decode(&config)
-	if err != nil {
-		panic(err)
+	if err := a.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s\n", err)
+		os.Exit(1)
 	}
-	a := app.New(config, *dev, os.Stdout)
-	a.Run()
 }

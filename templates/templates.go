@@ -36,7 +36,3 @@ func QualificationsToListItems(q []types.Qualification) []webcomponents.Searchab
 	}
 	return items
 }
-
-func GetOrg() string {
-	return cfg.Organization
-}

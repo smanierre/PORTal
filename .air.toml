@@ -3,12 +3,12 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  args_bin = ["--dev"]
+  args_bin = ["--domain localhost", "--sessionTimeout 168h", '--organization "103d LRS"', "--dev"]
   bin = "./tmp/main"
-  cmd = "templ generate && npm run --prefix webcomponents build && cp webcomponents/dist/* server/assets/js/webcomponents/ && go build -o ./tmp/main ."
+  cmd = "templ generate && minify -r --match .*\\.css -o server/assets/css/index.min.css templates/ && go build -o ./tmp/main ."
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "webcomponents/node_modules"]
-  exclude_file = ["webcomponents/dist/bundle.js", "server/assets/js/webcomponents/bundle.js"]
+  exclude_file = ["webcomponents/dist/bundle.js", "server/assets/js/webcomponents/bundle.js", "server/assets/css/index.min.css"]
   exclude_regex = ["_test.go", ".*_templ.go"]
   exclude_unchanged = false
   follow_symlink = false

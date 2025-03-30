@@ -1,0 +1,11 @@
+.admin-layout {
+    display: grid;
+    height: 100%;
+    width: 100%;
+    grid-template-rows: 60px 1fr;
+}
+
+.admin-content {
+    display: grid;
+    grid-template-columns: 25% 1fr;
+}

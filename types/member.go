@@ -8,6 +8,32 @@ import (
 
 type Grade string
 
+func (g Grade) CanSupervise(grade Grade) bool {
+	// There's probably a better way, but this won't really need to be changed
+	switch g {
+	case E9:
+		return true
+	case E8:
+		return grade != E9
+	case E7:
+		return grade != E8 && grade != E9
+	case E6:
+		return grade != E7 && grade != E8 && grade != E9
+	case E5:
+		return grade != E6 && grade != E7 && grade != E8 && grade != E9
+	case E4:
+		return grade != E5 && grade != E6 && grade != E7 && grade != E8 && grade != E9
+	case E3:
+		return grade != E4 && grade != E5 && grade != E6 && grade != E7 && grade != E8 && grade != E9
+	case E2:
+		return grade != E3 && grade != E4 && grade != E5 && grade != E6 && grade != E7 && grade != E8 && grade != E9
+	case E1:
+		return grade == E1
+	default:
+		return false
+	}
+}
+
 const (
 	E1 Grade = "E1"
 	E2 Grade = "E2"
@@ -37,16 +63,6 @@ func (m Member) LogValue() slog.Value {
 	return slog.StringValue(fmt.Sprintf("ID: %s Member: %s %s %s Username: %s Supervisor ID: %s Admin: %t", m.ID, m.Grade, m.FirstName, m.LastName, m.Username, m.SupervisorID, m.Admin))
 }
 
-func (m Member) GetPotentialSupervisors(members []Member) []Member {
-	var ps []Member
-	for _, member := range members {
-		if m.Grade <= member.Grade && member.ID != m.ID {
-			ps = append(ps, member)
-		}
-	}
-	return ps
-}
-
 func (m Member) GetID() string {
 	return m.ID
 }
@@ -68,6 +84,16 @@ func GetRank(member Member, service string) string {
 	default:
 		return ""
 	}
+}
+
+func FilterMembers(members []Member, test func(m Member) bool) []Member {
+	var result []Member
+	for _, member := range members {
+		if test(member) {
+			result = append(result, member)
+		}
+	}
+	return result
 }
 
 type Session struct {
