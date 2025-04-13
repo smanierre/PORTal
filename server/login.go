@@ -7,16 +7,18 @@ import (
 	"PORTal/templates"
 	"PORTal/templates/pages"
 	"PORTal/templates/pages/dashboard"
+	"PORTal/types"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
 )
 
-func LoginDirectorHandler(logger *slog.Logger, organization string, memberStore stores.MemberStore, sessionStore stores.SessionStore) http.Handler {
+func LoginDirectorHandler(logger *slog.Logger, organization string, ranks types.RankMap, memberStore stores.MemberStore, sessionStore stores.SessionStore) http.Handler {
 	logger = logger.With(slog.String("route", "/"))
 	loginGetHandler := LoginGetHandler(logger.With(slog.String("route", "GET /")), organization)
-	loginPostHandler := LoginPostHandler(logger.With(slog.String("route", "POST /")), memberStore, sessionStore)
+	loginPostHandler := LoginPostHandler(logger.With(slog.String("route", "POST /")), memberStore, sessionStore, ranks, organization)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" && r.URL.Path == "/" {
 			loginGetHandler.ServeHTTP(w, r)
@@ -35,7 +37,7 @@ func LoginGetHandler(logger *slog.Logger, organization string) http.Handler {
 		loginTpl := pages.Login(organization)
 		hx := serverutils.CheckHTMXRequest(r)
 		if !hx {
-			err := templates.Root(templates.NavData{}, loginTpl).Render(r.Context(), w)
+			err := templates.Root(false, false, false, "", organization, loginTpl).Render(r.Context(), w)
 			if err != nil {
 				logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login template: %s", slog.String("error", err.Error()))
 			}
@@ -48,7 +50,7 @@ func LoginGetHandler(logger *slog.Logger, organization string) http.Handler {
 	})
 }
 
-func LoginPostHandler(logger *slog.Logger, memberStore stores.MemberStore, sessionStore stores.SessionStore) http.Handler {
+func LoginPostHandler(logger *slog.Logger, memberStore stores.MemberStore, sessionStore stores.SessionStore, ranks types.RankMap, organization string) http.Handler {
 	logger = logger.With(slog.String("source", "LoginPostHandler"))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger.LogAttrs(r.Context(), slog.LevelInfo, "Handling login request")
@@ -85,13 +87,8 @@ func LoginPostHandler(logger *slog.Logger, memberStore stores.MemberStore, sessi
 		if len(subordinates) > 0 {
 			hasSubordinates = true
 		}
-		navData := templates.NavData{
-			Show:         true,
-			OobSwap:      false,
-			Member:       member,
-			Subordinates: hasSubordinates,
-		}
+		displayName := fmt.Sprintf("%s %s %s", ranks[member.Grade], member.FirstName, member.LastName)
 		content := dashboard.Dashboard()
-		serverutils.HandleRenderError(r.Context(), logger, templates.Root(navData, content).Render(r.Context(), w))
+		serverutils.HandleRenderError(r.Context(), logger, templates.Root(true, hasSubordinates, member.Admin, displayName, organization, content).Render(r.Context(), w))
 	})
 }

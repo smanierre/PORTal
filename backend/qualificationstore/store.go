@@ -20,6 +20,7 @@ func New(provider QualificationProvider, logger *slog.Logger) QualificationStore
 
 type QualificationProvider interface {
 	AddQualification(q types.Qualification) error
+	AssignRequirementToQualification(qualificationID, requirementID string, initial bool) error
 	GetQualification(id string) (types.Qualification, error)
 	GetAllQualifications() ([]types.Qualification, error)
 	UpdateQualification(q types.Qualification) error

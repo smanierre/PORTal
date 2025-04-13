@@ -11,7 +11,7 @@ type NavData struct {
 	Subordinates bool
 }
 
-func (n NavData) GetNavItems() []NavItem {
+func getNavItems(subordinates, admin bool) []NavItem {
 	// All users get a dashboard
 	items := []NavItem{
 		{
@@ -19,13 +19,13 @@ func (n NavData) GetNavItems() []NavItem {
 			Display: "Dashboard",
 		},
 	}
-	if n.Subordinates {
+	if subordinates {
 		items = append(items, NavItem{
 			Href:    "/members",
 			Display: "Members",
 		})
 	}
-	if n.Member.Admin {
+	if admin {
 		items = append(items, NavItem{
 			Href:    "/admin",
 			Display: "Admin",
@@ -39,26 +39,26 @@ type NavItem struct {
 	Display string
 }
 
-templ Nav(data NavData) {
-    if data.Show {
+templ Nav(show, oobSwap, subordinates, admin bool, memberDisplayName string) {
+    if show {
         <nav class="nav" id="nav"
-            if data.OobSwap {
+            if oobSwap {
                 hx-swap-oob="true"
             }>
-            for _, item := range data.GetNavItems() {
+            for _, item := range getNavItems(subordinates, admin) {
                 <a class="nav-item" href={templ.URL(item.Href)}
                 hx-select="#content"
                 hx-swap="outerHTML"
                 hx-target="#content">{ item.Display }</a>
             }
             <div class="nav-right-items">
-                <p class="nav-display-name">{ DisplayName(data.Member) }</p>
+                <p class="nav-display-name">{memberDisplayName}</p>
                 <a class="nav-item" hx-target="body" href="/logout">Logout</a>
             </div>
         </nav>
     } else {
         <nav id="nav"
-            if data.OobSwap {
+            if oobSwap {
                 hx-swap-oob="true"
             } ></nav>
        }

@@ -7,7 +7,7 @@ const (
     Normal
 )
 
-templ Button(Text string, Type ButtonType, Primary, Danger bool) {
+templ Button(Text string, Type ButtonType, Primary, Danger bool, additionalAttributes templ.Attributes) {
     <button
         class={templ.KV("form-submit", Type == Submit), templ.KV("primary", Primary), templ.KV("danger", Danger) ,"button"}
         if Type == Submit {
@@ -15,6 +15,7 @@ templ Button(Text string, Type ButtonType, Primary, Danger bool) {
         } else {
                 type="button"
         }
+        { additionalAttributes... }
         >
         <span class="form-submit--text">{ Text }</span>
         if Type != Normal {

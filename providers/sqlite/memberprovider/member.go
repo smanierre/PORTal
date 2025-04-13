@@ -154,7 +154,7 @@ func (m MemberProvider) RemoveSubordinates(id string) error {
 }
 
 func (m MemberProvider) UpdateMember(mem types.Member) error {
-	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Updating member", slog.Any("member", m))
+	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Updating member", slog.Any("member", mem))
 	var res sql.Result
 	var err error
 	if mem.SupervisorID == "" {

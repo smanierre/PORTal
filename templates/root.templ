@@ -1,6 +1,6 @@
 package templates
 
-templ Root(navData NavData, content templ.Component) {
+templ Root(showNav, memberSubordinates, admin bool, memberDisplayName, organization string, content templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -16,17 +16,17 @@ templ Root(navData NavData, content templ.Component) {
 			<link rel="icon" type="image/png" href="/assets/images/port_dawg.png"/>
 			<link rel="stylesheet" href="/assets/css/reset.css"/>
 			<link rel="stylesheet" href="/assets/css/index.min.css"/>
-			<title>{ cfg.Organization } PORTal</title>
+			<title>{ organization } PORTal</title>
 		</head>
 		<body hx-boost="true">
-			@Layout(navData, content)
+			@Layout(showNav, memberSubordinates, admin, memberDisplayName, content)
 		</body>
 	</html>
 }
 
-templ Layout(navData NavData, content templ.Component) {
+templ Layout(showNav, memberSubordinates, admin bool, memberDisplayName string, content templ.Component) {
     <div class="layout">
-        @Nav(navData)
+        @Nav(showNav, false, memberSubordinates, admin, memberDisplayName)
         <div id="toast" class="toast toast--hidden"></div>
         <div id="content">
             @content

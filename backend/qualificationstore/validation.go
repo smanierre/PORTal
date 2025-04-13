@@ -14,9 +14,6 @@ func checkQualificationForMissingArgs(q types.Qualification) error {
 	if q.Name == "" {
 		missing = append(missing, "Name")
 	}
-	if q.Expires && q.ExpirationInterval == 0 {
-		missing = append(missing, "ExpirationInterval")
-	}
 	if len(missing) > 0 {
 		return fmt.Errorf("%w: %s", backend.ErrMissingArgs, missing)
 	}
@@ -25,10 +22,10 @@ func checkQualificationForMissingArgs(q types.Qualification) error {
 
 func checkRequirementForMissingArgs(r types.Requirement) error {
 	var errors []string
-	if r.Name == "" {
+	if (r.Type != types.QualificationType && r.Type != types.GradeType) && r.Name == "" {
 		errors = append(errors, "Name")
 	}
-	if r.DaysValidFor == 0 {
+	if (r.Type != types.QualificationType && r.Type != types.GradeType) && r.DaysValidFor == 0 {
 		errors = append(errors, "DaysValidFor")
 	}
 	if r.Reference == "" {

@@ -9,7 +9,7 @@ type MemberStore interface {
 	Login(username, password string) (types.Member, error)
 	AddMember(m types.Member) (types.Member, error)
 	GetMember(identifier string) (types.Member, error)
-	GetPotentialSupervisors(m types.Member) ([]types.Member, error)
+	GetPotentialSupervisors(m types.Member, grade types.Grade) ([]types.Member, error)
 	GetMemberFromSession(sessionID string) (types.Member, error)
 	GetDisabledMember(identifier string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
@@ -23,6 +23,7 @@ type MemberStore interface {
 
 type QualificationStore interface {
 	AddQualification(q types.Qualification) (types.Qualification, error)
+	AssignRequirementToQualification(qualificationID, requirementID string, initial bool) error
 	GetQualification(id string) (types.Qualification, error)
 	GetAllQualifications() ([]types.Qualification, error)
 	UpdateQualification(q types.Qualification) (types.Qualification, error)

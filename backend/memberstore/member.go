@@ -79,7 +79,7 @@ func (m MemberStore) GetMember(identifier string) (types.Member, error) {
 	return member, nil
 }
 
-func (m MemberStore) GetPotentialSupervisors(member types.Member) ([]types.Member, error) {
+func (m MemberStore) GetPotentialSupervisors(member types.Member, grade types.Grade) ([]types.Member, error) {
 	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting potential supervisors")
 	allMembers, err := m.GetAllMembers()
 	if err != nil {
@@ -90,7 +90,7 @@ func (m MemberStore) GetPotentialSupervisors(member types.Member) ([]types.Membe
 		if member.ID == mem.ID {
 			continue
 		}
-		if member.Grade.CanSupervise(mem.Grade) {
+		if mem.Grade.CanSupervise(grade) {
 			potentialSupervisors = append(potentialSupervisors, mem)
 		}
 	}

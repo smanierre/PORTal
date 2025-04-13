@@ -12,11 +12,18 @@ const (
 	QualificationType RequirementType = "Qualification"
 	WbtType           RequirementType = "WBT"
 	GradeType         RequirementType = "Grade"
+	ProficiencyType   RequirementType = "Proficiency"
 )
 
-func GetRequirementTypes() []RequirementType {
+func GetInitialRequirementTypes() []RequirementType {
 	return []RequirementType{
 		QualificationType, WbtType, GradeType,
+	}
+}
+
+func GetRecurringRequirementTypes() []RequirementType {
+	return []RequirementType{
+		WbtType, ProficiencyType,
 	}
 }
 
@@ -26,13 +33,11 @@ type Qualification struct {
 	InitialRequirements   []Requirement
 	RecurringRequirements []Requirement
 	Notes                 string
-	Expires               bool
-	ExpirationInterval    time.Duration
 }
 
 func (q Qualification) LogValue() slog.Value {
-	return slog.StringValue(fmt.Sprintf("ID: %s, Name: %s, Notes: %s, Expires: %t, Expiration Days: %d, Initial Requirements: %v, Recurring Requirements: %v",
-		q.ID, q.Name, q.Notes, q.Expires, q.ExpirationInterval, q.InitialRequirements, q.RecurringRequirements))
+	return slog.StringValue(fmt.Sprintf("ID: %s, Name: %s, Notes: %s, Initial Requirements: %v, Recurring Requirements: %v",
+		q.ID, q.Name, q.Notes, q.InitialRequirements, q.RecurringRequirements))
 }
 
 func (q Qualification) GetID() string {
@@ -43,15 +48,25 @@ func (q Qualification) Display() string {
 	return q.Name
 }
 
+func FilterQualifications(qualifications []Qualification, test func(q Qualification) bool) []Qualification {
+	var result []Qualification
+	for _, qualification := range qualifications {
+		if test(qualification) {
+			result = append(result, qualification)
+		}
+	}
+	return result
+}
+
 type Requirement struct {
-	ID              string          `json:"id"`
-	Name            string          `json:"name"`
-	Reference       string          `json:"reference"`
-	QualificationID string          `json:"qualification_id"`
-	Grade           Grade           `json:"grade"`
-	Notes           string          `json:"notes"`
-	DaysValidFor    int             `json:"days_valid_for"`
-	Type            RequirementType `json:"type"`
+	ID              string
+	Name            string
+	Reference       string
+	QualificationID string
+	Grade           Grade
+	Notes           string
+	DaysValidFor    int
+	Type            RequirementType
 }
 
 func (r Requirement) LogValue() slog.Value {

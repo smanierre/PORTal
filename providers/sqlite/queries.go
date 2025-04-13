@@ -18,9 +18,7 @@ CREATE TABLE member(
 CREATE TABLE qualification(
     id string PRIMARY KEY,
     name string UNIQUE,
-    notes string,
-    expires integer,
-    expiration_interval integer
+    notes string
 );
 
 CREATE TABLE member_qualification(
@@ -37,6 +35,7 @@ CREATE TABLE requirement(
     notes string,
     grade string,
     days_valid_for integer,
+    qualification_id string,
     reference string,
     type string NOT NULL
 );

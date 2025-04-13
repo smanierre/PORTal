@@ -1,10 +1,10 @@
 package qualificationprovider
 
 const (
-	insertQualificationQuery                     = "INSERT INTO qualification(id, name, notes, expires, expiration_interval) VALUES(?, ?, ?, ?, ?);"
+	insertQualificationQuery                     = "INSERT INTO qualification(id, name, notes) VALUES(?, ?, ?);"
 	getQualificationQuery                        = "SELECT * FROM qualification WHERE id=?;"
 	getAllQualificationIDsQuery                  = "SELECT id FROM qualification;"
-	updateQualificationQuery                     = "UPDATE qualification SET name=?, notes=?, expires=?, expiration_interval=? WHERE ID=?;"
+	updateQualificationQuery                     = "UPDATE qualification SET name=?, notes=? WHERE ID=?;"
 	deleteQualificationQuery                     = "DELETE FROM qualification WHERE id=?;"
 	insertQualificationInitialRequirementQuery   = "INSERT INTO qualification_initial_requirement(qualification_id, requirement_id) VALUES(?, ?);"
 	insertQualificationRecurringRequirementQuery = "INSERT INTO qualification_recurring_requirement(qualification_id, requirement_id) VALUES(?, ?);"

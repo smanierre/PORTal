@@ -3,7 +3,6 @@ package admin
 import (
     "PORTal/types"
     "PORTal/templates/components/button"
-    "PORTal/templates"
     "fmt"
     )
 
@@ -42,6 +41,8 @@ templ MemberList(oobSwap, disabledMembers bool, members []types.Member, selected
                     </a>
                 </div>
                 @FilteredList(members, selectedMember, query, disabledMembers)
+                @button.Button("New Member", button.Submit, true, false,
+                    templ.Attributes{"hx-get": "/admin/newMember", "hx-target": "#member-content", "hx-swap": "outerHTML"})
         </div>
 }
 
@@ -56,19 +57,20 @@ templ FilteredList(members []types.Member, selectedMember types.Member, query st
         class="searchbar" for="member">
         <input
         x-model="input"
-        x-init="$el.focus()"
+        if query != "" {
+            x-init="$el.focus()"
+        }
         class="member-search" name="member_query" type="text" />
         <button @click="input=''; $dispatch('clear')" class="button primary">Clear</button>
     </label>
-    <ul x-data="{selected:''}" class="searchable-list-items"
-        hx-get={fmt.Sprintf("/admin?fragment=members_pane&disabled=%t&member_query=%s", disabled, query)}
-        hx-target="#admin-content"
-        hx-push-url="true"
-        hx-include="[name='selected']"
-    >
+    <ul x-data="{selected:''}" class="searchable-list-items">
         <input hidden name="selected" x-model="selected" />
         for _, member := range members {
             <li data-id={member.ID} class={"searchable-list-item", templ.KV("searchable-list-item--selected", selectedMember.ID == member.ID)}
+                hx-get={fmt.Sprintf("/admin?fragment=members_pane&disabled=%t&member_query=%s", disabled, query)}
+                hx-target="#admin-content"
+                hx-push-url="true"
+                hx-include="[name='selected']"
                 @click="selected=$event.target.dataset.id"
             >
                 {member.Display()}
@@ -87,9 +89,10 @@ templ MemberEditor(
               if newMember {
                 hx-post="/admin/addMember"
               } else {
-                hx-put={fmt.Sprintf("/admin/updateMember?member=%s", selectedMember.ID)}
+                hx-put="/admin/updateMember"
               }
-              hx-target="#admin-content"
+              hx-target="body"
+              hx-swap="outerHTML"
         >
             <label>ID: <input name="id" readonly class="editor-input" value={selectedMember.ID} /></label>
             <label>Rank:
@@ -114,10 +117,10 @@ templ MemberEditor(
             <label>Last Name: <input name="last_name" value={ selectedMember.LastName } /></label>
             <label>Username: <input name="username"
                 if !newMember {
-                    disabled
+                    readonly
                 }
                 value={ selectedMember.Username } /></label>
-            @SupervisorList(potentialSupervisors, selectedMember)
+            @SupervisorList(potentialSupervisors, selectedMember.SupervisorID)
             <label>Admin: <input name="admin" type="checkbox"
                 if selectedMember.Admin {
                     checked
@@ -125,23 +128,18 @@ templ MemberEditor(
             <label>Password: <input onkeyup="this.setCustomValidity('')" hx-on:htmx:validation:validate="validatePassword(this)" name="password" type="password"/></label>
             <label>Confirm Password: <input onkeyup="this.setCustomValidity('')" hx-on:htmx:validation:validate="validateConfirmPassword(this)" name="confirm_password" type="password">
             </label>
-            <div style="display: flex; gap: 1rem;">
+            <div class="editor-submit-container">
                 if newMember {
-                    @button.Button("Create Member", button.Submit, true, false)
+                    @button.Button("Create Member", button.Submit, true, false, nil)
                 } else {
-                    @button.Button("Update Member", button.Submit, true, false)
+                    @button.Button("Update Member", button.Submit, true, false, nil)
                 }
-                if newMember {
-                <button class="button danger form-submit" type="button"
-                    hx-post={fmt.Sprintf("/admin/members/%s/%s", selectedMember.ID, enableDisableToggle(selectedMember.Disabled))}>
-                    <span class="form-submit--text">
-                        if selectedMember.Disabled {
-                            Enable
-                        } else {
-                            Disable
-                        } Member</span>
-                    <span class="form-submit--spinner"><svg class="spinner" width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_P7sC{transform-origin:center;animation:spinner_svv2 .75s infinite linear}@keyframes spinner_svv2{100%{transform:rotate(360deg)}}</style><path d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z" class="spinner_P7sC"/></svg></span>
-                </button>
+                if !newMember && selectedMember.Disabled {
+                    @button.Button("Enable Member", button.Submit, false, true,
+                    templ.Attributes{"hx-put": "/admin/enableMember", "hx-target":"#admin-content", "hx-swap": "innerHTML"})
+                } else if !newMember && !selectedMember.Disabled {
+                    @button.Button("Disable Member", button.Submit, false, true,
+                    templ.Attributes{"hx-put": "/admin/disableMember", "hx-target":"#admin-content", "hx-swap": "innerHTML"})
                 }
             </div>
         </form>
@@ -167,24 +165,16 @@ templ MemberEditor(
             </script>
 }
 
-func enableDisableToggle(memberDisabled bool) string {
-    if memberDisabled {
-        return "enable"
-    } else {
-        return "disable"
-    }
-}
-
-templ SupervisorList(potentialSupervisors []types.Member, selectedMember types.Member) {
+templ SupervisorList(potentialSupervisors []types.Member, selectedSupervisorID string) {
     if len(potentialSupervisors) > 0 {
     <label id="supervisor">Supervisor:
         <select name="supervisor">
             <option value="">No Supervisor</option>
             for _, supervisor := range potentialSupervisors {
                 <option value={supervisor.ID}
-                if selectedMember.SupervisorID == supervisor.ID {
+                if selectedSupervisorID == supervisor.ID {
                     selected
-                }>{ templates.DisplayName(supervisor) }</option>
+                }>{ fmt.Sprintf("%s %s", supervisor.FirstName, supervisor.LastName) }</option>
             }
         </select>
     </label>

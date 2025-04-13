@@ -22,14 +22,24 @@ func addRoutes(
 	mux.Handle("GET /assets/", assetHandler)
 
 	logger.LogAttrs(ctx, slog.LevelInfo, "Registering index, login, and logout routes...")
-	mux.Handle("/", LoginDirectorHandler(logger, organization, memberStore, sessionStore))
+	mux.Handle("/", LoginDirectorHandler(logger, organization, ranks, memberStore, sessionStore))
 	mux.Handle("GET /logout", LogoutHandler(logger, sessionStore))
 
 	logger.LogAttrs(ctx, slog.LevelInfo, "Registering admin routes...")
-	mux.Handle("GET /admin", adminRootGetHandler(logger, memberStore, qualificationStore, ranks))
+	mux.Handle("GET /admin", adminRootGetHandler(logger, memberStore, qualificationStore, ranks, organization))
 	mux.Handle("GET /admin/potentialSupervisors", getPotentialSupervisorsHandler(logger, memberStore))
-	mux.Handle("PUT /admin/updateMember", updateMemberHandler(logger, memberStore))
+	mux.Handle("PUT /admin/updateMember", updateMemberHandler(logger, memberStore, ranks, organization))
+	mux.Handle("GET /admin/newMember", newMemberHandler(logger, ranks))
+	mux.Handle("POST /admin/addMember", addMemberHandler(logger, memberStore, ranks, organization))
+	mux.Handle("PUT /admin/disableMember", disableMemberHandler(logger, ranks, memberStore))
+	mux.Handle("PUT /admin/enableMember", enableMemberHandler(logger, ranks, memberStore))
+	mux.Handle("GET /admin/newQualification", newQualificationHandler(logger, qualificationStore))
+	mux.Handle("POST /admin/addQualification", addQualificationHandler(logger, qualificationStore))
+	mux.Handle("PUT /admin/updateQualification", updateQualificationHandler(logger, qualificationStore))
+	mux.Handle("GET /admin/newRequirement", newRequirementHandler(logger, qualificationStore))
+	mux.Handle("POST /admin/addRequirement", addRequirementHandler(logger, qualificationStore))
+	mux.Handle("PUT /admin/updateRequirement", updateRequirementHandler(logger, qualificationStore))
 
 	logger.LogAttrs(ctx, slog.LevelInfo, "Registering dashboard routes...")
-	mux.Handle("GET /dashboard", dashboardGetHandler(logger))
+	mux.Handle("GET /dashboard", dashboardGetHandler(logger, organization))
 }

@@ -21,7 +21,7 @@ templ Login(organization string) {
 					<input class="login-input" name="password" placeholder="Password" type="password"/>
 				</label>
 				<div class="login-form-submit-container">
-					@button.Button("Login", button.Submit, false, false)
+					@button.Button("Login", button.Submit, false, false, nil)
 				</div>
 			</form>
 			<div id="loginError" class="login-error--hidden"></div>

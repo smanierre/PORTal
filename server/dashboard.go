@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-func dashboardGetHandler(logger *slog.Logger) http.Handler {
+func dashboardGetHandler(logger *slog.Logger, organization string) http.Handler {
 	logger = logger.With(slog.String("route", "GET /dashboard"))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		m := r.Context().Value(serverutils.MemberContextKey)
@@ -19,13 +19,9 @@ func dashboardGetHandler(logger *slog.Logger) http.Handler {
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
-		rootTemplate := templates.Root(templates.NavData{
-			Show:         true,
-			OobSwap:      false,
-			Member:       member,
-			Subordinates: false,
-		},
-			dashboard.Dashboard())
+		rootTemplate := templates.Root(
+			true,
+			false, true, member.FirstName, organization, dashboard.Dashboard())
 
 		serverutils.HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
 	})

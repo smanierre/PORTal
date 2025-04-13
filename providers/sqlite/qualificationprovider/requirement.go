@@ -12,7 +12,7 @@ import (
 
 func (q QualificationProvider) AddRequirement(r types.Requirement) error {
 	q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Adding requirement to database", slog.Any("requirement", r))
-	_, err := q.db.Exec(addRequirementQuery, r.ID, r.Name, r.Notes, r.Grade, r.DaysValidFor, r.Reference, r.Type)
+	_, err := q.db.Exec(addRequirementQuery, r.ID, r.Name, r.Notes, r.Grade, r.DaysValidFor, r.QualificationID, r.Reference, r.Type)
 	if err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed: requirement.name") {
 		q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Requirement with given name already exists")
 		return backend.ErrDuplicateRequirement
@@ -29,7 +29,7 @@ func (q QualificationProvider) GetRequirement(id string) (types.Requirement, err
 	q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting requirement from database", slog.String("requirement_id", id))
 	row := q.db.QueryRow(getRequirementQuery, id)
 	r := types.Requirement{}
-	err := row.Scan(&r.ID, &r.Name, &r.Notes, &r.Grade, &r.DaysValidFor, &r.Reference, &r.Type)
+	err := row.Scan(&r.ID, &r.Name, &r.Notes, &r.Grade, &r.DaysValidFor, &r.QualificationID, &r.Reference, &r.Type)
 	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
 		q.logger.LogAttrs(context.Background(), slog.LevelWarn, "No results found for requirement with given id")
 		return types.Requirement{}, fmt.Errorf("%w: requirement_id=%s", backend.ErrRequirementNotFound, id)
@@ -51,7 +51,7 @@ func (q QualificationProvider) GetAllRequirements() ([]types.Requirement, error)
 	var reqs []types.Requirement
 	var r types.Requirement
 	for rows.Next() {
-		err := rows.Scan(&r.ID, &r.Name, &r.Notes, &r.Grade, &r.DaysValidFor, &r.Reference, &r.Type)
+		err := rows.Scan(&r.ID, &r.Name, &r.Notes, &r.Grade, &r.DaysValidFor, &r.QualificationID, &r.Reference, &r.Type)
 		if err != nil {
 			q.logger.LogAttrs(context.Background(), slog.LevelError, "Error scanning requirement into struct", slog.String("error", err.Error()))
 			continue
@@ -83,7 +83,7 @@ func (q QualificationProvider) GetQualificationIDsForRequirement(requirementID s
 
 func (q QualificationProvider) UpdateRequirement(r types.Requirement) error {
 	q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Updating requirement", slog.Any("new_requirement", r))
-	res, err := q.db.Exec(updateRequirementQuery, r.Name, r.Notes, r.Grade, r.DaysValidFor, r.Reference, r.Type, r.ID)
+	res, err := q.db.Exec(updateRequirementQuery, r.Name, r.Notes, r.Grade, r.DaysValidFor, r.QualificationID, r.Reference, r.Type, r.ID)
 	if err != nil && strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
 		q.logger.LogAttrs(context.Background(), slog.LevelError, "Provided reference doesn't exist")
 		return backend.ErrReferenceNotFound

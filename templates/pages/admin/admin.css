@@ -9,3 +9,8 @@
     display: grid;
     grid-template-columns: 25% 1fr;
 }
+
+.editor-submit-container {
+    display: flex;
+    gap: 1rem;
+}

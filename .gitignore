@@ -11,6 +11,4 @@ tmp
 # Dev config
 config.yml
 .direnv
-node_modules
-bundle.js
-dist
+

@@ -8,8 +8,10 @@ import (
 	"PORTal/templates/pages"
 	"PORTal/templates/pages/dashboard"
 	"PORTal/templates/pages/errorpages"
+	"PORTal/types"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -87,7 +89,7 @@ func assetMiddleware(next http.Handler, assetHandler http.Handler) http.Handler 
 	})
 }
 
-func adminRequiredMiddleware(next http.Handler, memberStore stores.MemberStore, logger *slog.Logger) http.Handler {
+func adminRequiredMiddleware(next http.Handler, ranks types.RankMap, memberStore stores.MemberStore, logger *slog.Logger) http.Handler {
 	logger = logger.With(slog.String("source", "adminRequiredMiddleware"))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.HasPrefix(r.URL.Path, "/admin") {
@@ -116,13 +118,15 @@ func adminRequiredMiddleware(next http.Handler, memberStore stores.MemberStore, 
 				subordinateLength = len(subordinates)
 			}
 
+			displayName := fmt.Sprintf("%s %s %s", ranks[m.Grade], m.FirstName, m.LastName)
 			if !serverutils.CheckHTMXRequest(r) {
-				err = templates.Nav(templates.NavData{
-					Show:         true,
-					OobSwap:      true,
-					Member:       m,
-					Subordinates: subordinateLength > 0,
-				}).Render(r.Context(), w)
+				err = templates.Nav(
+					true,
+					true,
+					subordinateLength > 0,
+					m.Admin,
+					displayName,
+				).Render(r.Context(), w)
 				if err != nil {
 					logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering nav OOB", slog.String("error", err.Error()))
 				}

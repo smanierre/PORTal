@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -14,12 +15,29 @@ type Provider struct {
 	Db     *sql.DB
 }
 
+var validatedStructure bool = false
+
 func OpenDB(logger *slog.Logger, dbFile string) (*sql.DB, error) {
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Connecting to database...")
 	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on", dbFile))
 	if err != nil {
 		logger.LogAttrs(context.Background(), slog.LevelError, "Error opening sqlite database", slog.String("error", err.Error()))
 		return nil, err
+	}
+	if !validatedStructure {
+		_, err = checkDB(db)
+		if err != nil {
+			if strings.Contains(err.Error(), "no such table: versions") {
+				err = createDBStructure(db)
+				if err != nil {
+					logger.LogAttrs(context.Background(), slog.LevelError, "Error creating database structure", slog.String("error", err.Error()))
+					return nil, err
+				}
+			} else {
+				return nil, err
+			}
+		}
+		validatedStructure = true
 	}
 	logger.LogAttrs(context.Background(), slog.LevelInfo, "Successfully connected to database")
 	return db, nil
