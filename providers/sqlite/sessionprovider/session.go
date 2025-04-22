@@ -1,9 +1,11 @@
 package sessionprovider
 
 import (
+	"PORTal/backend"
 	"PORTal/types"
 	"context"
 	"log/slog"
+	"strings"
 	"time"
 )
 
@@ -29,6 +31,10 @@ func (s SessionProvider) GetSession(sessionID string) (types.Session, error) {
 	var session types.Session
 	err := row.Scan(&session.SessionID, &session.Expires, &session.UserAgent, &session.IpAddress)
 	if err != nil {
+		if strings.Contains(err.Error(), "no rows in result set") {
+			s.logger.LogAttrs(context.Background(), slog.LevelError, "Session not found")
+			return types.Session{}, backend.ErrSessionNotFound
+		}
 		s.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting session from database", slog.String("error", err.Error()))
 		return types.Session{}, err
 	}

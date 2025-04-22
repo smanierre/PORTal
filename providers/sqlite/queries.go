@@ -31,13 +31,14 @@ CREATE TABLE member_qualification(
 
 CREATE TABLE requirement(
     id string PRIMARY KEY,
-    name string,
+    name string NOT NULL,
+    initial integer NOT NULL,
+    reference string NOT NULL,
     notes string,
-    grade string,
-    days_valid_for integer,
+    type string NOT NULL,
     qualification_id string,
-    reference string,
-    type string NOT NULL
+    grade string,
+    days_valid_for integer
 );
 
 CREATE TABLE member_requirement(

@@ -30,7 +30,6 @@ type QualificationProvider interface {
 	AddRequirement(r types.Requirement) error
 	GetRequirement(id string) (types.Requirement, error)
 	GetAllRequirements() ([]types.Requirement, error)
-	GetQualificationIDsForRequirement(requirementID string) ([]string, error)
 	UpdateRequirement(r types.Requirement) error
 	DeleteRequirement(id string) error
 }

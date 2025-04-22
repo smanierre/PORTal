@@ -4,6 +4,7 @@ import (
 	"PORTal/backend"
 	"PORTal/types"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"log/slog"
@@ -12,11 +13,18 @@ import (
 func (q QualificationStore) AddRequirement(r types.Requirement) (types.Requirement, error) {
 	q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Generating ID...")
 	r.ID = uuid.NewString()
-
-	q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Checking for missing args...")
-	if err := checkRequirementForMissingArgs(r); err != nil {
-		q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Required arguments missing", slog.String("error", err.Error()))
-		return types.Requirement{}, err
+	if r.Initial {
+		q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Validating initial requirement...")
+		if err := validateInitialRequirement(r); err != nil {
+			q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Error validating initial requirement", slog.String("error", err.Error()))
+			return types.Requirement{}, err
+		}
+	} else {
+		q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Validating recurring requirement...")
+		if err := validateRecurringRequirement(r); err != nil {
+			q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Error validating recurring requirement", slog.String("error", err.Error()))
+			return types.Requirement{}, err
+		}
 	}
 	return r, q.provider.AddRequirement(r)
 }
@@ -34,7 +42,30 @@ func (q QualificationStore) GetAllRequirements() ([]types.Requirement, error) {
 }
 
 func (q QualificationStore) UpdateRequirement(r types.Requirement) (types.Requirement, error) {
-	err := q.provider.UpdateRequirement(r)
+	var err error
+	originalReq, err := q.provider.GetRequirement(r.ID)
+	if errors.Is(err, backend.ErrRequirementNotFound) {
+		return types.Requirement{}, fmt.Errorf("%w: %s", err, r.ID)
+	}
+	if r.Initial != originalReq.Initial {
+		if r.Initial {
+			q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Changing from recurring to initial type not allowed")
+			return types.Requirement{}, fmt.Errorf("%w: changing from recurring to initial requirement not allowed", backend.ErrValidation)
+		} else {
+			q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Changing from initial to recurring type not allowed")
+			return types.Requirement{}, fmt.Errorf("%w: changing from initial to recurring requirement not allowed", backend.ErrValidation)
+		}
+	}
+	if r.Initial {
+		err = validateInitialRequirement(r)
+	} else {
+		err = validateRecurringRequirement(r)
+	}
+	if err != nil {
+		q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Error validating requirement update request", slog.String("error", err.Error()))
+		return types.Requirement{}, err
+	}
+	err = q.provider.UpdateRequirement(r)
 	if err != nil {
 		return types.Requirement{}, err
 	}
@@ -42,14 +73,5 @@ func (q QualificationStore) UpdateRequirement(r types.Requirement) (types.Requir
 }
 
 func (q QualificationStore) DeleteRequirement(id string) error {
-	q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Checking if requirement is assigned to any qualifications")
-	quals, err := q.provider.GetQualificationIDsForRequirement(id)
-	if err != nil {
-		return err
-	}
-	if len(quals) > 0 {
-		q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Requirement is still assigned to qualifications", slog.Any("qualification_ids", quals))
-		return fmt.Errorf("%w: %v", backend.ErrRequirementInUse, quals)
-	}
 	return q.provider.DeleteRequirement(id)
 }

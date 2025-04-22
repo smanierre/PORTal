@@ -14,7 +14,7 @@ type MemberStore interface {
 	GetDisabledMember(identifier string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
 	GetDisabledMembers() ([]types.Member, error)
-	GetSubordinates(memberID string) ([]types.Member, error)
+	GetSubordinates(memberID string) []types.Member
 	UpdateMember(m types.Member) (types.Member, error)
 	DeleteMember(id string) error
 	DisableMember(id string) error

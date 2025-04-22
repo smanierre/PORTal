@@ -2,7 +2,6 @@ package server
 
 import (
 	"PORTal/backend"
-	"PORTal/server/serverutils"
 	"PORTal/server/stores"
 	"PORTal/templates"
 	"PORTal/templates/pages/admin"
@@ -17,220 +16,6 @@ import (
 	"strings"
 )
 
-func adminRootGetHandler(logger *slog.Logger, memberStore stores.MemberStore, qualificationStore stores.QualificationStore, ranks types.RankMap, organization string) http.Handler {
-	logger = logger.With("route", "GET /admin")
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Hx-Request") == "true" && r.URL.Query().Get("fragment") != "" {
-			logger.LogAttrs(r.Context(), slog.LevelInfo, "HTMX Request, directing to fragment handler")
-			adminPanelFragmentHandler(logger, memberStore, qualificationStore, ranks, w, r)
-			return
-		}
-
-		// Determine which fragment is being requested and render based on that
-		switch r.URL.Query().Get("fragment") {
-		case "qualifications_pane":
-			rootQualificationsPaneHandler(logger, memberStore, qualificationStore, organization, w, r)
-			return
-		case "requirement_editor":
-			rootRequirementEditorHandler(logger, memberStore, qualificationStore, organization, ranks, w, r)
-			return
-		}
-		members, err := memberStore.GetAllMembers()
-		if err != nil {
-			serverutils.HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
-		}
-		member, err := serverutils.GetMemberFromContext(r.Context())
-		if err != nil {
-			serverutils.HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
-		}
-		var hasSubordinates bool
-		if subordinates, err := memberStore.GetSubordinates(member.ID); err != nil || len(subordinates) == 0 {
-			hasSubordinates = false
-		} else {
-			hasSubordinates = true
-		}
-		var selectedMember types.Member
-		var potentialSupervisors []types.Member
-		if r.URL.Query().Get("selected") != "" {
-			selectedMember, err = memberStore.GetMember(r.URL.Query().Get("selected"))
-			// If the member is not found just continue. The editor will be blank.
-			// If it's a different error, return an error page
-			if err != nil && !errors.Is(err, backend.ErrMemberNotFound) {
-				w.WriteHeader(http.StatusInternalServerError)
-				serverutils.HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
-				return
-			}
-			potentialSupervisors, err = memberStore.GetPotentialSupervisors(selectedMember, selectedMember.Grade)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				serverutils.HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
-				return
-			}
-		}
-		memberDisplayName := fmt.Sprintf("%s %s %s", ranks[member.Grade], member.FirstName, member.LastName)
-		serverutils.HandleRenderError(r.Context(), logger, templates.Root(true, hasSubordinates, member.Admin, memberDisplayName, organization,
-			admin.AdminPage("Members", admin.MembersPane(
-				members,
-				selectedMember,
-				ranks,
-				potentialSupervisors,
-				false,
-				false,
-				false,
-				""))).Render(r.Context(), w))
-	})
-}
-
-func rootQualificationsPaneHandler(
-	logger *slog.Logger,
-	memberStore stores.MemberStore,
-	qualificationStore stores.QualificationStore,
-	organization string,
-	w http.ResponseWriter, r *http.Request) {
-	logger.LogAttrs(r.Context(), slog.LevelInfo, "Rendering root template with qualifications pane")
-	// Potential queries
-	selected := r.URL.Query().Get("selected")
-	query := r.URL.Query().Get("qualification_query")
-	newQualification := r.URL.Query().Get("new") == "true"
-
-	qualifications, err := qualificationStore.GetAllQualifications()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if query != "" {
-		qualifications = types.FilterQualifications(qualifications, func(q types.Qualification) bool {
-			return strings.Contains(strings.ToLower(q.Name), strings.ToLower(query))
-		})
-	}
-	var selectedQualification types.Qualification
-	if selected != "" {
-		selectedQualification, err = qualificationStore.GetQualification(selected)
-		if errors.Is(err, backend.ErrQualificationNotFound) {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		} else if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		fmt.Printf("%+v\n", selectedQualification)
-		for i, requirement := range selectedQualification.InitialRequirements {
-			if requirement.Type == types.QualificationType {
-				qual, err := qualificationStore.GetQualification(requirement.QualificationID)
-				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
-				selectedQualification.InitialRequirements[i].Name = qual.Name
-			}
-		}
-	}
-
-	loggedInMember, err := serverutils.GetMemberFromContext(r.Context())
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	var hasSubordinates bool
-	if subordinates, err := memberStore.GetSubordinates(loggedInMember.ID); err == nil && len(subordinates) > 0 {
-		hasSubordinates = true
-	}
-
-	adminContent := admin.AdminPage("Qualifications",
-		admin.QualificationPane(qualifications, selectedQualification, newQualification, false, query))
-	rootTemplate := templates.Root(true, hasSubordinates, true, loggedInMember.Display(), organization, adminContent)
-	serverutils.HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
-}
-
-func rootRequirementEditorHandler(
-	logger *slog.Logger,
-	memberStore stores.MemberStore,
-	qualificationStore stores.QualificationStore,
-	organization string,
-	ranks types.RankMap,
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-	logger.LogAttrs(r.Context(), slog.LevelInfo, "Rendering root template with requirement editor")
-
-	// Required Queries
-	requirementID := r.URL.Query().Get("requirement_id")
-	requirementType := r.URL.Query().Get("requirement_type")
-	qualificationID := r.URL.Query().Get("qualification_id")
-
-	// Optional Queries
-	query := r.URL.Query().Get("qualification_query")
-
-	// Validate required queries
-	var redirect bool
-	if requirementID == "" {
-		logger.LogAttrs(r.Context(), slog.LevelWarn, "Missing requirement ID, redirecting to qualifications pane")
-		redirect = true
-	}
-	if requirementType == "" {
-		logger.LogAttrs(r.Context(), slog.LevelWarn, "Missing requirement type, redirecting to qualifications pane")
-		redirect = true
-	}
-	if qualificationID == "" {
-		logger.LogAttrs(r.Context(), slog.LevelWarn, "Missing parent qualification ID, redirecting to qualifications pane")
-		redirect = true
-	}
-	if redirect {
-		http.Redirect(w, r, "/admin?fragment=qualifications_pane", http.StatusFound)
-		return
-	}
-
-	// Get and filter qualifications
-	qualifications, err := qualificationStore.GetAllQualifications()
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if query != "" {
-		qualifications = types.FilterQualifications(qualifications, func(q types.Qualification) bool {
-			return strings.Contains(strings.ToLower(q.Name), strings.ToLower(query))
-		})
-	}
-
-	// Get Selected parent qualification
-	qualification, err := qualificationStore.GetQualification(qualificationID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Get Selected requirement
-	requirement, err := qualificationStore.GetRequirement(requirementID)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Get SelectedMember
-	member, err := serverutils.GetMemberFromContext(r.Context())
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	var hasSubordinates bool
-	if subordinates, err := memberStore.GetSubordinates(member.ID); err == nil && len(subordinates) > 0 {
-		hasSubordinates = true
-	}
-
-	adminContent := admin.AdminPage("Qualifications", admin.RequirementEditorPane(
-		qualifications,
-		qualification,
-		requirement,
-		requirementType == "initial",
-		qualificationID,
-		false,
-		query,
-	))
-
-	rootTemplate := templates.Root(true, hasSubordinates, true, member.Display(), organization, adminContent)
-	serverutils.HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
-}
-
 func adminPanelFragmentHandler(
 	logger *slog.Logger,
 	memberStore stores.MemberStore,
@@ -241,14 +26,12 @@ func adminPanelFragmentHandler(
 ) {
 	fragment := r.URL.Query().Get("fragment")
 	switch fragment {
-	case "members_pane":
-		membersPaneFragmentHandler(logger, memberStore, ranks, w, r)
 	case "qualifications_pane":
 		qualificationsPaneFragmentHandler(logger, qualificationStore, w, r)
 	case "requirement_editor":
 		requirementEditorFragmentHandler(logger, qualificationStore, w, r)
 	default:
-		logger.LogAttrs(r.Context(), slog.LevelWarn, "Invalid fragment in query", slog.String("fragment", fragment))
+		membersPaneFragmentHandler(logger, memberStore, ranks, w, r)
 	}
 }
 
@@ -307,6 +90,7 @@ func membersPaneFragmentHandler(
 			}
 		}
 	}
+
 	membersPane := admin.MembersPane(
 		members,
 		member,
@@ -317,9 +101,8 @@ func membersPaneFragmentHandler(
 		r.URL.Query().Get("new") == "true",
 		memberFilterQuery,
 	)
-	serverutils.HandleRenderError(r.Context(), logger, membersPane.Render(r.Context(), w))
-	dropdown := admin.AdminDropdown("Members", true)
-	serverutils.HandleRenderError(r.Context(), logger, dropdown.Render(r.Context(), w))
+	adminPage := admin.AdminPage("Members", membersPane)
+	HandleRenderError(r.Context(), logger, adminPage.Render(r.Context(), w))
 }
 
 func qualificationsPaneFragmentHandler(logger *slog.Logger, qualificationStore stores.QualificationStore, w http.ResponseWriter, r *http.Request) {
@@ -365,10 +148,10 @@ func qualificationsPaneFragmentHandler(logger *slog.Logger, qualificationStore s
 	}
 
 	qualificationsPane := admin.QualificationPane(qualifications, selectedQualification, newQual, false, query)
-	serverutils.HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
+	HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
 
 	dropdown := admin.AdminDropdown("Qualifications", true)
-	serverutils.HandleRenderError(r.Context(), logger, dropdown.Render(r.Context(), w))
+	HandleRenderError(r.Context(), logger, dropdown.Render(r.Context(), w))
 }
 
 func requirementEditorFragmentHandler(logger *slog.Logger, qualificationStore stores.QualificationStore, w http.ResponseWriter, r *http.Request) {
@@ -407,7 +190,7 @@ func requirementEditorFragmentHandler(logger *slog.Logger, qualificationStore st
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	serverutils.HandleRenderError(r.Context(), logger, requirementEditor.Render(r.Context(), w))
+	HandleRenderError(r.Context(), logger, requirementEditor.Render(r.Context(), w))
 }
 
 func getPotentialSupervisorsHandler(logger *slog.Logger, memberStore stores.MemberStore) http.Handler {
@@ -440,7 +223,7 @@ func getPotentialSupervisorsHandler(logger *slog.Logger, memberStore stores.Memb
 			return
 		}
 		supervisorList := admin.SupervisorList(potentialSupervisors, m.SupervisorID)
-		serverutils.HandleRenderError(r.Context(), logger, supervisorList.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, supervisorList.Render(r.Context(), w))
 	})
 }
 
@@ -473,31 +256,27 @@ func updateMemberHandler(logger *slog.Logger, memberStore stores.MemberStore, ra
 		members, err := memberStore.GetAllMembers()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			serverutils.HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
+			HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
 			return
 		}
 		potentialSupervisors, err := memberStore.GetPotentialSupervisors(member, member.Grade)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			serverutils.HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
+			HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
 			return
 		}
-		loggedInMember, err := serverutils.GetMemberFromContext(r.Context())
+		loggedInMember, err := MemberFromContext(r.Context())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			serverutils.HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
+			HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
 			return
 		}
 		// If the logged in member was the one that was updated, get the updated member
 		if loggedInMember.ID == member.ID {
 			loggedInMember = member
 		}
-		subordinates, err := memberStore.GetSubordinates(loggedInMember.ID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			serverutils.HandleRenderError(r.Context(), logger, errorpages.GenericISE().Render(r.Context(), w))
-			return
-		}
+		subordinates := memberStore.GetSubordinates(loggedInMember.ID)
+
 		displayName := fmt.Sprintf("%s %s %s", ranks[loggedInMember.Grade], loggedInMember.FirstName, loggedInMember.LastName)
 
 		membersPane := admin.MembersPane(
@@ -520,7 +299,7 @@ func updateMemberHandler(logger *slog.Logger, memberStore stores.MemberStore, ra
 			displayName,
 			organization,
 			adminPage)
-		serverutils.HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
 	})
 }
 
@@ -529,7 +308,7 @@ func newMemberHandler(logger *slog.Logger, ranks types.RankMap) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		membersEditor := admin.MemberEditor(types.Member{}, ranks, nil, true)
-		serverutils.HandleRenderError(r.Context(), logger, membersEditor.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, membersEditor.Render(r.Context(), w))
 	})
 }
 
@@ -568,23 +347,19 @@ func addMemberHandler(logger *slog.Logger, memberStore stores.MemberStore, ranks
 			return
 		}
 
-		loggedInMember, err := serverutils.GetMemberFromContext(r.Context())
+		loggedInMember, err := MemberFromContext(r.Context())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		subordinates, err := memberStore.GetSubordinates(loggedInMember.ID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		subordinates := memberStore.GetSubordinates(loggedInMember.ID)
 		displayName := fmt.Sprintf("%s %s %s", ranks[loggedInMember.Grade], loggedInMember.FirstName, loggedInMember.LastName)
 
 		w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin?selected=%s", m.ID))
 		membersPane := admin.MembersPane(members, m, ranks, potentialSupervisors, false, false, false, "")
 		adminPage := admin.AdminPage("Members", membersPane)
 		rootTemplate := templates.Root(true, len(subordinates) > 0, loggedInMember.Admin, displayName, organization, adminPage)
-		serverutils.HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
 	})
 }
 
@@ -609,7 +384,7 @@ func disableMemberHandler(logger *slog.Logger, ranks types.RankMap, memberStore 
 		}
 		w.Header().Set("HX-Push-URL", "/admin?fragment=members_pane&disabled=false")
 		membersPane := admin.MembersPane(members, types.Member{}, ranks, nil, false, false, false, "")
-		serverutils.HandleRenderError(r.Context(), logger, membersPane.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, membersPane.Render(r.Context(), w))
 	})
 }
 
@@ -634,7 +409,7 @@ func enableMemberHandler(logger *slog.Logger, ranks types.RankMap, memberStore s
 		}
 		w.Header().Set("HX-Push-URL", "/admin?fragment=members_pane&disabled=true")
 		membersPane := admin.MembersPane(members, types.Member{}, ranks, nil, false, true, false, "")
-		serverutils.HandleRenderError(r.Context(), logger, membersPane.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, membersPane.Render(r.Context(), w))
 	})
 }
 
@@ -650,8 +425,8 @@ func newQualificationHandler(logger *slog.Logger, qualificationStore stores.Qual
 		}
 		qualificationList := admin.QualificationList(qualifications, types.Qualification{}, true, "")
 
-		serverutils.HandleRenderError(r.Context(), logger, qualificationEditor.Render(r.Context(), w))
-		serverutils.HandleRenderError(r.Context(), logger, qualificationList.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, qualificationEditor.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, qualificationList.Render(r.Context(), w))
 	})
 }
 
@@ -684,7 +459,7 @@ func addQualificationHandler(logger *slog.Logger, qualificationStore stores.Qual
 		}
 		w.Header().Set("HX-Push-URL", fmt.Sprintf("/admin?fragment=qualifications_pane&selected=%s", qualification.ID))
 		qualificationsPane := admin.QualificationPane(qualifications, qualification, false, false, "")
-		serverutils.HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
 	})
 }
 
@@ -720,7 +495,7 @@ func updateQualificationHandler(logger *slog.Logger, qualificationStore stores.Q
 		}
 
 		qualificationPane := admin.QualificationPane(qualifications, qualification, false, false, "")
-		serverutils.HandleRenderError(r.Context(), logger, qualificationPane.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, qualificationPane.Render(r.Context(), w))
 	})
 }
 
@@ -749,7 +524,7 @@ func newRequirementHandler(logger *slog.Logger, qualificationStore stores.Qualif
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		serverutils.HandleRenderError(r.Context(), logger, requirementEditor.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, requirementEditor.Render(r.Context(), w))
 	})
 }
 
@@ -803,7 +578,7 @@ func addRequirementHandler(logger *slog.Logger, qualificationStore stores.Qualif
 			return
 		}
 		qualificationsPane := admin.QualificationPane(qualifications, qualification, false, false, "")
-		serverutils.HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
 	})
 }
 
@@ -858,6 +633,45 @@ func updateRequirementHandler(logger *slog.Logger, qualificationStore stores.Qua
 			return
 		}
 		qualificationsPane := admin.QualificationPane(qualifications, selectedQualification, false, false, "")
-		serverutils.HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
+	})
+}
+
+func removeRequirementHandler(logger *slog.Logger, qualificationStore stores.QualificationStore) http.Handler {
+	logger = logger.With(slog.String("route", "DELETE /admin/removeRequirement"))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Hx-Request") != "true" {
+			// TODO: What to do here?
+			logger.LogAttrs(r.Context(), slog.LevelWarn, "Request to remove requirement should be an HTMX request but isn't.")
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		err := r.ParseForm()
+		if err != nil {
+			logger.LogAttrs(r.Context(), slog.LevelInfo, fmt.Sprintf("Error parsing form: %s", err.Error()))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		requirementID := r.Form.Get("requirement_id")
+		if requirementID == "" {
+			logger.LogAttrs(r.Context(), slog.LevelWarn, "Requirement id not provided")
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		qualificationStore.DeleteRequirement(requirementID)
+
+		qualifications, err := qualificationStore.GetAllQualifications()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		selectedQualification, err := qualificationStore.GetQualification(r.Form.Get("id"))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		qualificationsPane := admin.QualificationPane(qualifications, selectedQualification, false, false, "")
+		HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
 	})
 }

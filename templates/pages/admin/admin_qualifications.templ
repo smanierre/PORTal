@@ -124,7 +124,12 @@ templ requirementSelector(requirements []types.Requirement, t, parentQualificati
                         }
                     </span>
                     @icons.X("remove-requirement-button",
-                        templ.Attributes{"hx-confirm":"Are you sure you want to delete this requirement?", "hx-post": "/admin/removeRequirement"},
+                        templ.Attributes{
+                            "hx-confirm":"Are you sure you want to delete this requirement?",
+                            "hx-delete": "/admin/removeRequirement",
+                            "hx-params": "not name,notes,initial_requirements,recurring_requirements",
+                            "hx-vals": fmt.Sprintf("js:{requirement_id:\"%s\"}", req.ID),
+                        },
                     )
                 </button>
             }

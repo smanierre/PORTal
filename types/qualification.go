@@ -61,16 +61,18 @@ func FilterQualifications(qualifications []Qualification, test func(q Qualificat
 type Requirement struct {
 	ID              string
 	Name            string
+	Initial         bool
 	Reference       string
+	Notes           string
+	Type            RequirementType
 	QualificationID string
 	Grade           Grade
-	Notes           string
 	DaysValidFor    int
-	Type            RequirementType
 }
 
 func (r Requirement) LogValue() slog.Value {
-	return slog.StringValue(fmt.Sprintf("ID: %s Name: %s Notes: %s DaysValidFor: %d", r.ID, r.Name, r.Notes, r.DaysValidFor))
+	return slog.StringValue(fmt.Sprintf("ID: %s Name: %s Initial: %t Reference: %s Notes: %s Type: %s QualificationID: %s Grade %s DaysValidFor: %d",
+		r.ID, r.Name, r.Initial, r.Reference, r.Notes, r.Type, r.QualificationID, r.Grade, r.DaysValidFor))
 }
 
 type MemberRequirement struct {

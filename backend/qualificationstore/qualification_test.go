@@ -2,14 +2,13 @@ package qualificationstore_test
 
 import (
 	"PORTal/backend"
-	"PORTal/providers/sqlite"
+	"PORTal/backend/qualificationstore"
+	"PORTal/providers/sqlite/qualificationprovider"
 	"PORTal/testutils"
 	"PORTal/types"
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"io"
 	"log/slog"
 	"os"
@@ -18,116 +17,51 @@ import (
 	"testing"
 )
 
+// There are no requirements assigned because a qualification must be created before assigning qualifications to it.
+// This is a limitation of the web UI, not because it can't be done.
 func TestAddAndGetQualification(t *testing.T) {
-	dbID := uuid.NewString()
+	dbString := testutils.GetDbString()
 	t.Cleanup(func() {
-		os.Remove(fmt.Sprintf("%s.db", dbID))
+		os.Remove(dbString)
 	})
 	buf := &bytes.Buffer{}
 	mr := io.MultiWriter(os.Stdout, buf)
 	logger := slog.New(slog.NewTextHandler(mr, nil))
-	provider, err := sqlite.New(logger, fmt.Sprintf("%s.db", dbID), 1.0)
+	provider, err := qualificationprovider.New(dbString, logger)
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
-
-	ref1, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestAddAndGetQualification: %s", err.Error())
-	}
-	ref2, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestAddAndGetQualification: %s", err.Error())
-	}
-	ref3, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestAddAndGetQualification: %s", err.Error())
-	}
-	ref4, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestAddAndGetQualification: %s", err.Error())
-	}
-	req1, err := b.AddRequirement(testutils.RandomRequirement(ref1))
-	if err != nil {
-		t.Fatalf("Error adding requirement for TestAddQualification_Sqlite: %s", err.Error())
-	}
-	req2, err := b.AddRequirement(testutils.RandomRequirement(ref2))
-	if err != nil {
-		t.Fatalf("Error adding requirement for TestAddQualification_Sqlite: %s", err.Error())
-	}
-	req3, err := b.AddRequirement(testutils.RandomRequirement(ref3))
-	if err != nil {
-		t.Fatalf("Error adding requirement for TestAddQualification_Sqlite: %s", err.Error())
-	}
-	req4, err := b.AddRequirement(testutils.RandomRequirement(ref4))
-	if err != nil {
-		t.Fatalf("Error adding requirement for TestAddQualification_Sqlite: %s", err.Error())
-	}
+	b := qualificationstore.New(provider, logger)
 
 	tc := []struct {
-		Name           string
-		QualName       string
-		Notes          string
-		Expires        bool
-		ExpirationDays int
-		ExpectedError  error
-		InitialReqs    []types.Requirement
-		RecurringReqs  []types.Requirement
+		Name          string
+		QualName      string
+		Notes         string
+		ExpectedError error
+		InitialReqs   []types.Requirement
+		RecurringReqs []types.Requirement
 	}{
 		{
-			Name:           "Successful insert doesn't expire",
-			QualName:       testutils.RandomString(),
-			Notes:          testutils.RandomString(),
-			Expires:        false,
-			ExpirationDays: 0,
-			ExpectedError:  nil,
-		},
-		{
-			Name:           "Successful insert does expire",
-			QualName:       testutils.RandomString(),
-			Notes:          testutils.RandomString(),
-			Expires:        true,
-			ExpirationDays: 100,
-			ExpectedError:  nil,
-		},
-		{
-			Name:           "Expires with no expiration days",
-			QualName:       testutils.RandomString(),
-			Notes:          testutils.RandomString(),
-			Expires:        true,
-			ExpirationDays: 0,
-			ExpectedError:  backend.ErrMissingArgs,
-		},
-		{
-			Name:           "Expires with invalid expiration days",
-			QualName:       testutils.RandomString(),
-			Notes:          testutils.RandomString(),
-			Expires:        true,
-			ExpirationDays: -1,
-			ExpectedError:  backend.ErrInvalidQualExpiration,
-		},
-		{
-			Name:          "Initial Requirements",
+			Name:          "No Requirements",
 			QualName:      testutils.RandomString(),
 			Notes:         testutils.RandomString(),
 			ExpectedError: nil,
-			InitialReqs:   []types.Requirement{req1, req2},
+			InitialReqs:   []types.Requirement{},
+			RecurringReqs: []types.Requirement{},
 		},
 		{
-			Name:           "Recurring Requirements",
-			QualName:       testutils.RandomString(),
-			Notes:          testutils.RandomString(),
-			Expires:        false,
-			ExpirationDays: 0,
-			ExpectedError:  nil,
-			RecurringReqs:  []types.Requirement{req3, req4},
+			Name:          "Missing Args",
+			QualName:      "",
+			Notes:         "",
+			ExpectedError: backend.ErrMissingArgs,
+			InitialReqs:   []types.Requirement{},
+			RecurringReqs: []types.Requirement{},
 		},
 	}
 
 	for _, tt := range tc {
 		t.Run(tt.Name, func(t *testing.T) {
-			qual, err := b.AddQualification(types.Qualification{Name: tt.Name, Notes: tt.Notes, Expires: tt.Expires, ExpirationInterval: tt.ExpirationDays,
+			qual, err := b.AddQualification(types.Qualification{Name: tt.QualName, Notes: tt.Notes,
 				InitialRequirements: tt.InitialReqs, RecurringRequirements: tt.RecurringReqs})
 			if tt.ExpectedError == nil && err != nil {
 				t.Errorf("Expected no error but got: %s", err.Error())
@@ -149,37 +83,37 @@ func TestAddAndGetQualification(t *testing.T) {
 }
 
 func TestGetAllQualifications(t *testing.T) {
-	dbID := uuid.NewString()
+	dbString := testutils.GetDbString()
 	t.Cleanup(func() {
-		os.Remove(fmt.Sprintf("%s.db", dbID))
+		os.Remove(dbString)
 	})
 	buf := &bytes.Buffer{}
 	mr := io.MultiWriter(os.Stdout, buf)
 	logger := slog.New(slog.NewTextHandler(mr, nil))
-	provider, err := sqlite.New(logger, fmt.Sprintf("%s.db", dbID), 1.0)
+	provider, err := qualificationprovider.New(dbString, logger)
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := qualificationstore.New(provider, logger)
 
-	ref1, err := b.AddReference(testutils.RandomReference())
+	initialRequirement1, err := b.AddRequirement(testutils.RandomInitialRequirement(false, ""))
 	if err != nil {
-		t.Fatalf("Error adding reference for TestGetAllQualifications: %s", err.Error())
+		t.Fatalf("Error adding Initial requirement for TestGetAllQualifications: %s", err.Error())
 	}
-	req1, err := b.AddRequirement(testutils.RandomRequirement(ref1))
+	initialRequirement2, err := b.AddRequirement(testutils.RandomInitialRequirement(false, ""))
 	if err != nil {
-		t.Fatalf("Error adding requirement for TestGetAllQualifications: %s", err.Error())
+		t.Fatalf("Error adding Initial requirement for TestGetAllQualifications: %s", err.Error())
 	}
-	req2, err := b.AddRequirement(testutils.RandomRequirement(ref1))
+	recurringRequirement1, err := b.AddRequirement(testutils.RandomRecurringRequirement())
 	if err != nil {
-		t.Fatalf("Error adding requirement for TestGetAllQualifications: %s", err.Error())
+		t.Fatalf("Error adding recurring requirement for TestGetAllQualifications: %s", err.Error())
 	}
-	qual1 := testutils.RandomQualification()
-	qual1.RecurringRequirements = append(qual1.RecurringRequirements, req1)
-	qual1.InitialRequirements = append(qual1.InitialRequirements, req2)
+	recurringRequirement2, err := b.AddRequirement(testutils.RandomRecurringRequirement())
+	if err != nil {
+		t.Fatalf("Error adding recurring requirement for TestGetAllQualifications: %s", err.Error())
+	}
 
-	qual2 := testutils.RandomQualification()
-
+	var expectedQuals []types.Qualification
 	type testCase struct {
 		Name          string
 		ExpectedQuals []types.Qualification
@@ -198,12 +132,12 @@ func TestGetAllQualifications(t *testing.T) {
 			ExpectedQuals: []types.Qualification{},
 			ExpectedError: nil,
 			Setup: func(t *testing.T, tc *testCase) {
-				qual, err := b.AddQualification(qual1)
+				qual1, err := b.AddQualification(testutils.RandomQualification())
 				if err != nil {
 					t.Fatalf("Error adding qualification for TestGetAllQualifications: %s", err.Error())
 				}
-				qual1.ID = qual.ID
-				tc.ExpectedQuals = append(tc.ExpectedQuals, qual)
+				tc.ExpectedQuals = append(expectedQuals, qual1)
+				expectedQuals = append(expectedQuals, qual1)
 			},
 		},
 		{
@@ -211,11 +145,53 @@ func TestGetAllQualifications(t *testing.T) {
 			ExpectedQuals: []types.Qualification{},
 			ExpectedError: nil,
 			Setup: func(t *testing.T, tc *testCase) {
-				qual, err := b.AddQualification(qual2)
+				qual2, err := b.AddQualification(testutils.RandomQualification())
 				if err != nil {
-					t.Fatalf("Error adding qualification for TestGetAllQUalifications_Sqlite")
+					t.Fatalf("Error adding qualification for TestGetAllQualifications: %s", err.Error())
 				}
-				tc.ExpectedQuals = append(tc.ExpectedQuals, qual1, qual)
+				err = b.AssignRequirementToQualification(qual2.ID, initialRequirement1.ID, true)
+				if err != nil {
+					t.Fatalf("Error assigning Initial requirement to qualification for TestGetAllQualifications: %s", err.Error())
+				}
+				err = b.AssignRequirementToQualification(qual2.ID, recurringRequirement1.ID, false)
+				if err != nil {
+					t.Fatalf("Error assigning recurring requirement to qualification for TestGetAllQualifications: %s", err.Error())
+				}
+				qual2.InitialRequirements = append(qual2.InitialRequirements, initialRequirement1)
+				qual2.RecurringRequirements = append(qual2.RecurringRequirements, recurringRequirement1)
+				tc.ExpectedQuals = append(expectedQuals, qual2)
+				expectedQuals = append(expectedQuals, qual2)
+			},
+		},
+		{
+			Name:          "Three qualifications",
+			ExpectedQuals: []types.Qualification{},
+			ExpectedError: nil,
+			Setup: func(t *testing.T, tc *testCase) {
+				qual3, err := b.AddQualification(testutils.RandomQualification())
+				if err != nil {
+					t.Fatalf("Error adding qualification for TestGetAllQualifications: %s", err.Error())
+				}
+				err = b.AssignRequirementToQualification(qual3.ID, initialRequirement1.ID, true)
+				if err != nil {
+					t.Fatalf("Error assigning Initial requirement to qualification for TestGetAllQualifications: %s", err.Error())
+				}
+				err = b.AssignRequirementToQualification(qual3.ID, initialRequirement2.ID, true)
+				if err != nil {
+					t.Fatalf("Error assigning Initial requirement to qualification for TestGetAllQualifications: %s", err.Error())
+				}
+				qual3.InitialRequirements = append(qual3.InitialRequirements, initialRequirement1, initialRequirement2)
+				err = b.AssignRequirementToQualification(qual3.ID, recurringRequirement1.ID, false)
+				if err != nil {
+					t.Fatalf("Error assigning recurring requirement to qualification for TestGetAllQualifications: %s", err.Error())
+				}
+				err = b.AssignRequirementToQualification(qual3.ID, recurringRequirement2.ID, false)
+				if err != nil {
+					t.Fatalf("Error assigning recurring requirement to qualification for TestGetAllQualifications: %s", err.Error())
+				}
+				qual3.RecurringRequirements = append(qual3.RecurringRequirements, recurringRequirement1, recurringRequirement2)
+				tc.ExpectedQuals = append(expectedQuals, qual3)
+				expectedQuals = append(expectedQuals, qual3)
 			},
 		},
 	}
@@ -246,127 +222,50 @@ func TestGetAllQualifications(t *testing.T) {
 	}
 }
 
+// Updating a qualification only handles things like Name, description, etc. Requirements are managed separately.
 func TestUpdateQualification(t *testing.T) {
-	dbID := uuid.NewString()
+	dbString := testutils.GetDbString()
 	t.Cleanup(func() {
-		os.Remove(fmt.Sprintf("%s.db", dbID))
+		os.Remove(dbString)
 	})
 	buf := &bytes.Buffer{}
 	mr := io.MultiWriter(os.Stdout, buf)
 	logger := slog.New(slog.NewTextHandler(mr, nil))
-	provider, err := sqlite.New(logger, fmt.Sprintf("%s.db", dbID), 1.0)
+	provider, err := qualificationprovider.New(dbString, logger)
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := qualificationstore.New(provider, logger)
 
-	usedRef1, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestUpdateQualification: %s", err.Error())
-	}
-	usedRef2, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestUpdateQualification: %s", err.Error())
-	}
-	newRef1, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestUpdateQualification: %s", err.Error())
-	}
-	newRef2, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestUpdateQualification: %s", err.Error())
-	}
-	usedReq1, err := b.AddRequirement(testutils.RandomRequirement(usedRef1))
-	if err != nil {
-		t.Fatalf("Error adding requirement for TestUpdateQualification: %s", err.Error())
-	}
-	usedReq2, err := b.AddRequirement(testutils.RandomRequirement(usedRef2))
-	if err != nil {
-		t.Fatalf("Error adding requirement for TestUpdateQualification: %s", err.Error())
-	}
-	newReq1, err := b.AddRequirement(testutils.RandomRequirement(newRef1))
-	if err != nil {
-		t.Fatalf("Error adding requirement for TestUpdateQualification: %s", err.Error())
-	}
-	newReq2, err := b.AddRequirement(testutils.RandomRequirement(newRef2))
-	if err != nil {
-		t.Fatalf("Error adding requirement for TestUpdateQualification: %s", err.Error())
-	}
 	original := testutils.RandomQualification()
-	original.InitialRequirements = []types.Requirement{usedReq1}
-	original.RecurringRequirements = []types.Requirement{usedReq2}
+	original.InitialRequirements = []types.Requirement{}
+	original.RecurringRequirements = []types.Requirement{}
 	original, err = b.AddQualification(original)
 	if err != nil {
 		t.Fatalf("Error adding qualification for TestUpdateQualification_Sqlite: %s", err.Error())
 	}
 
 	tc := []struct {
-		name                  string
-		update                types.Qualification
-		forceExpirationUpdate bool
-		expectedResult        types.Qualification
-		expectedError         error
+		name           string
+		update         types.Qualification
+		expectedResult types.Qualification
+		expectedError  error
 	}{
 		{
 			name: "Successful full update",
 			update: types.Qualification{
 				ID:                    original.ID,
 				Name:                  "New name",
-				InitialRequirements:   []types.Requirement{newReq1},
-				RecurringRequirements: []types.Requirement{newReq2},
+				InitialRequirements:   []types.Requirement{},
+				RecurringRequirements: []types.Requirement{},
 				Notes:                 "New notes",
-				Expires:               true,
-				ExpirationInterval:    1000,
 			},
 			expectedResult: types.Qualification{
 				ID:                    original.ID,
 				Name:                  "New name",
-				InitialRequirements:   []types.Requirement{newReq1},
-				RecurringRequirements: []types.Requirement{newReq2},
-				Notes:                 "New notes",
-				Expires:               true,
-				ExpirationInterval:    1000,
-			},
-			expectedError: nil,
-		},
-		{
-			name: "Successful keeping requirements",
-			update: types.Qualification{
-				ID:                    original.ID,
-				Name:                  "New name 2",
-				InitialRequirements:   []types.Requirement{newReq1, usedReq1},
-				RecurringRequirements: []types.Requirement{newReq2, usedReq2},
-				Notes:                 "New notes 2",
-				Expires:               false,
-				ExpirationInterval:    0,
-			},
-			forceExpirationUpdate: true,
-			expectedResult: types.Qualification{
-				ID:                    original.ID,
-				Name:                  "New name 2",
-				InitialRequirements:   []types.Requirement{newReq1, usedReq1},
-				RecurringRequirements: []types.Requirement{newReq2, usedReq2},
-				Notes:                 "New notes 2",
-				Expires:               false,
-				ExpirationInterval:    0,
-			},
-			expectedError: nil,
-		},
-		{
-			name: "Successful Update No Requirements",
-			update: types.Qualification{
-				ID:                    original.ID,
 				InitialRequirements:   []types.Requirement{},
 				RecurringRequirements: []types.Requirement{},
-			},
-			expectedResult: types.Qualification{
-				ID:                    original.ID,
-				Name:                  "New name 2",
-				InitialRequirements:   nil,
-				RecurringRequirements: nil,
-				Notes:                 "New notes 2",
-				Expires:               false,
-				ExpirationInterval:    0,
+				Notes:                 "New notes",
 			},
 			expectedError: nil,
 		},
@@ -374,92 +273,43 @@ func TestUpdateQualification(t *testing.T) {
 			name: "Single field update",
 			update: types.Qualification{
 				ID:    original.ID,
-				Notes: "New Notes 4",
+				Name:  "New name",
+				Notes: "New Notes 2",
 			},
 			expectedResult: types.Qualification{
 				ID:                    original.ID,
-				Name:                  "New name 2",
-				InitialRequirements:   nil,
-				RecurringRequirements: nil,
-				Notes:                 "New Notes 4",
-				Expires:               false,
-				ExpirationInterval:    0,
+				Name:                  "New name",
+				InitialRequirements:   []types.Requirement{},
+				RecurringRequirements: []types.Requirement{},
+				Notes:                 "New Notes 2",
 			},
 			expectedError: nil,
-		},
-		{
-			name: "Initial Requirement not found",
-			update: types.Qualification{
-				ID: original.ID,
-				InitialRequirements: []types.Requirement{
-					types.Requirement{
-						ID:           uuid.NewString(),
-						Name:         "Random",
-						Reference:    newRef1,
-						Notes:        "Random",
-						DaysValidFor: 100,
-					},
-				},
-				RecurringRequirements: []types.Requirement{},
-			},
-			forceExpirationUpdate: false,
-			expectedResult:        types.Qualification{},
-			expectedError:         backend.ErrRequirementNotFound,
-		},
-		{
-			name: "Recurring Requirement not found",
-			update: types.Qualification{
-				ID: original.ID,
-				RecurringRequirements: []types.Requirement{
-					types.Requirement{
-						ID:           uuid.NewString(),
-						Name:         "Random",
-						Reference:    newRef1,
-						Notes:        "Random",
-						DaysValidFor: 100,
-					},
-				},
-				InitialRequirements: []types.Requirement{},
-			},
-			forceExpirationUpdate: false,
-			expectedResult:        types.Qualification{},
-			expectedError:         backend.ErrRequirementNotFound,
-		},
-		{
-			name: "Initial Requirement not found",
-			update: types.Qualification{
-				ID: original.ID,
-				InitialRequirements: []types.Requirement{
-					types.Requirement{
-						ID:           uuid.NewString(),
-						Name:         "Random",
-						Reference:    newRef1,
-						Notes:        "Random",
-						DaysValidFor: 100,
-					},
-				},
-				RecurringRequirements: []types.Requirement{},
-			},
-			forceExpirationUpdate: false,
-			expectedResult:        types.Qualification{},
-			expectedError:         backend.ErrRequirementNotFound,
 		},
 		{
 			name: "Qualification not found",
 			update: types.Qualification{
 				ID:                    uuid.NewString(),
+				Name:                  "doesn't matter",
+				Notes:                 "doesn't matter",
 				RecurringRequirements: []types.Requirement{},
 				InitialRequirements:   []types.Requirement{},
 			},
-			forceExpirationUpdate: false,
-			expectedResult:        types.Qualification{},
-			expectedError:         backend.ErrQualificationNotFound,
+			expectedResult: types.Qualification{},
+			expectedError:  backend.ErrQualificationNotFound,
+		},
+		{
+			name: "Missing fields",
+			update: types.Qualification{
+				ID: original.ID,
+			},
+			expectedResult: types.Qualification{},
+			expectedError:  backend.ErrMissingArgs,
 		},
 	}
 
 	for _, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := b.UpdateQualification(tt.update, tt.forceExpirationUpdate)
+			_, err := b.UpdateQualification(tt.update)
 			if tt.expectedError == nil && err != nil {
 				t.Errorf("Expected no error but got: %s", err.Error())
 			}
@@ -481,32 +331,24 @@ func TestUpdateQualification(t *testing.T) {
 }
 
 func TestDeleteQualification(t *testing.T) {
-	dbID := uuid.NewString()
+	dbString := testutils.GetDbString()
 	t.Cleanup(func() {
-		os.Remove(fmt.Sprintf("%s.db", dbID))
+		os.Remove(dbString)
 	})
 	buf := &bytes.Buffer{}
 	mr := io.MultiWriter(os.Stdout, buf)
 	logger := slog.New(slog.NewTextHandler(mr, nil))
-	provider, err := sqlite.New(logger, fmt.Sprintf("%s.db", dbID), 1.0)
+	provider, err := qualificationprovider.New(dbString, logger)
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost}, nil)
+	b := qualificationstore.New(provider, logger)
 
-	ref1, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestDeleteQualification")
-	}
-	ref2, err := b.AddReference(testutils.RandomReference())
-	if err != nil {
-		t.Fatalf("Error adding reference for TestDeleteQualification")
-	}
-	req1, err := b.AddRequirement(testutils.RandomRequirement(ref1))
+	req1, err := b.AddRequirement(testutils.RandomInitialRequirement(false, ""))
 	if err != nil {
 		t.Fatalf("Error adding requirement for TestDeleteQualification")
 	}
-	req2, err := b.AddRequirement(testutils.RandomRequirement(ref2))
+	req2, err := b.AddRequirement(testutils.RandomInitialRequirement(false, ""))
 	if err != nil {
 		t.Fatalf("Error adding requirement for TestDeleteQualification")
 	}

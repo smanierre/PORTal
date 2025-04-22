@@ -2,7 +2,6 @@ package server
 
 import (
 	"PORTal/backend"
-	"PORTal/server/serverutils"
 	"PORTal/server/stores"
 	"PORTal/templates"
 	"PORTal/templates/pages"
@@ -35,7 +34,7 @@ func LoginGetHandler(logger *slog.Logger, organization string) http.Handler {
 	logger = logger.With(slog.String("source", "LoginGetHandler"))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		loginTpl := pages.Login(organization)
-		hx := serverutils.CheckHTMXRequest(r)
+		hx := CheckHTMXRequest(r)
 		if !hx {
 			err := templates.Root(false, false, false, "", organization, loginTpl).Render(r.Context(), w)
 			if err != nil {
@@ -59,7 +58,7 @@ func LoginPostHandler(logger *slog.Logger, memberStore stores.MemberStore, sessi
 			logger.LogAttrs(r.Context(), slog.LevelError, "Error parsing form", slog.String("error", err.Error()))
 			w.Header().Set("HX-Retarget", "#loginError")
 			w.Header().Set("HX-Reswap", "outerHTML")
-			serverutils.HandleRenderError(r.Context(), logger, pages.LoginCustomError(err.Error()).Render(r.Context(), w))
+			HandleRenderError(r.Context(), logger, pages.LoginCustomError(err.Error()).Render(r.Context(), w))
 			return
 		}
 		member, err := memberStore.Login(r.Form.Get("username"), r.Form.Get("password"))
@@ -67,28 +66,25 @@ func LoginPostHandler(logger *slog.Logger, memberStore stores.MemberStore, sessi
 			w.Header().Set("HX-Retarget", "#loginError")
 			w.Header().Set("HX-Reswap", "outerHTML")
 			w.WriteHeader(http.StatusUnauthorized)
-			serverutils.HandleRenderError(r.Context(), logger, pages.LoginAuthError().Render(r.Context(), w))
+			HandleRenderError(r.Context(), logger, pages.LoginAuthError().Render(r.Context(), w))
 			return
 		} else if err != nil {
 			logger.LogAttrs(r.Context(), slog.LevelError, "Error parsing form", slog.String("error", err.Error()))
 			w.Header().Set("HX-Retarget", "#loginError")
 			w.Header().Set("HX-Reswap", "outerHTML")
-			serverutils.HandleRenderError(r.Context(), logger, pages.LoginCustomError(err.Error()).Render(r.Context(), w))
+			HandleRenderError(r.Context(), logger, pages.LoginCustomError(err.Error()).Render(r.Context(), w))
 			return
 		}
 		sessionId, expiration := sessionStore.CreateSession(member.ID, r.UserAgent(), strings.Split(r.RemoteAddr, ":")[0])
 		w.Header().Set("HX-Push-URL", "/dashboard")
-		http.SetCookie(w, serverutils.MakeCookie(serverutils.SessionCookieName, sessionId, expiration))
+		http.SetCookie(w, MakeCookie(SessionCookieName, sessionId, expiration))
 		var hasSubordinates bool
-		subordinates, err := memberStore.GetSubordinates(member.ID)
-		if err != nil {
-			hasSubordinates = false
-		}
+		subordinates := memberStore.GetSubordinates(member.ID)
 		if len(subordinates) > 0 {
 			hasSubordinates = true
 		}
 		displayName := fmt.Sprintf("%s %s %s", ranks[member.Grade], member.FirstName, member.LastName)
 		content := dashboard.Dashboard()
-		serverutils.HandleRenderError(r.Context(), logger, templates.Root(true, hasSubordinates, member.Admin, displayName, organization, content).Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, templates.Root(true, hasSubordinates, member.Admin, displayName, organization, content).Render(r.Context(), w))
 	})
 }

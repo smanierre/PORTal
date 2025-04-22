@@ -27,7 +27,7 @@ type MemberProvider interface {
 	GetMemberFromSession(sessionID string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
 	GetDisabledMembers() ([]types.Member, error)
-	GetSubordinates(memberID string) ([]types.Member, error)
+	GetSubordinates(memberID string) []types.Member
 	RemoveSubordinates(memberID string) error
 	UpdateMember(member types.Member) error
 	DeleteMember(identifier string, method backend.ProviderMethod) error

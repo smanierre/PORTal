@@ -29,6 +29,10 @@ func (s SessionStore) ValidateSession(sessionID, userAgent, ipAddress string) (t
 		s.logger.LogAttrs(context.Background(), slog.LevelWarn, "Session validation failed due to database")
 		return types.Member{}, fmt.Errorf("%w: %s", backend.ErrSessionValidationFailed, err.Error())
 	}
+	if session.Expires.Before(s.clock.Now()) {
+		s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Session is expired")
+		return types.Member{}, backend.ErrSessionValidationFailed
+	}
 	if userAgent != session.UserAgent {
 		s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Session validation failed due to user agent mismatch")
 		return types.Member{}, backend.ErrSessionValidationFailed

@@ -68,6 +68,9 @@ func (m MemberProvider) GetMemberFromSession(sessionID string) (types.Member, er
 	err := row.Scan(&memberID)
 	if err != nil {
 		m.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting member id from session", slog.String("error", err.Error()))
+		if strings.Contains(err.Error(), "no rows in result set") {
+			return types.Member{}, backend.ErrSessionNotFound
+		}
 		return types.Member{}, err
 	}
 	return m.GetMember(memberID, backend.ById)
@@ -124,11 +127,11 @@ func (m MemberProvider) GetDisabledMembers() ([]types.Member, error) {
 	return members, nil
 }
 
-func (m MemberProvider) GetSubordinates(memberID string) ([]types.Member, error) {
+func (m MemberProvider) GetSubordinates(memberID string) []types.Member {
 	rows, err := m.db.Query(getSubordinatesQuery, memberID)
 	if err != nil {
 		m.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting subordinates for member", slog.String("error", err.Error()))
-		return nil, err
+		return []types.Member{}
 	}
 	var subordinates []types.Member
 	var subordinate types.Member
@@ -136,12 +139,12 @@ func (m MemberProvider) GetSubordinates(memberID string) ([]types.Member, error)
 		err = rows.Scan(&subordinate.ID, &subordinate.FirstName, &subordinate.LastName, &subordinate.Grade, &subordinate.Username, &subordinate.SupervisorID, &subordinate.Admin, &subordinate.Hash)
 		if err != nil {
 			m.logger.LogAttrs(context.Background(), slog.LevelError, "Error when scanning subordinate into struct", slog.String("error", err.Error()))
-			return nil, err
+			return nil
 		}
 		subordinates = append(subordinates, subordinate)
 	}
 	m.logger.LogAttrs(context.Background(), slog.LevelInfo, fmt.Sprintf("Found %d subordinates for member", len(subordinates)))
-	return subordinates, nil
+	return subordinates
 }
 
 // RemoveSubordinates takes a member's ID and blanks out the SupervisorID of any members that have it as their supervisor
@@ -159,9 +162,9 @@ func (m MemberProvider) UpdateMember(mem types.Member) error {
 	var err error
 	if mem.SupervisorID == "" {
 		m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Supervisor ID is empty, inserting as null in database")
-		res, err = m.db.Exec(updateMemberQuery, mem.FirstName, mem.LastName, mem.Grade, nil, mem.Admin, mem.Hash, mem.ID)
+		res, err = m.db.Exec(updateMemberQuery, mem.Username, mem.FirstName, mem.LastName, mem.Grade, nil, mem.Admin, mem.Hash, mem.ID)
 	} else {
-		res, err = m.db.Exec(updateMemberQuery, mem.FirstName, mem.LastName, mem.Grade, mem.SupervisorID, mem.Admin, mem.Hash, mem.ID)
+		res, err = m.db.Exec(updateMemberQuery, mem.Username, mem.FirstName, mem.LastName, mem.Grade, mem.SupervisorID, mem.Admin, mem.Hash, mem.ID)
 	}
 	if err != nil && strings.Contains(err.Error(), "FOREIGN KEY constraint failed") {
 		m.logger.LogAttrs(context.Background(), slog.LevelWarn, "Attempting to update member with non-existent supervisor")

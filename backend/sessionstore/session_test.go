@@ -2,13 +2,14 @@ package sessionstore_test
 
 import (
 	"PORTal/backend"
-	"PORTal/providers/sqlite"
+	"PORTal/backend/memberstore"
+	"PORTal/backend/sessionstore"
+	"PORTal/providers/sqlite/memberprovider"
+	"PORTal/providers/sqlite/sessionprovider"
 	"PORTal/testutils"
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"io"
 	"log/slog"
 	"os"
@@ -27,20 +28,25 @@ func (e expireClock) Now() time.Time {
 }
 
 func TestCreateAndValidateSession(t *testing.T) {
-	dbID := uuid.NewString()
+	dbString := testutils.GetDbString()
 	t.Cleanup(func() {
-		os.Remove(fmt.Sprintf("%s.db", dbID))
+		os.Remove(dbString)
 	})
 	buf := &bytes.Buffer{}
 	mr := io.MultiWriter(os.Stdout, buf)
 	logger := slog.New(slog.NewTextHandler(mr, nil))
-	provider, err := sqlite.New(logger, fmt.Sprintf("%s.db", dbID), 1.0)
+	provider, err := sessionprovider.New(dbString, logger)
 	if err != nil {
 		t.Fatalf("Error creating provider for tests: %s", err.Error())
 	}
-	b := backend.New(logger, provider, provider, provider, provider, backend.Config{BcryptCost: bcrypt.MinCost, SessionTimeout: 4}, nil)
+	memberProvider, err := memberprovider.New(dbString, logger)
+	if err != nil {
+		t.Fatalf("Error creating member provider for TestCreateAndValidateSession: %s", err.Error())
+	}
+	memberStore := memberstore.New(memberProvider, 4, logger)
+	b := sessionstore.New(provider, memberStore, nil, 1*time.Hour, logger)
 
-	m, err := b.AddMember(testutils.RandomMember(false))
+	m, err := memberStore.AddMember(testutils.RandomMember(false))
 	if err != nil {
 		t.Fatalf("Error adding member: %s", err.Error())
 	}
@@ -97,6 +103,108 @@ func TestCreateAndValidateSession(t *testing.T) {
 				if member.ID != tt.MemberId {
 					t.Errorf("Expected member with ID: %s\nGot: %s", tt.MemberId, member.ID)
 				}
+			}
+		})
+	}
+}
+
+func TestExpiredSession(t *testing.T) {
+	dbString := testutils.GetDbString()
+	t.Cleanup(func() {
+		os.Remove(dbString)
+	})
+	buf := &bytes.Buffer{}
+	mr := io.MultiWriter(os.Stdout, buf)
+	logger := slog.New(slog.NewTextHandler(mr, nil))
+	provider, err := sessionprovider.New(dbString, logger)
+	if err != nil {
+		t.Fatalf("Error creating provider for tests: %s", err.Error())
+	}
+	memberProvider, err := memberprovider.New(dbString, logger)
+	if err != nil {
+		t.Fatalf("Error creating member provider for TestCreateAndValidateSession: %s", err.Error())
+	}
+	memberStore := memberstore.New(memberProvider, 4, logger)
+
+	// Create session store that will set session expiration way in the past
+	b := sessionstore.New(provider, memberStore, expireClock{}, 1*time.Hour, logger)
+
+	m, err := memberStore.AddMember(testutils.RandomMember(false))
+	if err != nil {
+		t.Fatalf("Error adding member for TestExpiredSession: %s", err.Error())
+	}
+
+	sessionID, _ := b.CreateSession(m.ID, "test", "127.0.0.1")
+	// Create session store using current time to force expiration
+	b = sessionstore.New(provider, memberStore, nil, 1*time.Hour, logger)
+	_, err = b.ValidateSession(sessionID, "test", "127.0.0.1")
+
+	if !errors.Is(err, backend.ErrSessionValidationFailed) {
+		t.Errorf("Expected expected error: %s\n got: %s", backend.ErrSessionValidationFailed.Error(), err)
+	}
+}
+
+func TestDeleteSession(t *testing.T) {
+	dbString := testutils.GetDbString()
+	t.Cleanup(func() {
+		os.Remove(dbString)
+	})
+	buf := &bytes.Buffer{}
+	mr := io.MultiWriter(os.Stdout, buf)
+	logger := slog.New(slog.NewTextHandler(mr, nil))
+	provider, err := sessionprovider.New(dbString, logger)
+	if err != nil {
+		t.Fatalf("Error creating provider for tests: %s", err.Error())
+	}
+	memberProvider, err := memberprovider.New(dbString, logger)
+	if err != nil {
+		t.Fatalf("Error creating member provider for TestCreateAndValidateSession: %s", err.Error())
+	}
+	memberStore := memberstore.New(memberProvider, 4, logger)
+	b := sessionstore.New(provider, memberStore, nil, 1*time.Hour, logger)
+
+	m, err := memberStore.AddMember(testutils.RandomMember(false))
+	if err != nil {
+		t.Fatalf("Error adding member for TestExpiredSession: %s", err.Error())
+	}
+	sessionID, _ := b.CreateSession(m.ID, "test", "127.0.0.1")
+	sessionID2, _ := b.CreateSession(m.ID, "test", "127.0.0.1")
+
+	tc := []struct {
+		Name          string
+		SessionID     string
+		ExpectedError error
+		SetupFunc     func(t *testing.T)
+	}{
+		{
+			Name:      "Successful Delete",
+			SessionID: sessionID,
+			SetupFunc: nil,
+		},
+		{
+			Name:      "Member deleted",
+			SessionID: sessionID2,
+			SetupFunc: func(t *testing.T) {
+				err := memberStore.DeleteMember(m.ID)
+				if err != nil {
+					t.Fatalf("Error deleting member for TestDeleteSession: %s", err.Error())
+				}
+			},
+		},
+	}
+
+	for _, tt := range tc {
+		t.Run(tt.Name, func(t *testing.T) {
+			if tt.SetupFunc != nil {
+				tt.SetupFunc(t)
+			}
+			// There may be a better way to handle this, but that can be worried about when more tests are added
+			if tt.Name != "Member Deleted" {
+				b.DeleteSession(tt.SessionID)
+			}
+			_, err = provider.GetSession(tt.SessionID)
+			if !errors.Is(err, backend.ErrSessionNotFound) {
+				t.Errorf("Expected error %s\nGot: %s", backend.ErrSessionNotFound, err)
 			}
 		})
 	}

@@ -39,6 +39,9 @@ func (q QualificationStore) GetAllQualifications() ([]types.Qualification, error
 }
 
 func (q QualificationStore) UpdateQualification(qual types.Qualification) (types.Qualification, error) {
+	if err := checkQualificationForMissingArgs(qual); err != nil {
+		return types.Qualification{}, err
+	}
 	err := q.provider.UpdateQualification(qual)
 	if err != nil {
 		return types.Qualification{}, err

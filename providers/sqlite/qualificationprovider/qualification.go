@@ -52,7 +52,7 @@ func (q QualificationProvider) GetQualification(id string) (types.Qualification,
 		q.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting initial requirement IDs for qualification", slog.String("error", err.Error()))
 		return types.Qualification{}, err
 	}
-	var initialRequirements []types.Requirement
+	initialRequirements := []types.Requirement{}
 	for rows.Next() {
 		var id string
 		err = rows.Scan(&id)
@@ -74,7 +74,7 @@ func (q QualificationProvider) GetQualification(id string) (types.Qualification,
 		q.logger.LogAttrs(context.Background(), slog.LevelError, "Error getting recurring requirement IDs for qualification", slog.String("error", err.Error()))
 		return types.Qualification{}, err
 	}
-	var recurringRequirements []types.Requirement
+	recurringRequirements := []types.Requirement{}
 	for rows.Next() {
 		var id string
 		err = rows.Scan(&id)

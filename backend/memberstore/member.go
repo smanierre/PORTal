@@ -139,7 +139,7 @@ func (m MemberStore) GetDisabledMembers() ([]types.Member, error) {
 	return members, nil
 }
 
-func (m MemberStore) GetSubordinates(memberID string) ([]types.Member, error) {
+func (m MemberStore) GetSubordinates(memberID string) []types.Member {
 	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting subordinates for member", slog.String("member_id", memberID))
 	return m.provider.GetSubordinates(memberID)
 }

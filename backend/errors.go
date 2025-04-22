@@ -4,8 +4,6 @@ import "errors"
 
 var (
 	ErrAuthenticationFailed         = errors.New("unable to authenticate user")
-	ErrBadUpdate                    = errors.New("supplied update values are invalid")
-	ErrDuplicateReference           = errors.New("reference with that name already exists")
 	ErrDuplicateRequirement         = errors.New("requirement with that name already exists")
 	ErrDuplicateUsername            = errors.New("member with that username already exists")
 	ErrInvalidQualExpiration        = errors.New("invalid expiration length for qualification")
@@ -19,7 +17,9 @@ var (
 	ErrReferenceNotFound            = errors.New("unable to find reference with given id")
 	ErrRequirementInUse             = errors.New("requirement is assigned to qualification")
 	ErrRequirementNotFound          = errors.New("requirement with that identifier not found")
+	ErrSessionNotFound              = errors.New("no session with that ID found")
 	ErrSessionValidationFailed      = errors.New("session validation failed")
 	ErrSupervisorNotFound           = errors.New("supervisor with that ID not found")
+	ErrValidation                   = errors.New("validation failed")
 	ErrWeakPassword                 = errors.New("supplied password doesn't meet requirements")
 )

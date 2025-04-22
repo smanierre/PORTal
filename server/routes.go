@@ -39,6 +39,7 @@ func addRoutes(
 	mux.Handle("GET /admin/newRequirement", newRequirementHandler(logger, qualificationStore))
 	mux.Handle("POST /admin/addRequirement", addRequirementHandler(logger, qualificationStore))
 	mux.Handle("PUT /admin/updateRequirement", updateRequirementHandler(logger, qualificationStore))
+	mux.Handle("DELETE /admin/removeRequirement", removeRequirementHandler(logger, qualificationStore))
 
 	logger.LogAttrs(ctx, slog.LevelInfo, "Registering dashboard routes...")
 	mux.Handle("GET /dashboard", dashboardGetHandler(logger, organization))

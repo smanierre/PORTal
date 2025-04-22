@@ -1,7 +1,6 @@
 package server
 
 import (
-	"PORTal/server/serverutils"
 	"PORTal/templates"
 	"PORTal/templates/pages/dashboard"
 	"PORTal/types"
@@ -12,7 +11,7 @@ import (
 func dashboardGetHandler(logger *slog.Logger, organization string) http.Handler {
 	logger = logger.With(slog.String("route", "GET /dashboard"))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		m := r.Context().Value(serverutils.MemberContextKey)
+		m := r.Context().Value(MemberContextKey)
 		member, ok := m.(types.Member)
 		if !ok {
 			logger.LogAttrs(r.Context(), slog.LevelWarn, "unable to get member from context, redirecting to login")
@@ -21,8 +20,8 @@ func dashboardGetHandler(logger *slog.Logger, organization string) http.Handler 
 		}
 		rootTemplate := templates.Root(
 			true,
-			false, true, member.FirstName, organization, dashboard.Dashboard())
+			false, member.Admin, member.Display(), organization, dashboard.Dashboard())
 
-		serverutils.HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
+		HandleRenderError(r.Context(), logger, rootTemplate.Render(r.Context(), w))
 	})
 }
