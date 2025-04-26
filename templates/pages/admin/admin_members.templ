@@ -2,7 +2,7 @@ package admin
 
 import (
     "PORTal/types"
-    "PORTal/templates/components/button"
+    "PORTal/templates/components/general/button"
     "fmt"
     )
 
@@ -32,10 +32,14 @@ templ MemberList(oobSwap, disabledMembers bool, members []types.Member, selected
                 <div class="member-toggle">
                     <a href="/admin?fragment=members_pane&disabled=false" class={"button", templ.KV("primary", !disabledMembers)}
                        hx-target="#admin-content"
+                       hx-select="#admin-content"
+                       hx-swap="outerHTML"
                        hx-push-url="true">
                         Enabled
                     </a><a href="/admin?fragment=members_pane&disabled=true" class={"button", templ.KV("primary", disabledMembers)}
                        hx-target="#admin-content"
+                       hx-select="#admin-content"
+                       hx-swap="outerHTML"
                        hx-push-url="true">
                         Disabled
                     </a>
@@ -51,6 +55,8 @@ templ FilteredList(members []types.Member, selectedMember types.Member, query st
         x-data={fmt.Sprintf("{input:'%s'}", query)}
         hx-get={fmt.Sprintf("/admin?fragment=members_pane&disabled=%t&selected=%s", disabled, selectedMember.ID)}
         hx-target="#admin-content"
+        hx-select="#admin-content"
+        hx-swap="outerHTML"
         hx-include="[name='member_query']"
         hx-trigger="keyup changed delay:300ms, clear delay:50ms"
         hx-push-url="true"
@@ -69,6 +75,8 @@ templ FilteredList(members []types.Member, selectedMember types.Member, query st
             <li data-id={member.ID} class={"searchable-list-item", templ.KV("searchable-list-item--selected", selectedMember.ID == member.ID)}
                 hx-get={fmt.Sprintf("/admin?fragment=members_pane&disabled=%t&member_query=%s", disabled, query)}
                 hx-target="#admin-content"
+                hx-select="#admin-content"
+                hx-swap="outerHTML"
                 hx-push-url="true"
                 hx-include="[name='selected']"
                 @click="selected=$event.target.dataset.id"

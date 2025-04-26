@@ -23,10 +23,19 @@ templ AdminDropdown(dropdownValue string, oobSwap bool) {
      if oobSwap {
         hx-swap-oob="true"
      }>
-        <button class="button primary" @click="open=!open">{dropdownValue}</button>
+        <button class="button primary" x-ref="button" @click="open=!open">{dropdownValue}</button>
         <div x-cloak x-show="open" @click.outside="open=false" class="dropdown-list">
             for _, option := range options {
-                <a class="dropdown-item" hx-target="#admin-content" href={templ.URL(fmt.Sprintf("/admin?fragment=%s_pane", option.Value))}>
+                <a class="dropdown-item"
+                    hx-target="#admin-content"
+                    hx-select="#admin-content"
+                    hx-swap="outerHTML"
+                    href={templ.URL(fmt.Sprintf("/admin?fragment=%s_pane", option.Value))}
+                    @click="
+                        open=!open;
+                        $refs.button.textContent=$el.textContent
+                    "
+                    >
                 <span>{option.Name}</span>
                 </a>
             }

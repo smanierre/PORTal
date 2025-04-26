@@ -57,7 +57,7 @@ func sessionRequiredMiddleware(next http.Handler, logger *slog.Logger, organizat
 			logger.LogAttrs(r.Context(), slog.LevelDebug, "Session validation failed, removing cookie and redirecting to login")
 			RemoveCookie(w, SessionCookieName)
 			w.Header().Set("HX-Push-URL", "/")
-			if CheckHTMXRequest(r) {
+			if r.Header.Get("Hx-Request") == "true" {
 				err = pages.Login(organization).Render(r.Context(), w)
 			} else {
 				http.Redirect(w, r, "/", http.StatusFound)

@@ -47,8 +47,6 @@ templ Nav(show, oobSwap, subordinates, admin bool, memberDisplayName string) {
             }>
             for _, item := range getNavItems(subordinates, admin) {
                 <a class="nav-item" href={templ.URL(item.Href)}
-                hx-select="#content"
-                hx-swap="outerHTML"
                 hx-target="#content">{ item.Display }</a>
             }
             <div class="nav-right-items">

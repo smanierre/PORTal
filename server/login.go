@@ -34,17 +34,10 @@ func LoginGetHandler(logger *slog.Logger, organization string) http.Handler {
 	logger = logger.With(slog.String("source", "LoginGetHandler"))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		loginTpl := pages.Login(organization)
-		hx := CheckHTMXRequest(r)
-		if !hx {
-			err := templates.Root(false, false, false, "", organization, loginTpl).Render(r.Context(), w)
-			if err != nil {
-				logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login template: %s", slog.String("error", err.Error()))
-			}
+		if r.Header.Get("Hx-Request") != "true" {
+			serveContentAsRoot(loginTpl, logger, w, r)
 		} else {
-			err := loginTpl.Render(r.Context(), w)
-			if err != nil {
-				logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering login fragment: %s", slog.String("error", err.Error()))
-			}
+			HandleRenderError(r.Context(), logger, loginTpl.Render(r.Context(), w))
 		}
 	})
 }

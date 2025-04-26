@@ -150,8 +150,8 @@ func qualificationsPaneFragmentHandler(logger *slog.Logger, qualificationStore s
 	qualificationsPane := admin.QualificationPane(qualifications, selectedQualification, newQual, false, query)
 	HandleRenderError(r.Context(), logger, qualificationsPane.Render(r.Context(), w))
 
-	dropdown := admin.AdminDropdown("Qualifications", true)
-	HandleRenderError(r.Context(), logger, dropdown.Render(r.Context(), w))
+	adminPage := admin.AdminPage("Qualifications", qualificationsPane)
+	HandleRenderError(r.Context(), logger, adminPage.Render(r.Context(), w))
 }
 
 func requirementEditorFragmentHandler(logger *slog.Logger, qualificationStore stores.QualificationStore, w http.ResponseWriter, r *http.Request) {
@@ -307,6 +307,11 @@ func newMemberHandler(logger *slog.Logger, ranks types.RankMap) http.Handler {
 	logger = logger.With("route", "GET /admin/newMember")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Hx-Request") != "true" {
+			logger.LogAttrs(r.Context(), slog.LevelInfo, "Non-HTMX request, redirecting to members pane")
+			http.Redirect(w, r, "/admin?fragment=members_pane", http.StatusFound)
+			return
+		}
 		membersEditor := admin.MemberEditor(types.Member{}, ranks, nil, true)
 		HandleRenderError(r.Context(), logger, membersEditor.Render(r.Context(), w))
 	})
@@ -416,8 +421,11 @@ func enableMemberHandler(logger *slog.Logger, ranks types.RankMap, memberStore s
 func newQualificationHandler(logger *slog.Logger, qualificationStore stores.QualificationStore) http.Handler {
 	logger = logger.With("route", "GET /admin/newQualification")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Hx-Request") != "true" {
+			logger.LogAttrs(r.Context(), slog.LevelInfo, "Non-HTMX request, redirecting to qualification fragment")
+			http.Redirect(w, r, "/admin?fragment=qualifications_pane", http.StatusFound)
+		}
 		qualificationEditor := admin.QualificationEditor(types.Qualification{}, true)
-
 		qualifications, err := qualificationStore.GetAllQualifications()
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -507,6 +515,12 @@ func newRequirementHandler(logger *slog.Logger, qualificationStore stores.Qualif
 		qualificationID := r.URL.Query().Get("id")
 		initialOrRecurring := r.URL.Query().Get("requirement_type")
 
+		if r.Header.Get("Hx-Request") != "true" {
+			logger.LogAttrs(r.Context(), slog.LevelInfo, "Non-HTMX request, redirecting to qualification editor")
+			http.Redirect(w, r, fmt.Sprintf("/admin?fragment=qualifications_pane&selected=%s", qualificationID), http.StatusFound)
+			return
+		}
+
 		logger.LogAttrs(r.Context(), slog.LevelInfo, fmt.Sprintf("Rendering new requirement editor for qualification: %s", qualificationID))
 
 		qualifications, err := qualificationStore.GetAllQualifications()
@@ -556,6 +570,7 @@ func addRequirementHandler(logger *slog.Logger, qualificationStore stores.Qualif
 			Notes:           r.Form.Get("notes"),
 			DaysValidFor:    daysValidFor,
 			Grade:           types.Grade(r.Form.Get("grade")),
+			Initial:         initial,
 		}
 		requirement, err = qualificationStore.AddRequirement(requirement)
 		if err != nil {
@@ -610,6 +625,7 @@ func updateRequirementHandler(logger *slog.Logger, qualificationStore stores.Qua
 			Notes:           r.Form.Get("notes"),
 			DaysValidFor:    daysValidFor,
 			Type:            types.RequirementType(r.Form.Get("type")),
+			Initial:         initial,
 		}
 		requirement, err = qualificationStore.UpdateRequirement(requirement)
 		if errors.Is(err, backend.ErrRequirementNotFound) {

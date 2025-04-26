@@ -67,6 +67,8 @@ func New(
 	s.handler = assetMiddleware(s.handler, assetHandler)
 
 	l.LogAttrs(ctx, slog.LevelInfo, "Successfully registered routes")
+	l.LogAttrs(ctx, slog.LevelInfo, "Setting up root serving func")
+	serveContentAsRoot = initializeServeContentAsRoot(memberStore, organization)
 	return s
 }
 
@@ -76,10 +78,6 @@ func (s Server) ListenAndServe() error {
 }
 
 // Util functions for the server package
-
-func CheckHTMXRequest(r *http.Request) bool {
-	return r.Header.Get("HX-Request") != ""
-}
 
 func GetSessionId(r *http.Request) (string, error) {
 	c, err := r.Cookie(SessionCookieName)

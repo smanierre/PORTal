@@ -2,7 +2,7 @@ package admin
 
 import (
     "PORTal/types"
-    "PORTal/templates/components/button"
+    "PORTal/templates/components/general/button"
     "strconv"
     "fmt"
 )
@@ -75,11 +75,11 @@ templ requirementEditor(selectedRequirement types.Requirement, qualifications []
         }
         </select>
     </label>
-    <label for="name" x-show="type !== 'Grade' && type !== 'Qualification'" >Name:
+    <label for="name" x-show="type !== 'Grade' && type !== 'Qualification' && type !== ''" >Name:
         <input name="name" x-bind:disabled="type === 'Grade' || type === 'Qualification'" value={ selectedRequirement.Name } />
     </label>
-    <label for="notes">Notes: <textarea name="notes">{selectedRequirement.Notes}</textarea></label>
-    <label for="days_valid_for" x-show="(type === 'WBT' || type === 'Proficiency') && !initial">
+    <label for="notes" x-show="type !== ''">Notes: <textarea name="notes">{selectedRequirement.Notes}</textarea></label>
+    <label for="days_valid_for" x-show="(type === 'WBT' || type === 'Proficiency') && !initial && type !== ''">
         Days Valid For:
         <input name="days_valid_for" type="number" value={ strconv.Itoa(selectedRequirement.DaysValidFor)}
             x-bind:disabled="(type === 'Qualification' || type === 'Grade') || initial"/>
@@ -109,7 +109,7 @@ templ requirementEditor(selectedRequirement types.Requirement, qualifications []
             }
         </select>
     </label>
-    <label>Reference: <input name="reference" value={selectedRequirement.Reference} placeholder="e.g. AFI 24-605V2 2.8"/> </label>
+    <label x-show="type !== ''">Reference: <input name="reference" value={selectedRequirement.Reference} placeholder="e.g. AFI 24-605V2 2.8"/> </label>
     <label hidden for="parent_qualification">
         <input name="parent_qualification" type="text" value={parentID} readonly />
     </label>
@@ -117,7 +117,8 @@ templ requirementEditor(selectedRequirement types.Requirement, qualifications []
         @button.Button("Cancel", button.Normal, false, true, templ.Attributes{
             "hx-confirm": "Are you sure you would like to discard any changes?",
             "hx-get": fmt.Sprintf("/admin?fragment=qualifications_pane&selected=%s", parentID),
-            "hx-swap": "innerHTML",
+            "hx-select": "#admin-content",
+            "hx-swap": "outerHTML",
             "hx-target": "#admin-content",
             "hx-push-url": "true",
         })

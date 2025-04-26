@@ -3,8 +3,8 @@ package admin
 import (
 	"fmt"
 	"PORTal/types"
-	"PORTal/templates/components/button"
-	"PORTal/templates/components/icons"
+	"PORTal/templates/components/general/button"
+	"PORTal/templates/components/general/icons"
 )
 
 templ QualificationPane(qualifications []types.Qualification, selectedQualification types.Qualification, newQualification, oobSwap bool, query string) {
@@ -32,6 +32,8 @@ templ FilteredQualificationList(qualifications []types.Qualification, selectedQu
         x-data={fmt.Sprintf("{input:'%s'}", query)}
         hx-get={fmt.Sprintf("/admin?fragment=qualifications_pane&selected=%s", selectedQualification.ID)}
         hx-target="#admin-content"
+        hx-select="#admin-content"
+        hx-swap="outerHTML"
         hx-include="[name='qualification_query']"
         hx-trigger="keyup changed delay:300ms, clear delay:50ms"
         hx-push-url="true"
@@ -50,6 +52,8 @@ templ FilteredQualificationList(qualifications []types.Qualification, selectedQu
             <li data-id={qualification.ID} class={"searchable-list-item", templ.KV("searchable-list-item--selected", selectedQualification.ID == qualification.ID)}
                 hx-get={fmt.Sprintf("/admin?fragment=qualifications_pane&qualification_query=%s", query)}
                 hx-target="#admin-content"
+                hx-select="#admin-content"
+                hx-swap="outerHTML"
                 hx-push-url="true"
                 hx-include="[name='selected']"
                 @click="selected=$event.target.dataset.id"
@@ -73,6 +77,7 @@ templ QualificationEditor(selectedQualification types.Qualification, newQualific
 		    <label>ID: <input name="id" class="editor-input" readonly value={ selectedQualification.ID }/></label>
 		    <label>Name: <input name="name" value={ selectedQualification.Name }/></label>
 		    <label>Notes: <textarea name="notes">{ selectedQualification.Notes }</textarea></label>
+		    if !newQualification {
 		    <label>
 		    <input name="initial_requirements" hidden type="text"/>
 			    Initial Requirements:
@@ -89,6 +94,7 @@ templ QualificationEditor(selectedQualification types.Qualification, newQualific
 			        @RecurringRequirementSelector(selectedQualification.RecurringRequirements, selectedQualification.ID)
 			    }
 		    </label>
+		    }
 		    <div class="editor-submit-container">
 			    @button.Button("Save Qualification", button.Submit, true, false, nil)
 			</div>
