@@ -1,135 +1,152 @@
 package admin
 
 import (
-    "PORTal/templates"
-	"PORTal/templates/components"
-	"PORTal/templates/components/webcomponents"
-	"PORTal/types"
 	"fmt"
-	"slices"
+	"PORTal/types"
+	"PORTal/templates/components/general/button"
+	"PORTal/templates/components/general/icons"
 )
 
-type QualificationPaneData struct {
-	Qualifications          []types.Qualification
-	SelectedQualification   types.Qualification
-	QualificationEditorData QualificationEditorData
-	OobSwap                 bool
-}
-
-type QualificationEditorData struct {
-	SelectedQualification          types.Qualification
-	PotentialInitialRequirements   []types.Requirement
-	PotentialRecurringRequirements []types.Requirement
-	NewQualification               bool
-}
-
-templ QualificationPane(data QualificationPaneData) {
-	<div
-		x-data="adminQualificationList"
-		id="qualifications-list"
-		class="searchable-list"
-		if data.OobSwap {
-			hx-swap-oob="true"
-		}
-	>
-		<div class="searchable-list-search">
-			<input class="searchable-list-search-input" placeholder="Filter"/>
-			<button class="button primary" type="button">Clear</button>
-		</div>
-		<ul class="searchable-list-items">
-			for _, qualification := range data.Qualifications {
-				<li
-					@click="selectHandler"
-					if data.SelectedQualification.ID == qualification.ID {
-						x-init="selectHandler({target: $el})"
-					}
-					class={ "searchable-list-item", templ.KV(data.SelectedQualification.ID == qualification.ID, "searchable-list-item--selected") }
-					hx-target="#qualification-content"
-					hx-get={ fmt.Sprintf("/admin/qualifications/%s", qualification.ID) }
-				>
-					{ qualification.Name }
-				</li>
-			}
-		</ul>
-		<button @click="clearSelectedQualification" type="button" class="admin-new-member button primary" hx-get="/admin/qualifications/add" hx-target="#qualification-content">New Qualification</button>
-	</div>
+templ QualificationPane(qualifications []types.Qualification, selectedQualification types.Qualification, newQualification, oobSwap bool, query string) {
+	@QualificationList(qualifications, selectedQualification, oobSwap, query)
 	<div id="qualification-content">
-		if data.SelectedQualification.ID != "" || data.QualificationEditorData.NewQualification {
-			@QualificationEditor(data.QualificationEditorData)
+		if selectedQualification.ID != "" || newQualification {
+			@QualificationEditor(selectedQualification, newQualification)
 		}
 	</div>
 }
 
-templ QualificationEditor(data QualificationEditorData) {
-	<form
-		x-data="adminQualificationEditor"
-		class="editor"
-		hx-indicator=".form-submit"
-		if data.NewQualification {
-			hx-post="/admin/qualifications/add"
-		} else {
-			hx-post={ fmt.Sprintf("/admin/qualifications/%s", data.SelectedQualification.ID) }
-		}
-		hx-target="#admin-content"
-	>
-		<label>ID: <input name="id" class="editor-input" disabled value={ data.SelectedQualification.ID }/></label>
-		<label>Name: <input name="name" value={ data.SelectedQualification.Name }/></label>
-		<label>Notes: <textarea name="notes">{ data.SelectedQualification.Notes }</textarea></label>
-		<label>
-			Expires: <input
-			@click="handleExpiresClick"
-	name="expires"
-	type="checkbox"
-	if data.SelectedQualification.Expires {
-		checked
-	}
-/>
-		</label>
+templ QualificationList(qualifications []types.Qualification, selectedQualification types.Qualification, oobSwap bool, query string) {
+<div id="qualification-list" class="list-container"
+         if oobSwap {
+            hx-swap-oob="true"
+         }>
+                @FilteredQualificationList(qualifications, selectedQualification, query)
+                @button.Button("New Qualification", button.Submit, true, false,
+                    templ.Attributes{"hx-get": "/admin/newQualification", "hx-target": "#qualification-content", "hx-push-url": "true"})
+        </div>
+}
 
-		<label x-ref="expires"
-		if !data.SelectedQualification.Expires {
-		    hidden
-		}
-		>Expiration Interval: <input type="number" name="expiration_interval" value={ templates.DaysFromDuration(data.SelectedQualification.ExpirationInterval)}/></label>
-		<label>
-			Initial Requirements:
-			@webcomponents.MultiSelect("initial_requirements") {
-				for _, req := range data.PotentialInitialRequirements {
-					<option
-						if slices.Contains(data.SelectedQualification.InitialRequirements, req) {
-							selected="true"
-						}
-						value={ req.ID }
-					>{ req.Name }</option>
-				}
-			}
-		</label>
-		<label>
-			Recurring Requirements:
-			@webcomponents.MultiSelect("recurring_requirements") {
-				for _, req := range data.PotentialRecurringRequirements {
-					<option
-						if slices.Contains(data.SelectedQualification.RecurringRequirements, req) {
-							selected
-						}
-						value={ req.ID }
-					>{ req.Name }</option>
-				}
-			}
-		</label>
-		<div style="display: flex; gap: 1rem;">
-			if data.NewQualification {
-				@components.SubmitButton("Create Qualification", true)
-			} else {
-				@components.SubmitButton("Update Qualification", true)
-			}
-			if !data.NewQualification {
-			}
-		</div>
-	</form>
-	<script type="text/javascript">
-                document.querySelector(".editor").addEventListener("change", function() {
-                    document.querySelector(".form-submit").disabled = false
-                })
-            </script>
+templ FilteredQualificationList(qualifications []types.Qualification, selectedQualification types.Qualification, query string) {
+    <label
+        x-data={fmt.Sprintf("{input:'%s'}", query)}
+        hx-get={fmt.Sprintf("/admin?fragment=qualifications_pane&selected=%s", selectedQualification.ID)}
+        hx-target="#admin-content"
+        hx-select="#admin-content"
+        hx-swap="outerHTML"
+        hx-include="[name='qualification_query']"
+        hx-trigger="keyup changed delay:300ms, clear delay:50ms"
+        hx-push-url="true"
+        class="searchbar" for="qualification">
+        <input
+        x-model="input"
+        if query != "" {
+            x-init="$el.focus()"
+        }
+        class="member-search" name="qualification_query" type="text" />
+        <button @click="input=''; $dispatch('clear')" class="button primary">Clear</button>
+    </label>
+    <ul x-data="{selected:''}" class="searchable-list-items">
+        <input hidden name="selected" x-model="selected" />
+        for _, qualification := range qualifications {
+            <li data-id={qualification.ID} class={"searchable-list-item", templ.KV("searchable-list-item--selected", selectedQualification.ID == qualification.ID)}
+                hx-get={fmt.Sprintf("/admin?fragment=qualifications_pane&qualification_query=%s", query)}
+                hx-target="#admin-content"
+                hx-select="#admin-content"
+                hx-swap="outerHTML"
+                hx-push-url="true"
+                hx-include="[name='selected']"
+                @click="selected=$event.target.dataset.id"
+            >
+                {qualification.Name}
+            </li>
+        }
+    </ul>
+}
+
+templ QualificationEditor(selectedQualification types.Qualification, newQualification bool) {
+	    <form class="editor"
+	    if newQualification {
+	        hx-post="/admin/addQualification"
+	    } else {
+	        hx-put="/admin/updateQualification"
+	    }
+	    hx-target="#admin-content"
+	    hx-trigger="submit"
+	    >
+		    <label>ID: <input name="id" class="editor-input" readonly value={ selectedQualification.ID }/></label>
+		    <label>Name: <input name="name" value={ selectedQualification.Name }/></label>
+		    <label>Notes: <textarea name="notes">{ selectedQualification.Notes }</textarea></label>
+		    if !newQualification {
+		    <label>
+		    <input name="initial_requirements" hidden type="text"/>
+			    Initial Requirements:
+			    if newQualification {
+			        Please save requirement before adding requirements.
+			    } else {
+			        @InitialRequirementSelector(selectedQualification.InitialRequirements, selectedQualification.ID)
+			    }
+		    </label>
+		    <label>
+		        <input name="recurring_requirements" hidden type="text" />
+			    Recurring Requirements:
+			    if !newQualification {
+			        @RecurringRequirementSelector(selectedQualification.RecurringRequirements, selectedQualification.ID)
+			    }
+		    </label>
+		    }
+		    <div class="editor-submit-container">
+			    @button.Button("Save Qualification", button.Submit, true, false, nil)
+			</div>
+	    </form>
+}
+
+templ InitialRequirementSelector(requirements []types.Requirement, qualificationID string) {
+    @requirementSelector(requirements, "initial", qualificationID)
+}
+
+templ RecurringRequirementSelector(requirements []types.Requirement, qualificationID string) {
+    @requirementSelector(requirements, "recurring", qualificationID)
+}
+
+templ requirementSelector(requirements []types.Requirement, t, parentQualificationID string) {
+    <div class="requirement-items">
+        <span>
+            for _, req := range requirements {
+                <button type="button" class="requirement-item">
+                    <span class="requirement-item-name"
+                        hx-get={fmt.Sprintf("/admin?fragment=requirement_editor&requirement_id=%s&requirement_type=%s&qualification_id=%s", req.ID, t, parentQualificationID)}
+                        hx-target="#qualification-content"
+                        hx-swap="innerHTML"
+                        hx-push-url="true"
+                    >
+                        switch req.Type {
+                        case types.WbtType, types.ProficiencyType:
+                            {req.Name}
+                        case types.GradeType:
+                            Grade: {fmt.Sprintf("%s", req.Grade)}
+                        case types.QualificationType:
+                            Qualification: {req.Name}
+                        }
+                    </span>
+                    @icons.X("remove-requirement-button",
+                        templ.Attributes{
+                            "hx-confirm":"Are you sure you want to delete this requirement?",
+                            "hx-delete": "/admin/removeRequirement",
+                            "hx-params": "not name,notes,initial_requirements,recurring_requirements",
+                            "hx-vals": fmt.Sprintf("js:{requirement_id:\"%s\"}", req.ID),
+                        },
+                    )
+                </button>
+            }
+        </span>
+        <button type="button" class="add-requirement-button"
+            hx-get={fmt.Sprintf("/admin/newRequirement?requirement_type=%s", t)}
+            hx-include="[name='id']"
+            hx-target="#qualification-content"
+            hx-swap="innerHTML"
+            hx-push-url="true"
+        >@icons.Plus("add-requirement-icon", nil)
+        </button>
+    </div>
 }

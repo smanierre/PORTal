@@ -1,12 +1,6 @@
 package backend
 
-import (
-	"PORTal/types"
-	"context"
-	"fmt"
-	"log/slog"
-	"time"
-)
+const MinimumPwLength = 8
 
 type ProviderMethod int
 
@@ -14,90 +8,3 @@ const (
 	ById ProviderMethod = iota
 	ByUsername
 )
-
-const MinimumPwLength = 8
-
-type Backend struct {
-	memberProvider         MemberProvider
-	qualificationProvider  QualificationProvider
-	requirementProvider    RequirementProvider
-	authenticationProvider AuthenticationProvider
-	clock                  Clock
-	logger                 *slog.Logger
-	config                 Config
-}
-
-type MemberProvider interface {
-	AddMember(m types.Member) error
-	GetMember(identifier string, method ProviderMethod) (types.Member, error)
-	GetMemberFromSession(sessionID string) (types.Member, error)
-	GetAllMembers() ([]types.Member, error)
-	GetDisabledMembers() ([]types.Member, error)
-	GetSubordinates(memberID string) ([]types.Member, error)
-	RemoveSubordinates(memberID string) error
-	UpdateMember(member types.Member) error
-	DeleteMember(identifier string, method ProviderMethod) error
-	DisableMember(id string) error
-	EnableMember(id string) error
-	AssignMemberQualification(memberID, qualificationID string) error
-	GetMemberQualification(memberID, qualificationID string) (types.Qualification, error)
-	GetMemberQualifications(memberID string) ([]types.Qualification, error)
-	RemoveMemberQualification(memberID, qualificationID string) error
-}
-
-type QualificationProvider interface {
-	AddQualification(q types.Qualification) error
-	GetQualification(id string) (types.Qualification, error)
-	GetAllQualifications() ([]types.Qualification, error)
-	UpdateQualification(q types.Qualification) error
-	DeleteQualification(id string) error
-}
-
-type RequirementProvider interface {
-	AddRequirement(r types.Requirement) error
-	GetRequirement(id string) (types.Requirement, error)
-	GetAllRequirements() ([]types.Requirement, error)
-	GetQualificationIDsForRequirement(requirementID string) ([]string, error)
-	UpdateRequirement(r types.Requirement) error
-	DeleteRequirement(id string) error
-}
-
-type AuthenticationProvider interface {
-	CreateSession(memberID, sessionID, userAgent, ipAddress string, expiration time.Time) error
-	GetSession(sessionID string) (types.Session, error)
-	DeleteSession(sessionID string) error
-}
-
-type Clock interface {
-	Now() time.Time
-}
-
-type Config struct {
-	DbFile         string `yaml:"DbFile"`
-	BcryptCost     int    `yaml:"BcryptCost"`
-	SessionTimeout int    `yaml:"SessionTimeout"`
-}
-
-type realTime struct{}
-
-func (r realTime) Now() time.Time {
-	return time.Now()
-}
-
-func New(logger *slog.Logger, memberProvider MemberProvider, qualificationProvider QualificationProvider,
-	requirementProvider RequirementProvider, authenticationProvider AuthenticationProvider, config Config, clock Clock) Backend {
-	if clock == nil {
-		clock = realTime{}
-	}
-
-	logger.LogAttrs(context.Background(), slog.LevelInfo, fmt.Sprintf("Using bcrypt cost: %d", config.BcryptCost))
-	return Backend{
-		memberProvider:         memberProvider,
-		qualificationProvider:  qualificationProvider,
-		requirementProvider:    requirementProvider,
-		authenticationProvider: authenticationProvider,
-		clock:                  clock,
-		logger:                 logger,
-		config:                 config,
-	}
-}

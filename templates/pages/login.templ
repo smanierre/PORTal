@@ -1,48 +1,38 @@
 package pages
 
 import (
-	"PORTal/templates"
-	"PORTal/templates/components"
+    "PORTal/templates/components/general/button"
 )
 
-templ Login() {
+templ Login(organization string) {
 	<div class="login-container">
-		<div class="login-form-container" x-data="">
-			<p class="login-form-header">{ templates.GetOrg() } PORTal Login</p>
+		<div class="login-form-container">
+			<p class="login-form-header">{organization} PORTal Login</p>
 			<form
-				hx-post="/"
-				hx-target="#content"
+			    method="post"
+			    action="/"
+				hx-target="body"
 				hx-indicator=".form-submit"
-				@htmx:xhr:loadstart="() => {
-                    $refs.usernameInput.disabled = true;
-                    $refs.passwordInput.disabled = true;
-
-                }"
-				@htmx:after-request.camel="() => {
-                    $refs.usernameInput.disabled = false;
-                    $refs.passwordInput.disabled = false;
-                }"
-				x-data=""
 			>
 				<label>
-					<input class="login-input" name="username" x-ref="usernameInput" placeholder="Username" style="margin-top: 2.5rem;" type="text"/>
+					<input class="login-input" name="username" placeholder="Username" style="margin-top: 2.5rem;" type="text"/>
 				</label>
 				<label>
-					<input class="login-input" name="password" x-ref="passwordInput" placeholder="Password" type="password"/>
+					<input class="login-input" name="password" placeholder="Password" type="password"/>
 				</label>
-				<div class="login-form-submit-container" @click="$refs.err.className='login-error--hidden'">
-					@components.LoginButton("Login")
+				<div class="login-form-submit-container">
+					@button.Button("Login", button.Submit, false, false, nil)
 				</div>
 			</form>
-			<div id="loginError" x-ref="err" class="login-error--hidden"></div>
+			<div id="loginError" class="login-error--hidden"></div>
 		</div>
 	</div>
 }
 
 templ LoginAuthError() {
-	<div id="loginError" x-ref="err" class="login-error--active"><p>Invalid username or password</p></div>
+	<div id="loginError" class="login-error--active"><p>Invalid username or password</p></div>
 }
 
-templ LoginInternalError() {
-	<div id="loginError" x-ref="err" class="login-error--active"><p>Internal server error</p></div>
+templ LoginCustomError(e string) {
+	<div id="loginError" class="login-error--active"><p>{e}</p></div>
 }

@@ -1,0 +1,30 @@
+.members-layout {
+    display: grid;
+    grid-template-columns: 25% 1fr;
+    height: 100%;
+}
+
+.list-container--members {
+    margin-top: 5rem;
+}
+
+.members-editor {
+    margin-top: 5rem;
+    display: flex;
+    flex-direction: column;
+    margin-left: 1rem;
+    gap: 1rem;
+}
+
+.members-editor-info {
+    display: flex;
+    gap: 1rem;
+    flex-direction: row;
+}
+
+.member-qualification-list {
+    display: flex;
+    width: 80%;
+    border: 1px solid hsla(var(--background));
+    min-height: 5rem;
+}

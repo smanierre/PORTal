@@ -1,10 +1,8 @@
 package admin
 
-import "PORTal/templates/components"
-
 templ AdminPage(dropdownValue string, content templ.Component) {
     <div class="admin-layout">
-        @components.Dropdown(dropdownValue)
+        @AdminDropdown(dropdownValue, false)
         <div id="admin-content" class="admin-content">
             @content
         </div>

@@ -1,0 +1,88 @@
+package members
+
+import (
+    "fmt"
+
+    "PORTal/types"
+	"PORTal/templates/components/general/button"
+)
+
+templ MemberPage(members []types.Member, selectedMember types.Member, query string) {
+    <div class="members-layout">
+        @MemberList(false, members, selectedMember, query)
+        <div class="members-editor">
+        if selectedMember.ID != "" {
+            @MembersEditor(selectedMember)
+        }
+        </div>
+    </div>
+}
+
+templ MemberList(oobSwap bool, members []types.Member, selectedMember types.Member, query string) {
+    <div id="members-list" class="list-container list-container--members"
+         if oobSwap {
+            hx-swap-oob="true"
+         }>
+                @FilteredList(members, selectedMember, query)
+        </div>
+}
+
+templ FilteredList(members []types.Member, selectedMember types.Member, query string) {
+    <label
+        x-data={fmt.Sprintf("{input:'%s'}", query)}
+        hx-get={fmt.Sprintf("/members/filter?selected=%s", selectedMember.ID)}
+        hx-include="[name='query']"
+        hx-trigger="keyup changed delay:300ms, clear delay:50ms"
+        hx-swap="outerHTML"
+        hx-target="#members-list"
+        class="searchbar" for="member">
+        <input
+        x-model="input"
+        if query != "" {
+            x-init="$el.focus()"
+        }
+        class="member-search" name="query" type="text" />
+        <button @click="input=''; $dispatch('clear')" class="button primary">Clear</button>
+    </label>
+    <ul x-data="{selected:''}" x-init={fmt.Sprintf("selected='%s'", selectedMember.ID)} class="searchable-list-items">
+        <input hidden name="selected" x-model="selected" />
+        for _, member := range members {
+            <li data-id={member.ID} class={"searchable-list-item", templ.KV("searchable-list-item--selected", selectedMember.ID == member.ID)}
+                hx-get={"/members"}
+                hx-target=".members-editor"
+                hx-select=".members-editor"
+                hx-swap="outerHTML"
+                hx-push-url="true"
+                hx-include="[name='selected']"
+                x-effect={fmt.Sprintf("selected === '%s' ? $el.classList.add('searchable-list-item--selected') : $el.classList.remove('searchable-list-item--selected')", member.ID)}
+                @click="selected=$event.target.dataset.id"
+            >
+                {member.Display()}
+            </li>
+        }
+    </ul>
+}
+
+templ MembersEditor(selectedMember types.Member) {
+    <div class="members-editor-info">
+        <p>{fmt.Sprintf("%s %s", selectedMember.FirstName, selectedMember.LastName)}</p>
+        <p>Grade: {string(selectedMember.Grade)}</p>
+        <p>Supervisor: {selectedMember.SupervisorID}</p>
+    </div>
+    Assigned Initial Qualifications
+    <div class="member-qualification-list">
+
+        @assignQualificationButton(true)
+    </div>
+}
+
+templ assignQualificationButton(initial bool) {
+    {{ var text string
+       if initial {
+        text = "Assign Initial Qualification"
+       } else {
+        text = "Assign Recurring Qualification"
+       } }}
+
+    @button.Button(text, button.Normal, true, false, nil)
+}

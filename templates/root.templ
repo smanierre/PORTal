@@ -1,8 +1,6 @@
 package templates
 
-import "PORTal/templates/components/webcomponents"
-
-templ Root(navData NavData, content templ.Component) {
+templ Root(showNav, memberSubordinates, admin bool, memberDisplayName, organization string, content templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -12,25 +10,25 @@ templ Root(navData NavData, content templ.Component) {
 				content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
 			/>
 			<meta http-equiv="X-UA-Compatible" content="ie=edge"/>
-			<script src="https://unpkg.com/htmx.org@2.0.3"></script>
-			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.7/dist/cdn.min.js"></script>
-			<script src="/assets/js/alpineStores.js"></script>
-			<script src="/assets/js/errors.js"></script>
-			<script defer src="/assets/js/webcomponents/multiSelect.js"></script>
+			<script src="/assets/js/htmx@2.0.4.js"></script>
+			<script defer src="/assets/js/alpinejs@3.x.x.js"></script>
 			<link rel="icon" type="image/png" href="/assets/images/port_dawg.png"/>
 			<link rel="stylesheet" href="/assets/css/reset.css"/>
-			<link rel="stylesheet" href="/assets/css/index.css"/>
-			<title>{ cfg.Organization } PORTal</title>
+			<link rel="stylesheet" href="/assets/css/index.min.css"/>
+			<title>{ organization } PORTal</title>
 		</head>
-		<body>
-			<div class="layout">
-				@Nav(navData)
-				<div id="toast" class="toast toast--hidden"></div>
-				<div id="content">
-					@content
-				</div>
-			</div>
-			@webcomponents.WebComponentTemplates()
+		<body hx-boost="true">
+			@Layout(showNav, memberSubordinates, admin, memberDisplayName, content)
 		</body>
 	</html>
+}
+
+templ Layout(showNav, memberSubordinates, admin bool, memberDisplayName string, content templ.Component) {
+    <div class="layout">
+        @Nav(showNav, false, memberSubordinates, admin, memberDisplayName)
+        <div id="toast" class="toast toast--hidden"></div>
+        <div id="content">
+            @content
+        </div>
+    </div>
 }

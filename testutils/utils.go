@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"PORTal/types"
+	"fmt"
 	"math/rand/v2"
 	"reflect"
 	"sort"
@@ -9,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func RandomString() string {
@@ -23,78 +23,110 @@ func RandomString() string {
 
 func RandomMember(admin bool) types.Member {
 	return types.Member{
-		ApiMember: types.ApiMember{
-			ID:           "",
-			FirstName:    RandomString(),
-			LastName:     RandomString(),
-			Username:     RandomString(),
-			Grade:        types.E4,
-			SupervisorID: "",
-			Admin:        admin,
-		},
-		Password: RandomString(),
-		Hash:     "",
+		ID:           "",
+		FirstName:    RandomString(),
+		LastName:     RandomString(),
+		Username:     RandomString(),
+		Grade:        types.E4,
+		SupervisorID: "",
+		Admin:        admin,
+		Password:     RandomString(),
+		Hash:         "",
 	}
 }
 
 func RandomQualification() types.Qualification {
-	expires := rand.IntN(100) > 50
-	days := 0
-	if expires {
-		days = rand.IntN(730)
-	}
 	return types.Qualification{
 		ID:                    "",
 		Name:                  RandomString(),
-		InitialRequirements:   nil,
-		RecurringRequirements: nil,
+		InitialRequirements:   []types.Requirement{},
+		RecurringRequirements: []types.Requirement{},
 		Notes:                 RandomString(),
-		Expires:               expires,
-		ExpirationInterval:    days,
 	}
 }
 
-func RandomRequirement(r types.Reference) types.Requirement {
-	return types.Requirement{
-		ID:           uuid.NewString(),
-		Name:         RandomString(),
-		Notes:        RandomString(),
-		DaysValidFor: rand.IntN(1000) + 1,
-		Reference:    r,
+func RandomInitialRequirement(canBeQualType bool, id string) types.Requirement {
+	var requirementTypes []types.RequirementType
+	if canBeQualType && id != "" {
+		requirementTypes = []types.RequirementType{types.GradeType, types.WbtType, types.QualificationType}
+	} else {
+		requirementTypes = []types.RequirementType{types.GradeType, types.WbtType}
 	}
-}
 
-func RandomReference() types.Reference {
-	return types.Reference{
-		Name:      RandomString(),
-		Volume:    rand.IntN(10),
-		Paragraph: RandomString(),
-	}
-}
-
-func VerifyUpdatedUser(original, updates, returned types.Member, forced bool, t *testing.T) {
-	if updates.FirstName != "" {
-		original.FirstName = updates.FirstName
-	}
-	if updates.LastName != "" {
-		original.LastName = updates.LastName
-	}
-	if updates.Grade != "" {
-		original.Grade = updates.Grade
-	}
-	if updates.Username != "" {
-		original.Username = updates.Username
-	}
-	if updates.SupervisorID != "" && !forced {
-		original.SupervisorID = updates.SupervisorID
-	}
-	if updates.Password != "" {
-		if err := bcrypt.CompareHashAndPassword([]byte(returned.Hash), []byte(updates.Password)); err != nil {
-			t.Errorf("Updated password does not match returned hash")
+	var grades = []types.Grade{types.E1, types.E2, types.E3, types.E4, types.E5, types.E6, types.E7, types.E8, types.E9}
+	n := rand.IntN(len(requirementTypes))
+	g := rand.IntN(len(grades))
+	switch requirementTypes[n] {
+	case types.GradeType:
+		return types.Requirement{
+			Name:            RandomString(),
+			Reference:       RandomString(),
+			Initial:         true,
+			QualificationID: "",
+			Grade:           grades[g],
+			Notes:           "",
+			DaysValidFor:    0,
+			Type:            types.GradeType,
+		}
+	case types.QualificationType:
+		return types.Requirement{
+			Name:            RandomString(),
+			QualificationID: id,
+			Initial:         true,
+			Reference:       RandomString(),
+			Type:            types.QualificationType,
+		}
+	case types.WbtType:
+		return types.Requirement{
+			Name:      RandomString(),
+			Initial:   true,
+			Reference: RandomString(),
+			Notes:     RandomString(),
+			Type:      types.WbtType,
 		}
 	}
-	if !reflect.DeepEqual(original.ApiMember, returned.ApiMember) {
-		t.Errorf("Expected updated member: %+v\nGot: %+v", original, returned)
+	return types.Requirement{}
+}
+
+func RandomRecurringRequirement() types.Requirement {
+	requirementTypes := []types.RequirementType{types.WbtType, types.ProficiencyType}
+	n := rand.IntN(len(requirementTypes))
+	switch requirementTypes[n] {
+	case types.WbtType:
+		return types.Requirement{
+			Name:         RandomString(),
+			Reference:    RandomString(),
+			Notes:        RandomString(),
+			DaysValidFor: rand.IntN(1000) + 1,
+			Type:         types.WbtType,
+		}
+	case types.ProficiencyType:
+		return types.Requirement{
+			Name:         RandomString(),
+			Reference:    RandomString(),
+			Notes:        RandomString(),
+			DaysValidFor: rand.IntN(1000) + 1,
+			Type:         types.ProficiencyType,
+		}
+	default:
+		return types.Requirement{}
+	}
+}
+
+func VerifyUpdatedUserNoHash(updates, returned types.Member, t *testing.T) {
+	updates.Hash = ""
+	returned.Hash = ""
+	VerifyUpdatedUser(updates, returned, t)
+}
+
+func VerifyUpdatedUser(updates, returned types.Member, t *testing.T) {
+	// New password was provided, so hashes will be different. Blank out both
+	if updates.Password != "" {
+		updates.Password = ""
+		returned.Hash = ""
+	}
+	if updates != returned {
+		t.Errorf("Expected Member: %+v\nGot: %+v\n", updates, returned)
 	}
 }
 
@@ -141,4 +173,8 @@ func CompareRequirements(r1, r2 types.Requirement) bool {
 		return false
 	}
 	return true
+}
+
+func GetDbString() string {
+	return fmt.Sprintf("%s.db", uuid.NewString())
 }

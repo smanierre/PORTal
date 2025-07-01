@@ -1,38 +1,19 @@
 package server
 
 import (
-	"PORTal/templates"
-	"PORTal/templates/pages"
-	"PORTal/types"
-	"log"
+	"PORTal/templates/pages/dashboard"
 	"log/slog"
 	"net/http"
 )
 
-func (s Server) DashboardGetHandler(w http.ResponseWriter, r *http.Request) {
-	m := r.Context().Value(MemberContextKey)
-	member, ok := m.(types.Member)
-	if !ok {
-		//TODO: FIX THIS
-		log.Println("hmmmm")
-	}
-	if checkHTMXRequest(r) {
-		w.Header().Set("HX-Push-URL", "/dashboard")
-		err := pages.Dashboard().Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard template", slog.String("error", err.Error()))
-			return
+func dashboardGetHandler(logger *slog.Logger) http.Handler {
+	logger = logger.With(slog.String("route", "GET /dashboard"))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		dashboard := dashboard.Dashboard()
+		if r.Header.Get("Hx-Request") != "true" {
+			serveContentAsRoot(dashboard, logger, w, r)
+		} else {
+			HandleRenderError(r.Context(), logger, dashboard.Render(r.Context(), w))
 		}
-	} else {
-		err := templates.Root(templates.NavData{
-			Show:         true,
-			OobSwap:      false,
-			Member:       member,
-			Subordinates: false,
-		},
-			pages.Dashboard()).Render(r.Context(), w)
-		if err != nil {
-			s.logger.LogAttrs(r.Context(), slog.LevelError, "Error rendering dashboard page", slog.String("error", err.Error()))
-		}
-	}
+	})
 }

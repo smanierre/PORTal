@@ -1,0 +1,132 @@
+package admin
+
+import (
+    "PORTal/types"
+    "PORTal/templates/components/general/button"
+    "strconv"
+    "fmt"
+)
+
+templ RequirementEditorPane(
+    qualifications []types.Qualification,
+    selectedQualification types.Qualification,
+    selectedRequirement types.Requirement,
+    initialRequirement bool,
+    parentQualification string,
+    oobSwap bool,
+    query string,
+    ) {
+	@QualificationList(qualifications, selectedQualification, oobSwap, query)
+	<div id="qualification-content">
+		if initialRequirement {
+		    @InitialRequirementEditor(selectedRequirement, qualifications, parentQualification)
+		} else {
+		    @RecurringRequirementEditor(selectedRequirement, qualifications, parentQualification)
+		}
+	</div>
+}
+
+templ InitialRequirementEditor(selectedRequirement types.Requirement, qualifications []types.Qualification, parentID string){
+    @requirementEditor(selectedRequirement, qualifications, parentID, true)
+}
+
+templ RecurringRequirementEditor(selectedRequirement types.Requirement, qualifications []types.Qualification, parentID string) {
+    @requirementEditor(selectedRequirement, qualifications, parentID, false)
+}
+
+templ requirementEditor(selectedRequirement types.Requirement, qualifications []types.Qualification, parentID string, initialRequirement bool) {
+    <form class="editor" x-data={fmt.Sprintf("{type: '%s', initial: %t}", selectedRequirement.Type, initialRequirement)}
+        if selectedRequirement.ID == "" {
+            if initialRequirement {
+                hx-post="/admin/addRequirement?requirement_type=initial"
+            } else {
+                hx-post="/admin/addRequirement?requirement_type=recurring"
+            }
+        } else {
+            if initialRequirement {
+                hx-put="/admin/updateRequirement?requirement_type=initial"
+            } else {
+                hx-put="/admin/updateRequirement?requirement_type=recurring"
+            }
+        }
+            hx-target="#admin-content"
+            hx-swap="innerHTML"
+    >
+    <label>ID: <input name="requirement_id" class="editor-input" readonly value={selectedRequirement.ID} /></label>
+    <label>Type:
+        <select name="type" x-model="type">
+            <option value="">Choose...</option>
+        if initialRequirement {
+            for _, t := range types.GetInitialRequirementTypes() {
+                <option value={string(t)}
+                    if selectedRequirement.Type == t {
+                        selected
+                    }
+                >{string(t)}</option>
+            }
+        } else {
+            for _, t := range types.GetRecurringRequirementTypes() {
+                <option value={string(t)}
+                    if selectedRequirement.Type == t {
+                        selected
+                    }
+                >{string(t)}</option>
+            }
+        }
+        </select>
+    </label>
+    <label for="name" x-show="type !== 'Grade' && type !== 'Qualification' && type !== ''" >Name:
+        <input name="name" x-bind:disabled="type === 'Grade' || type === 'Qualification'" value={ selectedRequirement.Name } />
+    </label>
+    <label for="notes" x-show="type !== ''">Notes: <textarea name="notes">{selectedRequirement.Notes}</textarea></label>
+    <label for="days_valid_for" x-show="(type === 'WBT' || type === 'Proficiency') && !initial && type !== ''">
+        Days Valid For:
+        <input name="days_valid_for" type="number" value={ strconv.Itoa(selectedRequirement.DaysValidFor)}
+            x-bind:disabled="(type === 'Qualification' || type === 'Grade') || initial"/>
+    </label>
+    <label for="grade" x-show="type === 'Grade'">
+        Grade:
+        <select name="grade" x-bind:disabled="type !== 'Grade'">
+            // Sure it's not pretty, but these won't change. Sue me.
+            for _, g := range []string{"E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9"} {
+                <option value={g}>{g}</option>
+            }
+        </select>
+    </label>
+    <label for="qualification_id" x-show="type === 'Qualification'">
+        Qualification:
+        <select name="qualification_id" x-bind:disabled="type !== 'Qualification'">
+            for _, q := range qualifications {
+                if q.ID == parentID {
+                    {{ continue }}
+                }
+                <option value={q.ID}
+                    if selectedRequirement.QualificationID == q.ID {
+                        selected
+                    }>
+                    {q.Name}
+                </option>
+            }
+        </select>
+    </label>
+    <label x-show="type !== ''">Reference: <input name="reference" value={selectedRequirement.Reference} placeholder="e.g. AFI 24-605V2 2.8"/> </label>
+    <label hidden for="parent_qualification">
+        <input name="parent_qualification" type="text" value={parentID} readonly />
+    </label>
+    <div class="editor-submit-container">
+        @button.Button("Cancel", button.Normal, false, true, templ.Attributes{
+            "hx-confirm": "Are you sure you would like to discard any changes?",
+            "hx-get": fmt.Sprintf("/admin?fragment=qualifications_pane&selected=%s", parentID),
+            "hx-select": "#admin-content",
+            "hx-swap": "outerHTML",
+            "hx-target": "#admin-content",
+            "hx-push-url": "true",
+        })
+            if selectedRequirement.ID == "" {
+                @button.Button("Create", button.Submit, true, false, nil)
+            } else {
+                @button.Button("Update", button.Submit, true, false, nil)
+            }
+    </div>
+    </form>
+}
