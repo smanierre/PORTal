@@ -24,9 +24,12 @@ CREATE TABLE qualification(
 CREATE TABLE member_qualification(
     member_id string,
     qualification_id string,
+    date_assigned datetime NOT NULL,
+    assigned_by_id string NOT NULL,
 	PRIMARY KEY (member_id, qualification_id),
 	FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
-	FOREIGN KEY (qualification_id) REFERENCES qualification(id) ON DELETE CASCADE
+	FOREIGN KEY (qualification_id) REFERENCES qualification(id) ON DELETE CASCADE,
+	FOREIGN KEY (assigned_by_id) REFERENCES member(id) ON DELETE NO ACTION 
 );
 
 CREATE TABLE requirement(
@@ -41,14 +44,36 @@ CREATE TABLE requirement(
     days_valid_for integer
 );
 
-CREATE TABLE member_requirement(
+CREATE TABLE initial_member_requirement(
     member_id string,
     requirement_id string,
-    initial_completion datetime,
-    most_recent_completion datetime,
+    completed_date datetime,
+    assigned_by string,
+    completed_by string,
     PRIMARY KEY (member_id, requirement_id),
     FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
-    FOREIGN KEY (requirement_id) REFERENCES requirement(id) ON DELETE CASCADE
+    FOREIGN KEY (requirement_id) REFERENCES requirement(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_by) REFERENCES member(id) ON DELETE NO ACTION,
+    FOREIGN KEY (completed_by) REFERENCES member(id) ON DELETE NO ACTION
+);
+
+CREATE TABLE recurring_member_requirement(
+    id string PRIMARY KEY,
+    member_id string,
+    requirement_id string,
+    assigned_by string,
+    FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
+    FOREIGN KEY (requirement_id) REFERENCES requirement(id) ON DELETE CASCADE,
+    FOREIGN KEY (assigned_by) REFERENCES member(id) ON DELETE NO ACTION
+);
+
+CREATE TABLE recurring_member_requirement_completion(
+    id string PRIMARY KEY,
+    recurring_member_requirement_id string,
+    completed_date datetime,
+    completed_by string,
+    FOREIGN KEY (recurring_member_requirement_id) REFERENCES recurring_member_requirement(id) ON DELETE CASCADE,
+    FOREIGN KEY (completed_by) REFERENCES member(id) ON DELETE NO ACTION
 );
 
 CREATE TABLE qualification_initial_requirement(
@@ -65,14 +90,6 @@ CREATE TABLE qualification_recurring_requirement(
     PRIMARY KEY (qualification_id, requirement_id),
     FOREIGN KEY (qualification_id) REFERENCES qualification(id) ON DELETE CASCADE,
     FOREIGN KEY (requirement_id) REFERENCES requirement(id) ON DELETE CASCADE
-);
-
-CREATE TABLE qualification_requirement(
-    requirement_id string,
-    qualification_id string,
-    PRIMARY KEY (requirement_id, qualification_id),
-    FOREIGN KEY (requirement_id) REFERENCES requirement(id) ON DELETE CASCADE,
-    FOREIGN KEY (qualification_id) REFERENCES qualification(id) ON DELETE CASCADE
 );
 
 CREATE TABLE session(

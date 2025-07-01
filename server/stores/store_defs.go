@@ -16,7 +16,6 @@ type MemberStore interface {
 	GetDisabledMembers() ([]types.Member, error)
 	GetSubordinates(memberID string) []types.Member
 	UpdateMember(m types.Member) (types.Member, error)
-	DeleteMember(id string) error
 	DisableMember(id string) error
 	EnableMember(id string) error
 }
@@ -36,10 +35,24 @@ type QualificationStore interface {
 }
 
 type MemberQualificationStore interface {
-	AssignMemberQualification(memberID, qualID string) error
-	GetMemberQualification(memberID string, qualificationID string) (types.Qualification, error)
-	GetMemberQualifications(memberID string) ([]types.Qualification, error)
+	AssignMemberQualification(memberID, qualID, assignedById string) error
+	GetMemberQualification(memberID string, qualificationID string) (types.MemberQualification, error)
+	GetQualificationsForMember(memberID string) ([]types.MemberQualification, error)
+	GetAllMemberQualifications() ([]types.MemberQualification, error)
 	RemoveMemberQualification(memberID, qualificationID string) error
+}
+
+type MemberRequirementStore interface {
+	GetInitialMemberRequirement(memberID, requirementID string) (types.InitialMemberRequirement, error)
+	GetAllInitialMemberRequirementsForQualification(memberID, qualificationID string) ([]types.InitialMemberRequirement, error)
+	CompleteInitialMemberRequirement(memberID, requirementID string) error
+	VerifyInitialMemberRequirement(memberID, requirementID, verifierId string) error
+	UncompleteInitialMemberRequirement(memberID, requirementID string) error
+	GetRecurringMemberRequirement(memberID, requirementID string) (types.RecurringMemberRequirement, error)
+	GetAllRecurringMemberRequirementsForQualification(memberID, qualificationID string) ([]types.RecurringMemberRequirement, error)
+	CompleteRecurringMemberRequirement(memberID, requirementID string) error
+	VerifyRecurringMemberRequirement(memberID, requirementID string) error
+	UncompleteRecurringMemberRequirement(memberID, requirementID string) error
 }
 
 type SessionStore interface {

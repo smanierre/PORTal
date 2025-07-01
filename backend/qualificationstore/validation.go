@@ -23,9 +23,9 @@ func checkQualificationForMissingArgs(q types.Qualification) error {
 /*
 Initial requirements have the following rules:
 Can't be Proficiency type.
-All: Name, reference, and Type. Notes are optional
+All: Reference, and Type. Notes are optional
 Qualification type: Must have QualificationID, can't have Grade or DaysValidFor
-WBT Type: Can't have QualificationID, Grade, or DaysValidFor
+WBT Type: Can't have QualificationID, Grade, or DaysValidFor, must have Name
 Grade: Must have Grade, can't have QualificationID or DaysValidFor
 */
 func validateInitialRequirement(r types.Requirement) error {
@@ -43,6 +43,9 @@ func validateInitialRequirement(r types.Requirement) error {
 		}
 		break
 	case types.WbtType:
+		if r.Name == "" {
+			errors = append(errors, "Missing Name")
+		}
 		if r.QualificationID != "" {
 			errors = append(errors, "QualificationID should be blank")
 		}
@@ -66,9 +69,6 @@ func validateInitialRequirement(r types.Requirement) error {
 		break
 	default:
 		return fmt.Errorf("%w: Invalid type for initial requirement: %s", backend.ErrValidation, r.Type)
-	}
-	if r.Name == "" {
-		errors = append(errors, "Missing Name")
 	}
 	if r.Reference == "" {
 		errors = append(errors, "Missing Reference")

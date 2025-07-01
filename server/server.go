@@ -41,6 +41,7 @@ func New(
 	memberStore stores.MemberStore,
 	qualificationStore stores.QualificationStore,
 	sessionStore stores.SessionStore,
+	mqStore stores.MemberQualificationStore,
 ) Server {
 	l := logger.With(slog.String("source", "Server"))
 	l.LogAttrs(ctx, slog.LevelInfo, fmt.Sprintf("Setting domain to: %s", domain))

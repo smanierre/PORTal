@@ -502,6 +502,20 @@ func updateQualificationHandler(logger *slog.Logger, qualificationStore stores.Q
 			return
 		}
 
+		// Check for any qualification requirements and update the name of them to display correctly on creation
+		for i, q := range qualifications {
+			for j, req := range q.InitialRequirements {
+				if req.Type == types.QualificationType {
+					qualReq, err := qualificationStore.GetQualification(req.QualificationID)
+					if err != nil {
+						logger.LogAttrs(r.Context(), slog.LevelWarn, "Couldn't get name for qualification, rendering without")
+						continue
+					}
+					qualifications[i].InitialRequirements[j].Name = qualReq.Name
+				}
+			}
+		}
+
 		qualificationPane := admin.QualificationPane(qualifications, qualification, false, false, "")
 		HandleRenderError(r.Context(), logger, qualificationPane.Render(r.Context(), w))
 	})

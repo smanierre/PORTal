@@ -15,6 +15,8 @@ const (
 	ProficiencyType   RequirementType = "Proficiency"
 )
 
+var Never = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
+
 func GetInitialRequirementTypes() []RequirementType {
 	return []RequirementType{
 		QualificationType, WbtType, GradeType,
@@ -75,9 +77,45 @@ func (r Requirement) LogValue() slog.Value {
 		r.ID, r.Name, r.Initial, r.Reference, r.Notes, r.Type, r.QualificationID, r.Grade, r.DaysValidFor))
 }
 
-type MemberRequirement struct {
-	MemberID string
-	Requirement
-	Completed     bool
+type MemberQualification struct {
+	MemberID        string
+	QualificationID string
+	DateAssigned    time.Time
+	AssignedByID    string
+}
+
+func (m MemberQualification) LogValue() slog.Value {
+	return slog.StringValue(fmt.Sprintf("MemberID: %s QualificationID: %s, DateAssigned: %s AssignedBy: %s",
+		m.MemberID, m.QualificationID, m.DateAssigned.String(), m.AssignedByID))
+}
+
+type InitialMemberRequirement struct {
+	MemberID      string
+	RequirementID string
 	CompletedDate time.Time
+	AssignedBy    string
+	CompletedBy   string
+}
+
+func (i InitialMemberRequirement) LogValue() slog.Value {
+	return slog.StringValue(fmt.Sprintf("MemberID: %s RequirementID: %s CompletedDate: %s CompletedBy: %s",
+		i.MemberID, i.RequirementID, i.CompletedDate.String(), i.CompletedBy))
+}
+
+type RecurringMemberRequirement struct {
+	ID                string
+	MemberID          string
+	RequirementID     string
+	AssignedBy        string
+	CompletionHistory []RecurringMemberRequirementCompletion
+}
+
+func (r RecurringMemberRequirement) LogValue() slog.Value {
+	return slog.StringValue(fmt.Sprintf("ID: %s MemberID: %s RequirementID: %s CompletionHistory: %v", r.ID, r.MemberID, r.RequirementID, r.CompletionHistory))
+}
+
+type RecurringMemberRequirementCompletion struct {
+	ID             string
+	CompletionDate time.Time
+	CompletedBy    string
 }

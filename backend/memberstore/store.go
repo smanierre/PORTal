@@ -4,6 +4,7 @@ import (
 	"PORTal/backend"
 	"PORTal/types"
 	"log/slog"
+	"time"
 )
 
 type MemberStore struct {
@@ -30,9 +31,11 @@ type MemberProvider interface {
 	GetSubordinates(memberID string) []types.Member
 	RemoveSubordinates(memberID string) error
 	UpdateMember(member types.Member) error
-	DeleteMember(identifier string, method backend.ProviderMethod) error
 	DisableMember(id string) error
 	EnableMember(id string) error
-	AssignMemberQualification(memberID, qualificationID string) error
+	AssignMemberQualification(memberID, qualificationID string, dateAssigned time.Time, assignedBy string) error
+	GetMemberQualification(memberID, qualificationID string) (types.MemberQualification, error)
+	GetQualificationsForMember(memberID string) ([]types.MemberQualification, error)
+	GetAllMemberQualifications() ([]types.MemberQualification, error)
 	RemoveMemberQualification(memberID, qualificationID string) error
 }

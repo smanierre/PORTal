@@ -12,6 +12,4 @@ const (
 	getRecurringRequirementIdsQuery              = "SELECT requirement_id FROM qualification_recurring_requirement WHERE qualification_id=?;"
 	deleteQualificationRecurringRequirementQuery = "DELETE FROM qualification_recurring_requirement WHERE requirement_id=?;"
 	deleteQualificationInitialRequirementQuery   = "DELETE FROM qualification_initial_requirement WHERE requirement_id=?;"
-	checkMemberQualificationQuery                = "SELECT COUNT(*) FROM member_qualification WHERE member_id=? AND qualification_id=?;"
-	getMemberQualificationIDsQuery               = "SELECT qualification_id FROM member_qualification WHERE member_id=?;"
 )

@@ -185,7 +185,7 @@ func TestDeleteSession(t *testing.T) {
 			Name:      "Member deleted",
 			SessionID: sessionID2,
 			SetupFunc: func(t *testing.T) {
-				err := memberStore.DeleteMember(m.ID)
+				err := memberStore.DisableMember(m.ID)
 				if err != nil {
 					t.Fatalf("Error deleting member for TestDeleteSession: %s", err.Error())
 				}

@@ -185,19 +185,6 @@ func (m MemberStore) UpdateMember(mem types.Member) (types.Member, error) {
 	return updatedMember, nil
 }
 
-func (m MemberStore) DeleteMember(identifier string) error {
-	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Deleting member", slog.String("identifier", identifier))
-	var method backend.ProviderMethod
-	if _, err := uuid.Parse(identifier); err != nil {
-		m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Setting delete method to ByUsername")
-		method = backend.ByUsername
-	} else {
-		m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Setting delete method to ById")
-		method = backend.ById
-	}
-	return m.provider.DeleteMember(identifier, method)
-}
-
 func (m MemberStore) DisableMember(id string) error {
 	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Disabling member", slog.String("id", id))
 	err := m.provider.DisableMember(id)

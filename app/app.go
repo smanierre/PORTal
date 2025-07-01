@@ -1,6 +1,7 @@
 package app
 
 import (
+	"PORTal/backend/memberqualificationstore"
 	"PORTal/backend/memberstore"
 	"PORTal/backend/qualificationstore"
 	"PORTal/backend/sessionstore"
@@ -64,13 +65,15 @@ func New(ctx context.Context, w io.Writer, args []string) (*App, error) {
 	}
 	qualificationStore := qualificationstore.New(qualificationProvider, l)
 
+	mqStore := memberqualificationstore.New(memberProvider, qualificationProvider, memberProvider, l, nil)
+
 	sessionProvider, err := sessionprovider.New(*dbFile, l)
 	if err != nil {
 		return nil, err
 	}
 	sessionStore := sessionstore.New(sessionProvider, memberStore, nil, *sessionTimeout, l)
 
-	s := server.New(ctx, l, *port, *dev, *domain, *service, *organization, memberStore, qualificationStore, sessionStore)
+	s := server.New(ctx, l, *port, *dev, *domain, *service, *organization, memberStore, qualificationStore, sessionStore, mqStore)
 	a := &App{
 		server:  s,
 		context: ctx,

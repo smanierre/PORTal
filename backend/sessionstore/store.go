@@ -1,34 +1,25 @@
 package sessionstore
 
 import (
+	"PORTal/backend"
 	"PORTal/server/stores"
 	"PORTal/types"
 	"log/slog"
 	"time"
 )
 
-type Clock interface {
-	Now() time.Time
-}
-
-type realTime struct{}
-
-func (r realTime) Now() time.Time {
-	return time.Now()
-}
-
 type SessionStore struct {
 	memberStore stores.MemberStore
 	provider    SessionProvider
 	logger      *slog.Logger
-	clock       Clock
+	clock       backend.Clock
 	timeout     time.Duration
 }
 
-func New(provider SessionProvider, memberStore stores.MemberStore, clock Clock, timeout time.Duration, logger *slog.Logger) SessionStore {
+func New(provider SessionProvider, memberStore stores.MemberStore, clock backend.Clock, timeout time.Duration, logger *slog.Logger) SessionStore {
 	logger = logger.With(slog.String("source", "SessionStore"))
 	if clock == nil {
-		clock = realTime{}
+		clock = backend.RealClock{}
 	}
 	return SessionStore{
 		memberStore: memberStore,

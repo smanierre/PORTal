@@ -13,7 +13,7 @@ import (
 func (s SessionStore) CreateSession(memberID, userAgent, ipAddress string) (string, time.Time) {
 	s.logger.LogAttrs(context.Background(), slog.LevelInfo, "Attempting to create session", slog.String("memberID", memberID))
 	sessionId := uuid.NewString()
-	expiration := s.clock.Now().Add(s.timeout).UTC()
+	expiration := s.clock.Now().Add(s.timeout)
 	err := s.provider.CreateSession(memberID, sessionId, userAgent, ipAddress, expiration)
 	if err != nil {
 		s.logger.LogAttrs(context.Background(), slog.LevelError, "Session creation failed")
