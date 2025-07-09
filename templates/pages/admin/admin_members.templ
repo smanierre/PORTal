@@ -1,25 +1,18 @@
 package admin
 
+import "PORTal/server/core"
+
 import (
     "PORTal/types"
     "PORTal/templates/components/general/button"
     "fmt"
     )
 
-templ MembersPane(
-    members []types.Member,
-    selectedMember types.Member,
-    ranks types.RankMap,
-    potentialSupervisors []types.Member,
-    oobSwap,
-    disabledMembers,
-    newMember bool,
-    query string,
-) {
-    @MemberList(oobSwap, disabledMembers, members, selectedMember, query)
+templ MembersPane(data core.AdminMembersData, oobSwap bool) {
+    @MemberList(oobSwap, data.DisabledMembers, data.Members, data.SelectedMember, data.MemberQuery)
     <div id="member-content">
-        if selectedMember.ID != "" || newMember {
-            @MemberEditor(selectedMember, ranks, potentialSupervisors, newMember)
+        if data.SelectedMember.ID != "" || data.NewMember {
+            @MemberEditor(data.SelectedMember, data.Ranks, data.PotentialSupervisors, data.NewMember)
         }
     </div>
 }
@@ -81,7 +74,7 @@ templ FilteredList(members []types.Member, selectedMember types.Member, query st
                 hx-include="[name='selected']"
                 @click="selected=$event.target.dataset.id"
             >
-                {member.Display()}
+                {member.Display("f")}
             </li>
         }
     </ul>

@@ -1,6 +1,9 @@
 package server
 
 import (
+	"PORTal/server/core"
+	"PORTal/server/handlers/api"
+	"PORTal/server/handlers/rendered"
 	"PORTal/server/stores"
 	"PORTal/types"
 	"context"
@@ -8,7 +11,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"time"
 )
 
 //go:embed assets
@@ -52,66 +54,38 @@ func New(
 		dev:    dev,
 		port:   port,
 	}
+	c := core.New(
+		logger.With(slog.String("source", "core")),
+		memberStore,
+		qualificationStore,
+		mqStore,
+		sessionStore,
+		types.GetRanks(service),
+		organization,
+		service,
+		domain,
+	)
 
 	mux := http.NewServeMux()
 	l.LogAttrs(ctx, slog.LevelInfo, "Registering static asset routes...")
 	// Static assets
 	assetHandler := http.FileServerFS(assetsDir)
-	ranks := types.GetRanks(service)
-	addRoutes(ctx, mux, logger, assetHandler, organization, memberStore, sessionStore, qualificationStore, ranks)
+	rendered.RegisterRoutes(ctx, mux, logger, c)
+	api.RegisterRoutes(logger, mux, c)
 
 	// Handlers are applied last to first
 	l.LogAttrs(ctx, slog.LevelInfo, "Applying global middlewares...")
 	s.handler = adminRequiredMiddleware(mux, logger)
-	s.handler = skipLoginMiddleware(s.handler, logger, sessionStore)
-	s.handler = sessionRequiredMiddleware(s.handler, logger, organization, sessionStore)
+	s.handler = sessionRequiredMiddleware(s.handler, logger, c)
+	s.handler = skipLoginMiddleware(s.handler, logger, c)
 	s.handler = assetMiddleware(s.handler, assetHandler)
 
 	l.LogAttrs(ctx, slog.LevelInfo, "Successfully registered routes")
 	l.LogAttrs(ctx, slog.LevelInfo, "Setting up root serving func")
-	serveContentAsRoot = initializeServeContentAsRoot(memberStore, organization)
 	return s
 }
 
 func (s Server) ListenAndServe() error {
 	s.logger.LogAttrs(context.Background(), slog.LevelInfo, fmt.Sprintf("Starting server on port: %s", s.port))
 	return http.ListenAndServe(fmt.Sprintf(":%s", s.port), s.handler)
-}
-
-// Util functions for the server package
-
-func GetSessionId(r *http.Request) (string, error) {
-	c, err := r.Cookie(SessionCookieName)
-	if err != nil {
-		return "", err
-	}
-	return c.Value, nil
-}
-
-func HandleRenderError(ctx context.Context, logger *slog.Logger, err error) {
-	if err != nil {
-		logger.LogAttrs(ctx, slog.LevelError, "Error rendering template", slog.String("error", err.Error()))
-	}
-}
-
-func MakeCookie(name, value string, expiration time.Time) *http.Cookie {
-	return &http.Cookie{
-		Name:     name,
-		Value:    value,
-		Path:     "/",
-		Domain:   domain,
-		Expires:  expiration,
-		Secure:   true,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	}
-}
-
-func RemoveCookie(w http.ResponseWriter, name string) {
-	http.SetCookie(w, &http.Cookie{
-		Name:    name,
-		Domain:  domain,
-		Expires: time.Now(),
-		Path:    "/",
-	})
 }

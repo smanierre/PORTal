@@ -67,8 +67,8 @@ func (m Member) GetID() string {
 	return m.ID
 }
 
-func (m Member) Display() string {
-	return fmt.Sprintf("%s %s", m.FirstName, m.LastName)
+func (m Member) Display(service string) string {
+	return fmt.Sprintf("%s %s %s", GetRank(m, service), m.FirstName, m.LastName)
 }
 
 func GetRank(member Member, service string) string {

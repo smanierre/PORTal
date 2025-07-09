@@ -9,8 +9,7 @@ import (
 type ContextKey string
 
 const (
-	MemberContextKey  ContextKey = "member"
-	SessionCookieName            = "session_id"
+	MemberContextKey ContextKey = "member"
 )
 
 func MemberFromContext(ctx context.Context) (types.Member, error) {

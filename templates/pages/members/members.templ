@@ -57,7 +57,7 @@ templ FilteredList(members []types.Member, selectedMember types.Member, query st
                 x-effect={fmt.Sprintf("selected === '%s' ? $el.classList.add('searchable-list-item--selected') : $el.classList.remove('searchable-list-item--selected')", member.ID)}
                 @click="selected=$event.target.dataset.id"
             >
-                {member.Display()}
+                {member.Display("f")}
             </li>
         }
     </ul>

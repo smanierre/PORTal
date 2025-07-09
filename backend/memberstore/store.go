@@ -14,7 +14,7 @@ type MemberStore struct {
 }
 
 func New(provider MemberProvider, hashCost int, logger *slog.Logger) MemberStore {
-	logger = logger.With(slog.String("source", "MemberStore"))
+	logger = logger.With(slog.String("source", "memberStore"))
 	return MemberStore{
 		provider: provider,
 		hashCost: hashCost,

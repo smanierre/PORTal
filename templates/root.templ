@@ -1,6 +1,8 @@
 package templates
 
-templ Root(showNav, memberSubordinates, admin bool, memberDisplayName, organization string, content templ.Component) {
+import "PORTal/server/core"
+
+templ Root(data core.TopLevelData, content templ.Component) {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -15,10 +17,10 @@ templ Root(showNav, memberSubordinates, admin bool, memberDisplayName, organizat
 			<link rel="icon" type="image/png" href="/assets/images/port_dawg.png"/>
 			<link rel="stylesheet" href="/assets/css/reset.css"/>
 			<link rel="stylesheet" href="/assets/css/index.min.css"/>
-			<title>{ organization } PORTal</title>
+			<title>{ data.Organization } PORTal</title>
 		</head>
 		<body hx-boost="true">
-			@Layout(showNav, memberSubordinates, admin, memberDisplayName, content)
+			@Layout(data.ShowNav, data.HasSubordinates, data.Admin, data.MemberDisplayName, content)
 		</body>
 	</html>
 }

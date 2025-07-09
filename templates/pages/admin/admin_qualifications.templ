@@ -5,13 +5,14 @@ import (
 	"PORTal/types"
 	"PORTal/templates/components/general/button"
 	"PORTal/templates/components/general/icons"
+	"PORTal/server/core"
 )
 
-templ QualificationPane(qualifications []types.Qualification, selectedQualification types.Qualification, newQualification, oobSwap bool, query string) {
-	@QualificationList(qualifications, selectedQualification, oobSwap, query)
+templ QualificationPane(data core.AdminQualificationData, oobSwap bool) {
+	@QualificationList(data.Qualifications, data.SelectedQualification, oobSwap, data.QualificationQuery)
 	<div id="qualification-content">
-		if selectedQualification.ID != "" || newQualification {
-			@QualificationEditor(selectedQualification, newQualification)
+		if data.SelectedQualification.ID != "" || data.NewQualification {
+			@QualificationEditor(data.SelectedQualification, data.NewQualification)
 		}
 	</div>
 }

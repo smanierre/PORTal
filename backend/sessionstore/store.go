@@ -17,7 +17,7 @@ type SessionStore struct {
 }
 
 func New(provider SessionProvider, memberStore stores.MemberStore, clock backend.Clock, timeout time.Duration, logger *slog.Logger) SessionStore {
-	logger = logger.With(slog.String("source", "SessionStore"))
+	logger = logger.With(slog.String("source", "sessionStore"))
 	if clock == nil {
 		clock = backend.RealClock{}
 	}
