@@ -176,41 +176,7 @@ package server
 //	}
 //	HandleRenderError(r.Context(), logger, requirementEditor.Render(r.Context(), w))
 //}
-//
-//func getPotentialSupervisorsHandler(logger *slog.Logger, memberStore stores.MemberStore) http.Handler {
-//	logger = logger.With("route", "GET /admin/potentialSupervisors")
-//	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//		logger.LogAttrs(r.Context(), slog.LevelInfo, "Getting potential supervisors for grade", slog.String("grade", r.URL.Query().Get("grade")))
-//		grade := types.Grade(r.URL.Query().Get("grade"))
-//		if grade == "" {
-//			logger.LogAttrs(r.Context(), slog.LevelWarn, "No grade provided")
-//			w.WriteHeader(http.StatusBadRequest)
-//			return
-//		}
-//		id := r.URL.Query().Get("id")
-//		if id == "" {
-//			logger.LogAttrs(r.Context(), slog.LevelWarn, "No id provided")
-//			w.WriteHeader(http.StatusBadRequest)
-//			return
-//		}
-//		m, err := memberStore.GetMember(id)
-//		if errors.Is(err, backend.ErrMemberNotFound) {
-//			w.WriteHeader(http.StatusNotFound)
-//			return
-//		} else if err != nil {
-//			w.WriteHeader(http.StatusInternalServerError)
-//			return
-//		}
-//		potentialSupervisors, err := memberStore.GetPotentialSupervisors(m, grade)
-//		if err != nil {
-//			w.WriteHeader(http.StatusInternalServerError)
-//			return
-//		}
-//		supervisorList := admin.SupervisorList(potentialSupervisors, m.SupervisorID)
-//		HandleRenderError(r.Context(), logger, supervisorList.Render(r.Context(), w))
-//	})
-//}
-//
+
 //func updateMemberHandler(logger *slog.Logger, memberStore stores.MemberStore, ranks types.RankMap, organization string) http.Handler {
 //	logger = logger.With("route", "PUT /admin/updateMember")
 //	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

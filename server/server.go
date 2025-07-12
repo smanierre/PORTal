@@ -71,7 +71,7 @@ func New(
 	// Static assets
 	assetHandler := http.FileServerFS(assetsDir)
 	rendered.RegisterRoutes(ctx, mux, logger, c)
-	api.RegisterRoutes(logger, mux, c)
+	api.RegisterRoutes(logger, mux, memberStore)
 
 	// Handlers are applied last to first
 	l.LogAttrs(ctx, slog.LevelInfo, "Applying global middlewares...")

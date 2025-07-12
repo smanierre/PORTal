@@ -59,7 +59,7 @@ func (c Core) AdminMemberPage(r *http.Request) (AdminMembersData, error) {
 		}
 		// Disabled members don't have supervisors
 		if !disabledMembers {
-			potentialSupervisors, err = c.memberStore.GetPotentialSupervisors(selectedMember, selectedMember.Grade)
+			potentialSupervisors, err = c.memberStore.GetPotentialSupervisors(selectedMember.ID, selectedMember.Grade)
 			if err != nil {
 				return AdminMembersData{}, err
 			}

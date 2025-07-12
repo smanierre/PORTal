@@ -10,14 +10,16 @@ import (
 type MemberStore struct {
 	provider MemberProvider
 	hashCost int
+	ranks    types.RankMap
 	logger   *slog.Logger
 }
 
-func New(provider MemberProvider, hashCost int, logger *slog.Logger) MemberStore {
+func New(provider MemberProvider, hashCost int, ranks types.RankMap, logger *slog.Logger) MemberStore {
 	logger = logger.With(slog.String("source", "memberStore"))
 	return MemberStore{
 		provider: provider,
 		hashCost: hashCost,
+		ranks:    ranks,
 		logger:   logger,
 	}
 }

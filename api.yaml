@@ -1,0 +1,256 @@
+openapi: "3.0.0"
+info:
+  version: 0.1.0
+  title: PORTal API server
+paths:
+  /api/potentialSupervisors:
+    summary: Get the list of potential supervisors for a member.
+    parameters:
+      - name: grade
+        required: true
+        description: Grade to find potential supervisors for E1-E9(case sensitive)
+        in: query
+        schema:
+          type: string
+      - name: id
+        required: true
+        description: Member to get potential supervisors for
+        in: query
+        schema:
+          type: string
+    get:
+      tags:
+        - Member
+      summary: Get a list of the potential supervisors for a given grade
+      responses:
+        '200':
+          description: "List of potential supervisors"
+          content:
+            application/json:
+              example: [
+                {
+                  "admin":true,
+                  "disabled":false,
+                  "first_name":"Joe",
+                  "grade":"E6",
+                  "id":"192ab363-a149-4bb5-b1c9-22fb6ec08488",
+                  "last_name":"Snuffy",
+                  "username":"jsnuffy"
+                },
+                {
+                  "admin":false,
+                  "disabled":false,
+                  "first_name":"John",
+                  "grade":"E1",
+                  "id":"d58b0af9-9a9a-4f84-a9e1-4b9912646c78",
+                  "last_name":"Smith",
+                  "username":"jsmith"
+                }
+              ]
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+        400:
+          description: Most likely invalid Grade
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: Member not found
+  /api/member:
+    summary: Methods to interact with individual members
+    get:
+      summary: Get a member
+      tags:
+        - Member
+      parameters:
+        - name: id
+          required: true
+          schema:
+            type: string
+          in: query
+      responses:
+        200:
+          description: Successful member get
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        404:
+          description: Member not found
+    put:
+      summary: Update an individual member
+      tags:
+        - Member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Member'
+      responses:
+        200:
+          description: Successful member update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        '400':
+          description: Invalid update request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: "Member not found"
+        500:
+          description: Unspecified error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create a member
+      tags:
+        - Member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/Member'
+                - type: object
+                  properties:
+                    password:
+                      type: string
+      responses:
+        200:
+          description: Member created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        400:
+          description: Invalid values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/disableMember:
+    summary: Disable a member
+    post:
+      tags:
+        - Member
+      parameters:
+        - name: id
+          schema:
+            type: string
+          required: true
+          in: query
+      responses:
+        200:
+          description: Successful disable
+        404:
+          description: Member not found
+  /api/enableMember:
+    summary: Enable a member
+    post:
+      tags:
+        - Member
+      parameters:
+        - name: id
+          schema:
+            type: string
+          required: true
+          in: query
+      responses:
+        200:
+          description: Successful enable
+        404:
+          description: Member not found
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+    Member:
+      type: object
+      required:
+        - id
+        - first_name
+        - last_name
+        - username
+        - grade
+        - admin
+        - disabled
+      properties:
+        id:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        username:
+          type: string
+        supervisor_id:
+          type: string
+        grade:
+          type: string
+        admin:
+          type: boolean
+        disabled:
+          type: boolean
+    Qualification:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        initial_requirements:
+          type: array
+          items: 
+            $ref: '#/components/schemas/Requirement'
+        recurring_requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/Requirement'
+        notes:
+          type: string
+    Requirement:
+      type: object
+      required:
+        - id
+        - name
+        - initial
+        - reference
+        - type
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        initial:
+          type: boolean
+        reference:
+          type: string
+        notes:
+          type: string
+        type:
+          type: string
+        qualification_id:
+          type: string
+        grade:
+          type: string
+        days_valid_for:
+          type: integer

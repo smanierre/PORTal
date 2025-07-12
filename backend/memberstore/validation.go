@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-func checkMemberForMissingArgs(m types.Member) error {
+func checkMemberForInvalidArgs(m types.Member, ranks types.RankMap) error {
 	var errors []string
 	if m.ID == "" {
 		errors = append(errors, "ID")
@@ -18,7 +18,16 @@ func checkMemberForMissingArgs(m types.Member) error {
 		errors = append(errors, "LastName")
 	}
 	if m.Grade == "" {
-		errors = append(errors, "Grade")
+		var found bool
+		for rank, _ := range ranks {
+			if rank == m.Grade {
+				found = true
+				break
+			}
+		}
+		if !found {
+			errors = append(errors, "Grade")
+		}
 	}
 	if m.Username == "" {
 		errors = append(errors, "Username")

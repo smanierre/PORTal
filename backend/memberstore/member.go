@@ -30,7 +30,7 @@ func (m MemberStore) AddMember(mem types.Member) (types.Member, error) {
 	mem.ID = uuid.NewString()
 
 	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Checking for missing fields")
-	if err := checkMemberForMissingArgs(mem); err != nil {
+	if err := checkMemberForInvalidArgs(mem, m.ranks); err != nil {
 		m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Required arguments missing for user creation", slog.String("error", err.Error()))
 		return types.Member{}, err
 	}
@@ -79,15 +79,29 @@ func (m MemberStore) GetMember(identifier string) (types.Member, error) {
 	return member, nil
 }
 
-func (m MemberStore) GetPotentialSupervisors(member types.Member, grade types.Grade) ([]types.Member, error) {
-	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting potential supervisors")
+func (m MemberStore) GetPotentialSupervisors(memberID string, grade types.Grade) ([]types.Member, error) {
+	var found bool
+	for k, _ := range m.ranks {
+		if k == grade {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, errors.New(fmt.Sprintf("invalid grade: %s", string(grade)))
+	}
+	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting potential supervisors for grade", slog.String("grade", string(grade)))
+	if memberID == "" {
+		m.logger.LogAttrs(context.Background(), slog.LevelWarn, "No id provided")
+		return nil, errors.New("no memberID provided")
+	}
 	allMembers, err := m.GetAllMembers()
 	if err != nil {
 		return nil, err
 	}
 	var potentialSupervisors []types.Member
 	for _, mem := range allMembers {
-		if member.ID == mem.ID {
+		if memberID == mem.ID {
 			continue
 		}
 		if mem.Grade.CanSupervise(grade) {
@@ -174,7 +188,12 @@ func (m MemberStore) UpdateMember(mem types.Member) (types.Member, error) {
 		}
 		mem.Hash = currentMember.Hash
 	}
-	err := m.provider.UpdateMember(mem)
+	err := checkMemberForInvalidArgs(mem, m.ranks)
+	if err != nil {
+		m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Error validating updated member values", slog.String("error", err.Error()))
+		return types.Member{}, err
+	}
+	err = m.provider.UpdateMember(mem)
 	if err != nil {
 		return types.Member{}, err
 	}

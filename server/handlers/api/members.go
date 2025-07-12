@@ -1,30 +1,155 @@
 package api
 
 import (
-	"PORTal/server/core"
+	"PORTal/backend"
 	"PORTal/types"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 )
 
-type PotentialSupervisorsResponse struct {
-	PotentialSupervisors []types.Member `json:"potential_supervisors"`
+func apiMemberToMember(m Member) types.Member {
+	return types.Member{
+		ID:           m.Id,
+		FirstName:    m.FirstName,
+		LastName:     m.LastName,
+		Username:     m.Username,
+		Grade:        types.Grade(m.Grade),
+		SupervisorID: *m.SupervisorId,
+		Admin:        m.Admin,
+		Disabled:     m.Disabled,
+	}
 }
 
-func PotentialSupervisors(logger *slog.Logger, c core.Core) http.Handler {
-	logger = logger.With(slog.String("Source", "API/PotentialSupervisors"))
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data, err := c.AdminMemberPage(r)
-		if err != nil {
-			logger.LogAttrs(r.Context(), slog.LevelError, "Error getting admin page data", slog.String("error", err.Error()))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		err = json.NewEncoder(w).Encode(PotentialSupervisorsResponse{PotentialSupervisors: data.PotentialSupervisors})
-		if err != nil {
-			logger.LogAttrs(r.Context(), slog.LevelError, "Error encoding response data", slog.String("error", err.Error()))
-		}
+func membersToApiMember(members []types.Member) []Member {
+	newMems := []Member{}
+	for _, m := range members {
+		newMems = append(newMems, memberToApiMember(m))
+	}
+	return newMems
+}
+
+func memberToApiMember(m types.Member) Member {
+	return Member{
+		Admin:        m.Admin,
+		Disabled:     m.Disabled,
+		FirstName:    m.FirstName,
+		Grade:        string(m.Grade),
+		Id:           m.ID,
+		LastName:     m.LastName,
+		Username:     m.Username,
+		SupervisorId: &m.SupervisorID,
+	}
+}
+
+func (a api) GetApiMember(w http.ResponseWriter, r *http.Request, p GetApiMemberParams) {}
+
+// Requests for new member will include an initial password
+type newMember struct {
+	Member
+	Password string `json:"password"`
+}
+
+func (a api) PostApiMember(w http.ResponseWriter, r *http.Request) {
+	var m newMember
+	err := json.NewDecoder(r.Body).Decode(&m)
+	if err != nil {
+		a.logger.LogAttrs(r.Context(), slog.LevelError, "Error decoding member to JSON", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(Error{Message: err.Error()})
 		return
-	})
+	}
+	tempMem := apiMemberToMember(m.Member)
+	tempMem.Password = m.Password
+	member, err := a.memberStore.AddMember(tempMem)
+	if errors.Is(err, backend.ErrWeakPassword) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(Error{Message: err.Error()})
+		return
+	}
+	if errors.Is(err, backend.ErrValidation) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(Error{Message: err.Error()})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(memberToApiMember(member))
+}
+
+func (a api) PutApiMember(w http.ResponseWriter, r *http.Request) {
+	var m Member
+	err := json.NewDecoder(r.Body).Decode(&m)
+	if err != nil {
+		a.logger.LogAttrs(r.Context(), slog.LevelError, "Error decoding JSON", slog.String("error", err.Error()))
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(Error{Message: err.Error()})
+		return
+	}
+	member, err := a.memberStore.UpdateMember(apiMemberToMember(m))
+	if errors.Is(err, backend.ErrMemberNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	encoder := json.NewEncoder(w)
+	if errors.Is(err, backend.ErrWeakPassword) || errors.Is(err, backend.ErrPasswordTooLong) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = encoder.Encode(Error{Message: err.Error()})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = encoder.Encode(Error{Message: err.Error()})
+		return
+	}
+	_ = encoder.Encode(memberToApiMember(member))
+}
+
+func (a api) PostApiDisableMember(w http.ResponseWriter, r *http.Request, p PostApiDisableMemberParams) {
+	err := a.memberStore.DisableMember(p.Id)
+	if errors.Is(err, backend.ErrMemberNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (a api) PostApiEnableMember(w http.ResponseWriter, r *http.Request, p PostApiEnableMemberParams) {
+	err := a.memberStore.EnableMember(p.Id)
+	if errors.Is(err, backend.ErrMemberNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (a api) GetApiPotentialSupervisors(w http.ResponseWriter, r *http.Request, p GetApiPotentialSupervisorsParams) {
+
+	potentialSupervisors, err := a.memberStore.GetPotentialSupervisors(p.Id, types.Grade(p.Grade))
+	if errors.Is(err, backend.ErrMemberNotFound) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	encoder := json.NewEncoder(w)
+	if err != nil && strings.Contains(err.Error(), "invalid grade") {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = encoder.Encode(Error{Message: err.Error()})
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	_ = encoder.Encode(membersToApiMember(potentialSupervisors))
 }

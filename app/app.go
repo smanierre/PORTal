@@ -9,6 +9,7 @@ import (
 	"PORTal/providers/sqlite/qualificationprovider"
 	"PORTal/providers/sqlite/sessionprovider"
 	"PORTal/server"
+	"PORTal/types"
 	"context"
 	"errors"
 	"flag"
@@ -57,7 +58,7 @@ func New(ctx context.Context, w io.Writer, args []string) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	memberStore := memberstore.New(memberProvider, *hashCost, l)
+	memberStore := memberstore.New(memberProvider, *hashCost, types.GetRanks(*service), l)
 
 	qualificationProvider, err := qualificationprovider.New(*dbFile, l)
 	if err != nil {

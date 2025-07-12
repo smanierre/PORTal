@@ -9,7 +9,7 @@ type MemberStore interface {
 	Login(username, password string) (types.Member, error)
 	AddMember(m types.Member) (types.Member, error)
 	GetMember(identifier string) (types.Member, error)
-	GetPotentialSupervisors(m types.Member, grade types.Grade) ([]types.Member, error)
+	GetPotentialSupervisors(memberID string, grade types.Grade) ([]types.Member, error)
 	GetMemberFromSession(sessionID string) (types.Member, error)
 	GetDisabledMember(identifier string) (types.Member, error)
 	GetAllMembers() ([]types.Member, error)
