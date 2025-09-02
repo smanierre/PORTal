@@ -40,6 +40,13 @@ type MemberQualificationStore interface {
 	GetQualificationsForMember(memberID string) ([]types.MemberQualification, error)
 	GetAllMemberQualifications() ([]types.MemberQualification, error)
 	RemoveMemberQualification(memberID, qualificationID string) error
+	GetInitialMemberRequirement(memberID, requirementID string) (types.InitialMemberRequirement, error)
+	// GetInitialMemberRequirements retrieves all the initial requirements for either a member, or just a certain qualification.
+	// If no qualification is specified, all initial requirements assigned to the member are returned.
+	GetInitialMemberRequirements(memberID string, qualificationID *string) ([]types.InitialMemberRequirement, error)
+	// GetRecurringMemberRequirements retrieves all the recurring requirements for either a member, or just a certain qualification.
+	// If no qualification is specified, all recurring requirements assigned to the member are returned.
+	GetRecurringMemberRequirements(memberID string, qualificationID *string) ([]types.RecurringMemberRequirement, error)
 }
 
 type MemberRequirementStore interface {

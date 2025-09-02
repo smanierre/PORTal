@@ -15,7 +15,30 @@ func (q QualificationStore) AddQualification(qual types.Qualification) (types.Qu
 		q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Missing required arguments", slog.String("error", err.Error()))
 		return types.Qualification{}, err
 	}
-	return qual, q.provider.AddQualification(qual)
+	err := q.provider.AddQualification(qual)
+	if err != nil {
+		return types.Qualification{}, err
+	}
+	for i, ir := range qual.InitialRequirements {
+		ir, err := q.AddRequirement(ir)
+		if err != nil {
+			continue
+		}
+		err = q.AssignRequirementToQualification(qual.ID, ir.ID, true)
+		qual.InitialRequirements[i] = ir
+	}
+	for i, rr := range qual.RecurringRequirements {
+		rr, err := q.AddRequirement(rr)
+		if err != nil {
+			continue
+		}
+		err = q.AssignRequirementToQualification(qual.ID, rr.ID, false)
+		if err != nil {
+			continue
+		}
+		qual.RecurringRequirements[i] = rr
+	}
+	return qual, nil
 }
 
 func (q QualificationStore) AssignRequirementToQualification(qualificationID, requirementID string, initial bool) error {
@@ -49,6 +72,95 @@ func (q QualificationStore) UpdateQualification(qual types.Qualification) (types
 	newQual, err := q.provider.GetQualification(qual.ID)
 	if err != nil {
 		return types.Qualification{}, err
+	}
+	for _, v := range qual.InitialRequirements {
+		found := false
+		for i, v2 := range newQual.InitialRequirements {
+			if v.ID == v2.ID {
+				found = true
+				if v != v2 {
+					newReq, err := q.UpdateRequirement(v)
+					if err != nil {
+						break
+					}
+					newQual.InitialRequirements[i] = newReq
+				}
+			}
+		}
+		if !found {
+			r, err := q.AddRequirement(v)
+			if err != nil {
+				return types.Qualification{}, err
+			}
+			err = q.AssignRequirementToQualification(qual.ID, r.ID, true)
+			if err != nil {
+				continue
+			}
+			newQual.InitialRequirements = append(newQual.InitialRequirements, r)
+		}
+	}
+	for _, v := range qual.RecurringRequirements {
+		found := false
+		for i, v2 := range newQual.RecurringRequirements {
+			if v.ID == v2.ID {
+				found = true
+				if v != v2 {
+					newReq, err := q.UpdateRequirement(v)
+					if err != nil {
+						break
+					}
+					newQual.RecurringRequirements[i] = newReq
+				}
+			}
+		}
+		if !found {
+			r, err := q.AddRequirement(v)
+			if err != nil {
+				return types.Qualification{}, err
+			}
+			err = q.AssignRequirementToQualification(qual.ID, r.ID, false)
+			if err != nil {
+				continue
+			}
+			newQual.RecurringRequirements = append(newQual.InitialRequirements, r)
+		}
+	}
+	// Need to refetch qualification to get the new requirements that were assigned to it
+	newQual, err = q.provider.GetQualification(qual.ID)
+	if err != nil {
+		return types.Qualification{}, err
+	}
+	for i, v := range newQual.InitialRequirements {
+		found := false
+		for _, v2 := range qual.InitialRequirements {
+			// If it's a new requirement, no need to worry about deleting it
+			if v2.ID == "" || v.ID == v2.ID {
+				found = true
+			}
+		}
+		if !found {
+			err = q.DeleteRequirement(v.ID)
+			if err != nil {
+				continue
+			}
+			newQual.InitialRequirements = append(newQual.InitialRequirements[:i], newQual.InitialRequirements[i+1:]...)
+		}
+	}
+	for i, v := range newQual.RecurringRequirements {
+		found := false
+		for _, v2 := range qual.RecurringRequirements {
+			// If it's a new requirement, no need to worry about deleting it
+			if v2.ID == "" || v.ID == v2.ID {
+				found = true
+			}
+		}
+		if !found {
+			err = q.DeleteRequirement(v.ID)
+			if err != nil {
+				continue
+			}
+			newQual.RecurringRequirements = append(newQual.RecurringRequirements[:i], newQual.RecurringRequirements[i+1:]...)
+		}
 	}
 	return newQual, nil
 }

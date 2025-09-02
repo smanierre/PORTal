@@ -1,9 +1,7 @@
 package server
 
 import (
-	"PORTal/server/core"
-	"PORTal/server/handlers/api"
-	"PORTal/server/handlers/rendered"
+	"PORTal/server/api"
 	"PORTal/server/stores"
 	"PORTal/types"
 	"context"
@@ -54,30 +52,18 @@ func New(
 		dev:    dev,
 		port:   port,
 	}
-	c := core.New(
-		logger.With(slog.String("source", "core")),
-		memberStore,
-		qualificationStore,
-		mqStore,
-		sessionStore,
-		types.GetRanks(service),
-		organization,
-		service,
-		domain,
-	)
 
 	mux := http.NewServeMux()
 	l.LogAttrs(ctx, slog.LevelInfo, "Registering static asset routes...")
 	// Static assets
 	assetHandler := http.FileServerFS(assetsDir)
-	rendered.RegisterRoutes(ctx, mux, logger, c)
-	api.RegisterRoutes(logger, mux, memberStore)
+	api.RegisterRoutes(logger, mux, memberStore, qualificationStore, mqStore, sessionStore, domain, organization, dev, types.GetRanks(service))
 
 	// Handlers are applied last to first
 	l.LogAttrs(ctx, slog.LevelInfo, "Applying global middlewares...")
 	s.handler = adminRequiredMiddleware(mux, logger)
-	s.handler = sessionRequiredMiddleware(s.handler, logger, c)
-	s.handler = skipLoginMiddleware(s.handler, logger, c)
+	//s.handler = sessionRequiredMiddleware(s.handler, logger, c)
+	s.handler = skipLoginMiddleware(s.handler, logger, sessionStore)
 	s.handler = assetMiddleware(s.handler, assetHandler)
 
 	l.LogAttrs(ctx, slog.LevelInfo, "Successfully registered routes")

@@ -32,9 +32,6 @@ func checkMemberForInvalidArgs(m types.Member, ranks types.RankMap) error {
 	if m.Username == "" {
 		errors = append(errors, "Username")
 	}
-	if m.Password == "" {
-		errors = append(errors, "Password")
-	}
 	if len(errors) > 0 {
 		return fmt.Errorf("%w: %s", backend.ErrMissingArgs, errors)
 	}

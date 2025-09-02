@@ -13,15 +13,16 @@ import (
 func (q QualificationStore) AddRequirement(r types.Requirement) (types.Requirement, error) {
 	q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Generating ID...")
 	r.ID = uuid.NewString()
+	var err error
 	if r.Initial {
 		q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Validating initial requirement...")
-		if err := validateInitialRequirement(r); err != nil {
+		if r, err = normalizeInitialRequirement(r); err != nil {
 			q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Error validating initial requirement", slog.String("error", err.Error()))
 			return types.Requirement{}, err
 		}
 	} else {
 		q.logger.LogAttrs(context.Background(), slog.LevelInfo, "Validating recurring requirement...")
-		if err := validateRecurringRequirement(r); err != nil {
+		if r, err = normalizeRecurringRequirement(r); err != nil {
 			q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Error validating recurring requirement", slog.String("error", err.Error()))
 			return types.Requirement{}, err
 		}
@@ -57,9 +58,9 @@ func (q QualificationStore) UpdateRequirement(r types.Requirement) (types.Requir
 		}
 	}
 	if r.Initial {
-		err = validateInitialRequirement(r)
+		r, err = normalizeInitialRequirement(r)
 	} else {
-		err = validateRecurringRequirement(r)
+		r, err = normalizeRecurringRequirement(r)
 	}
 	if err != nil {
 		q.logger.LogAttrs(context.Background(), slog.LevelWarn, "Error validating requirement update request", slog.String("error", err.Error()))

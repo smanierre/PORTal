@@ -39,11 +39,13 @@ func New(
 type MemberRequirementProvider interface {
 	AssignInitialMemberRequirement(memberID, requirementID, assignedBy string) error
 	GetInitialMemberRequirement(memberID, requirementID string) (types.InitialMemberRequirement, error)
+	GetInitialMemberRequirements(memberID string) ([]types.InitialMemberRequirement, error)
 	GetInitialMemberRequirementsForQualification(memberID, qualificationID string) ([]types.InitialMemberRequirement, error)
 	CompleteInitialMemberRequirement(completedDate time.Time, completedBy, memberID, requirementID string) error
 
 	AssignRecurringMemberRequirement(id, memberID, requirementID, assignedBy string) error
 	GetRecurringMemberRequirement(memberID, requirementID string) (types.RecurringMemberRequirement, error)
+	GetRecurringMemberRequirements(memberID string) ([]types.RecurringMemberRequirement, error)
 	GetRecurringMemberRequirementsForQualification(memberID, qualificationID string) ([]types.RecurringMemberRequirement, error)
 	CompleteRecurringMemberRequirement(id, memberRequirementID, completedBy string, completedDate time.Time) error
 }

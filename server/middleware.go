@@ -1,19 +1,26 @@
 package server
 
 import (
-	"PORTal/server/core"
+	"PORTal/server/api"
+	"PORTal/server/stores"
 	"context"
 	"log/slog"
 	"net/http"
 	"strings"
 )
 
-func skipLoginMiddleware(next http.Handler, logger *slog.Logger, c core.Core) http.Handler {
+func skipLoginMiddleware(next http.Handler, logger *slog.Logger, sessionStore stores.SessionStore) http.Handler {
 	logger = logger.With(slog.String("source", "skipLoginMiddleware"))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" && r.Method == http.MethodGet {
 			logger.LogAttrs(r.Context(), slog.LevelInfo, "Running skipLoginMiddleware")
-			m, err := c.ValidateSessionCookie(r, w)
+			sessionCookie, err := r.Cookie(api.SessionCookieName)
+			if err != nil {
+				logger.LogAttrs(r.Context(), slog.LevelInfo, "Session cookie not found, continuing to next handler")
+				next.ServeHTTP(w, r)
+				return
+			}
+			m, err := sessionStore.ValidateSession(sessionCookie.Value, r.UserAgent(), r.RemoteAddr)
 			if err != nil {
 				logger.LogAttrs(r.Context(), slog.LevelInfo, "Invalid session, continuing to next handler")
 				next.ServeHTTP(w, r)
@@ -28,7 +35,7 @@ func skipLoginMiddleware(next http.Handler, logger *slog.Logger, c core.Core) ht
 	})
 }
 
-func sessionRequiredMiddleware(next http.Handler, logger *slog.Logger, c core.Core) http.Handler {
+func sessionRequiredMiddleware(next http.Handler, logger *slog.Logger, sessionStore stores.SessionStore) http.Handler {
 	logger = logger.With(slog.String("source", "sessionRequiredMiddleware"))
 	// update this and add it to the chain in server.go
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +44,13 @@ func sessionRequiredMiddleware(next http.Handler, logger *slog.Logger, c core.Co
 			next.ServeHTTP(w, r)
 			return
 		}
-		m, err := c.ValidateSessionCookie(r, w)
+		sessionCookie, err := r.Cookie(api.SessionCookieName)
+		if err != nil {
+			logger.LogAttrs(r.Context(), slog.LevelInfo, "Session cookie not found, redirecting to login")
+			http.Redirect(w, r, "/dashboard", http.StatusFound)
+			return
+		}
+		m, err := sessionStore.ValidateSession(sessionCookie.Value, r.UserAgent(), r.RemoteAddr)
 		if err != nil {
 			logger.LogAttrs(r.Context(), slog.LevelDebug, "Invalid session, redirecting to login")
 			http.Redirect(w, r, "/dashboard", http.StatusFound)

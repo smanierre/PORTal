@@ -107,6 +107,8 @@ type RecurringMemberRequirement struct {
 	MemberID          string
 	RequirementID     string
 	AssignedBy        string
+	CompletedBy       string
+	CompletedDate     time.Time
 	CompletionHistory []RecurringMemberRequirementCompletion
 }
 

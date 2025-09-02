@@ -34,10 +34,10 @@ func (c Core) Login(r *http.Request) (LoginData, error) {
 }
 
 func (c Core) Logout(r *http.Request) {
-	sessionID, err := c.getSessionId(r)
-	if err != nil {
-		c.logger.LogAttrs(r.Context(), slog.LevelInfo, "Failed to get sessionID, skipping deletion")
-		return
-	}
-	c.sessionStore.DeleteSession(sessionID)
+	//sessionID, err := c.getSessionId(r)
+	//if err != nil {
+	//	c.logger.LogAttrs(r.Context(), slog.LevelInfo, "Failed to get sessionID, skipping deletion")
+	//	return
+	//}
+	//c.sessionStore.DeleteSession(sessionID)
 }

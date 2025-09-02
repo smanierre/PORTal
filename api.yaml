@@ -13,8 +13,7 @@ paths:
         schema:
           type: string
       - name: id
-        required: true
-        description: Member to get potential supervisors for
+        description: Member to get potential supervisors for, not required for new members
         in: query
         schema:
           type: string
@@ -23,30 +22,10 @@ paths:
         - Member
       summary: Get a list of the potential supervisors for a given grade
       responses:
-        '200':
+        200:
           description: "List of potential supervisors"
           content:
             application/json:
-              example: [
-                {
-                  "admin":true,
-                  "disabled":false,
-                  "first_name":"Joe",
-                  "grade":"E6",
-                  "id":"192ab363-a149-4bb5-b1c9-22fb6ec08488",
-                  "last_name":"Snuffy",
-                  "username":"jsnuffy"
-                },
-                {
-                  "admin":false,
-                  "disabled":false,
-                  "first_name":"John",
-                  "grade":"E1",
-                  "id":"d58b0af9-9a9a-4f84-a9e1-4b9912646c78",
-                  "last_name":"Smith",
-                  "username":"jsmith"
-                }
-              ]
               schema:
                 type: array
                 items:
@@ -89,7 +68,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Member'
+              allOf:
+                - $ref: '#/components/schemas/Member'
+                - type: object
+                  properties:
+                    password:
+                      type: string
       responses:
         200:
           description: Successful member update
@@ -97,13 +81,13 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Member'
-        '400':
+        400:
           description: Invalid update request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-        '404':
+        404:
           description: "Member not found"
         500:
           description: Unspecified error
@@ -139,6 +123,315 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/member/subordinates:
+    summary: Get subordinates for a member
+    get:
+      tags:
+        - Member
+      parameters:
+        - name: member_id
+          description: ID of member to get subordinates for
+          required: true
+          schema:
+            type: string
+          in: query
+      responses:
+        200:
+          description: Successful get
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+        404:
+          description: Member not found
+        500:
+          description: Internal server error
+  /api/member/qualifications:
+    summary: Get qualifications assigned to a member
+    get:
+      description: Get a members qualifications
+      tags:
+        - MemberQualifications
+      parameters:
+        - name: member_id
+          description: ID of member to get qualifications for
+          required: true
+          schema:
+            type: string
+          in: query
+      responses:
+        200:
+          description: Successful get
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MemberQualification'
+        404:
+          description: Member not found
+        500:
+          description: Internal server error
+  /api/member/qualification:
+    summary: Interact with individual member qualifications
+    post:
+      description: Assign a qualification to a member
+      tags:
+        - MemberQualification
+      parameters:
+        - name: member_id
+          required: true
+          schema:
+            type: string
+          in: query
+        - name: qualification_id
+          required: true
+          schema:
+            type: string
+          in: query
+        - name: assigned_by
+          required: true
+          schema:
+            type: string
+          in: query
+      responses:
+        200:
+          description: Qualification assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberQualification'
+        404:
+          description: Member or Qualification not found
+        500:
+          description: Internal Server Error
+  /api/member/requirement/initial:
+    summary: Interact with individual member requirements
+    get:
+      description: Get a member requirement
+      tags:
+        - Member Requirement
+      parameters:
+        - name: member_id
+          required: true
+          schema:
+            type: string
+          in: query
+        - name: requirement_id
+          required: true
+          schema:
+            type: string
+          in: query
+      responses:
+        200:
+          description: Successful Member Requirement retrieval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitialMemberRequirement'
+        400:
+          description: Member or Requirement not found
+        500:
+          description: Internal server error
+  /api/member/requirements/initial:
+    summary: Interact with initial requirements for a member
+    get:
+      description: Get all initial requirements for a member
+      tags:
+        - Member Requirements
+      parameters:
+        - name: member_id
+          required: true
+          schema:
+            type: string
+          in: query
+        - name: qualification_id
+          schema:
+            type: string
+          in: query
+      responses:
+        200:
+          description: Successful get of initial requirements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InitialMemberRequirement'
+        400:
+          description: Member not found
+        500:
+          description: Internal server error
+  /api/member/requirements/recurring:
+    summary: Interact with recurring requirements for a member
+    get:
+      description: Get all recurring requirements for a member
+      tags:
+        - Member Requirements
+      parameters:
+        - name: member_id
+          required: true
+          schema:
+            type: string
+          in: query
+        - name: qualification_id
+          schema:
+            type: string
+          in: query
+      responses:
+        200:
+          description: Successful get of recurring member requirements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecurringMemberRequirement'
+        404:
+          description: Member or qualification not found
+        500:
+          description: Internal server error
+  /api/members:
+    summary: Methods to bulk retrieve members
+    get:
+      tags:
+        - Members
+      parameters:
+        - name: filter
+          description: Options for filtering retrieved members. No filter returns all members
+          schema:
+            type: string
+            enum:
+              - enabled
+              - disabled
+          in: query
+      responses:
+        200:
+          description: Successful retrieval
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+        400:
+          description: Bad request (most likely invalid filter)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/qualifications:
+    summary: Methods to bulk retrieve qualifications
+    get:
+      tags:
+        - Qualifications
+      responses:
+        200:
+          description: Successful retrieval
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Qualification'
+  /api/qualification:
+    summary: Methods to interact with an individual qualification
+    post:
+      tags:
+        - Qualification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Qualification'
+      responses:
+        200:
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Qualification'
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Internal server error
+    put:
+      tags:
+        - Qualification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Qualification'
+      responses:
+        200:
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Qualification'
+        400:
+          description: "Invalid update"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Internal server error
+  /api/requirement:
+    summary: Methods to interact with an individual qualification
+    post:
+      tags:
+        - Requirement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Requirement'
+      responses:
+        200:
+          description: Successful creation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Requirement'
+        400:
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Internal server error
+    put:
+      tags:
+        - Requirement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Requirement'
+      responses:
+        200:
+          description: Successful update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Requirement'
+        400:
+          description: Bad update
+        500:
+          description: Internal server error
   /api/disableMember:
     summary: Disable a member
     post:
@@ -171,6 +464,71 @@ paths:
           description: Successful enable
         404:
           description: Member not found
+  /api/login:
+    summary: Login to the application
+    post:
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Member'
+        401:
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/logout:
+    summary: Log out of the application
+    post:
+      tags:
+        - Authentication
+      responses:
+        200:
+          description: Successful logout
+  /api/organization:
+    summary: Get the organization for this instance
+    get:
+      tags:
+        - Meta
+      responses:
+        200:
+          description: The organization of this instance
+          content:
+            application/json:
+              schema:
+                required:
+                  - organization
+                properties:
+                  organization:
+                    type: string
+  /api/ranks:
+    summary: Get the ranks that correspond to the given instance
+    get:
+      tags:
+        - Meta
+      responses:
+        200:
+          description: The ranks of this instance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ranks'
+
 components:
   schemas:
     Error:
@@ -252,5 +610,121 @@ components:
           type: string
         grade:
           type: string
+          enum:
+            - E1
+            - E2
+            - E3
+            - E4
+            - E5
+            - E6
+            - E7
+            - E8
+            - E9
         days_valid_for:
           type: integer
+    Ranks:
+      type: object
+      required:
+          - E1
+          - E2
+          - E3
+          - E4
+          - E5
+          - E6
+          - E7
+          - E8
+          - E9
+      properties:
+        E1:
+          type: string
+        E2:
+          type: string
+        E3:
+          type: string
+        E4:
+          type: string
+        E5:
+          type: string
+        E6:
+          type: string
+        E7:
+          type: string
+        E8:
+          type: string
+        E9:
+          type: string
+    MemberQualification:
+      description: Qualification Assigned to a member
+      required:
+        - member_id
+        - qualification_id
+        - date_assigned
+        - assigned_by
+      properties:
+        member_id:
+          type: string
+        qualification_id:
+          type: string
+        date_assigned:
+          type: string
+          format: date-time
+        assigned_by:
+          type: string
+    InitialMemberRequirement:
+      description: Initial requirement assigned to a member
+      required:
+        - member_id
+        - requirement_id
+        - assigned_by
+      properties:
+        member_id:
+          type: string
+        requirement_id:
+          type: string
+        completed_date:
+          type: string
+          format: date-time
+        assigned_by:
+          type: string
+        completed_by:
+          type: string
+    RecurringMemberRequirement:
+      description: Recurring requirement assigned to a member
+      required:
+        - id
+        - member_id
+        - requirement_id
+        - assigned_by
+        - completion_history
+      properties:
+        id:
+          type: string
+        member_id:
+          type: string
+        requirement_id:
+          type: string
+        assigned_by:
+          type: string
+        completed_by:
+          type: string
+        completed_date:
+          type: string
+          format: date-time
+        completion_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecurringMemberRequirementCompletion'
+    RecurringMemberRequirementCompletion:
+      description: Recurring requirement completion for a member
+      required:
+        - id
+        - completion_date
+        - completed_by
+      properties:
+        id:
+          type: string
+        completion_date:
+          type: string
+          format: date-time
+        completed_by:
+          type: string

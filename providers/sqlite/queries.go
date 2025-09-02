@@ -48,7 +48,7 @@ CREATE TABLE initial_member_requirement(
     member_id string,
     requirement_id string,
     completed_date datetime,
-    assigned_by string,
+    assigned_by string not null,
     completed_by string,
     PRIMARY KEY (member_id, requirement_id),
     FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
@@ -62,6 +62,8 @@ CREATE TABLE recurring_member_requirement(
     member_id string,
     requirement_id string,
     assigned_by string,
+    completed_by string not null,
+    completed_date datetime,
     FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE CASCADE,
     FOREIGN KEY (requirement_id) REFERENCES requirement(id) ON DELETE CASCADE,
     FOREIGN KEY (assigned_by) REFERENCES member(id) ON DELETE NO ACTION
@@ -70,8 +72,8 @@ CREATE TABLE recurring_member_requirement(
 CREATE TABLE recurring_member_requirement_completion(
     id string PRIMARY KEY,
     recurring_member_requirement_id string,
-    completed_date datetime,
-    completed_by string,
+    completed_date datetime not null,
+    completed_by string not null,
     FOREIGN KEY (recurring_member_requirement_id) REFERENCES recurring_member_requirement(id) ON DELETE CASCADE,
     FOREIGN KEY (completed_by) REFERENCES member(id) ON DELETE NO ACTION
 );

@@ -122,6 +122,7 @@ func (m MemberProvider) GetDisabledMembers() ([]types.Member, error) {
 		if supervisorId.Valid {
 			mem.SupervisorID = supervisorId.String
 		}
+		mem.Disabled = true
 		members = append(members, mem)
 	}
 	return members, nil

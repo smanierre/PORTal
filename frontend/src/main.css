@@ -1,0 +1,32 @@
+:root {
+  --nav-height: 40px;
+  --blue: 15, 56, 136;
+  --blue-dark: 14, 35, 88;
+  --blue-light: 174, 181, 251;
+  --red: 238, 64, 46;
+  --red-dark: 134, 29, 19;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('Geist-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('Geist-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+}
+
+html {
+  font-family: 'Geist';
+  font-size: 1.25rem;
+  overflow: hidden;
+}
+
+button {
+  background-color: rgb(var(--blue));
+}

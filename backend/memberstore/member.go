@@ -91,10 +91,6 @@ func (m MemberStore) GetPotentialSupervisors(memberID string, grade types.Grade)
 		return nil, errors.New(fmt.Sprintf("invalid grade: %s", string(grade)))
 	}
 	m.logger.LogAttrs(context.Background(), slog.LevelInfo, "Getting potential supervisors for grade", slog.String("grade", string(grade)))
-	if memberID == "" {
-		m.logger.LogAttrs(context.Background(), slog.LevelWarn, "No id provided")
-		return nil, errors.New("no memberID provided")
-	}
 	allMembers, err := m.GetAllMembers()
 	if err != nil {
 		return nil, err

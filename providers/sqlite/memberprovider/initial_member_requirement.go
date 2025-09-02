@@ -12,7 +12,7 @@ import (
 )
 
 func (m MemberProvider) AssignInitialMemberRequirement(memberID, requirementID, assignedBy string) error {
-	_, err := m.db.Exec(addInitialMemberRequirementQuery, memberID, requirementID, types.Never, assignedBy, nil)
+	_, err := m.db.Exec(addInitialMemberRequirementQuery, memberID, requirementID, nil, assignedBy, nil)
 	if err != nil {
 		m.logger.LogAttrs(context.Background(), slog.LevelError, "Error assigning initial requirement to member", slog.String("error", err.Error()))
 		return err
@@ -24,7 +24,8 @@ func (m MemberProvider) GetInitialMemberRequirement(memberID, requirementID stri
 	row := m.db.QueryRow(getInitialMemberRequirementQuery, memberID, requirementID)
 	var i types.InitialMemberRequirement
 	var verifiedByStr sql.NullString
-	err := row.Scan(&i.MemberID, &i.RequirementID, &i.CompletedDate, &i.AssignedBy, &verifiedByStr)
+	var completedDate sql.NullTime
+	err := row.Scan(&i.MemberID, &i.RequirementID, &completedDate, &i.AssignedBy, &verifiedByStr)
 	if errors.Is(err, sql.ErrNoRows) {
 		m.logger.LogAttrs(context.Background(), slog.LevelWarn, "Couldn't find initial member requirement", slog.String("error", err.Error()))
 		return types.InitialMemberRequirement{}, fmt.Errorf("%w: %s", backend.ErrInitialMemberRequirementNotFound, err.Error())
@@ -35,11 +36,14 @@ func (m MemberProvider) GetInitialMemberRequirement(memberID, requirementID stri
 	if verifiedByStr.Valid {
 		i.CompletedBy = verifiedByStr.String
 	}
+	if completedDate.Valid {
+		i.CompletedDate = completedDate.Time
+	}
 	return i, nil
 }
 
-func (m MemberProvider) GetInitialMemberRequirementsForQualification(memberID, qualificationID string) ([]types.InitialMemberRequirement, error) {
-	rows, err := m.db.Query(getInitialMemberRequirementsQuery, memberID, qualificationID)
+func (m MemberProvider) GetInitialMemberRequirements(memberID string) ([]types.InitialMemberRequirement, error) {
+	rows, err := m.db.Query(getInitialMemberRequirementsForQualificationQuery, memberID)
 	if err != nil {
 		return nil, err
 	}
@@ -47,12 +51,42 @@ func (m MemberProvider) GetInitialMemberRequirementsForQualification(memberID, q
 	for rows.Next() {
 		var i types.InitialMemberRequirement
 		var verifiedByStr sql.NullString
-		err := rows.Scan(&i.MemberID, &i.RequirementID, &i.CompletedDate, &i.AssignedBy, &verifiedByStr)
+		var completedDate sql.NullTime
+		err := rows.Scan(&i.MemberID, &i.RequirementID, &completedDate, &i.AssignedBy, &verifiedByStr)
 		if err != nil {
 			return nil, err
 		}
 		if verifiedByStr.Valid {
 			i.CompletedBy = verifiedByStr.String
+		}
+		if completedDate.Valid {
+			i.CompletedDate = completedDate.Time
+		}
+		requirements = append(requirements, i)
+	}
+	return requirements, nil
+}
+
+func (m MemberProvider) GetInitialMemberRequirementsForQualification(memberID, qualificationID string) ([]types.InitialMemberRequirement, error) {
+	rows, err := m.db.Query(getInitialMemberRequirementsForQualificationQuery, memberID, qualificationID)
+	if err != nil {
+		return nil, err
+	}
+	var requirements []types.InitialMemberRequirement
+	for rows.Next() {
+		var i types.InitialMemberRequirement
+		var verifiedByStr sql.NullString
+		var completedDate sql.NullTime
+		err := rows.Scan(&i.MemberID, &i.RequirementID, &completedDate, &i.AssignedBy, &verifiedByStr)
+		if err != nil {
+			m.logger.LogAttrs(context.Background(), slog.LevelError, "Error scanning initial member requirement into struct", slog.String("error", err.Error()))
+			return nil, err
+		}
+		if verifiedByStr.Valid {
+			i.CompletedBy = verifiedByStr.String
+		}
+		if completedDate.Valid {
+			i.CompletedDate = completedDate.Time
 		}
 		requirements = append(requirements, i)
 	}

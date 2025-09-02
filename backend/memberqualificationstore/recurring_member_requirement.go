@@ -4,16 +4,20 @@ import (
 	"PORTal/backend"
 	"PORTal/types"
 	"context"
-	"github.com/google/uuid"
 	"log/slog"
+
+	"github.com/google/uuid"
 )
 
 func (m MemberQualificationStore) GetRecurringMemberRequirement(memberID, requirementID string) (types.RecurringMemberRequirement, error) {
 	return m.memberRequirementProvider.GetRecurringMemberRequirement(memberID, requirementID)
 }
 
-func (m MemberQualificationStore) GetRecurringMemberRequirementsForQualification(memberID, qualificationID string) ([]types.RecurringMemberRequirement, error) {
-	return m.memberRequirementProvider.GetRecurringMemberRequirementsForQualification(memberID, qualificationID)
+func (m MemberQualificationStore) GetRecurringMemberRequirements(memberID string, qualificationID *string) ([]types.RecurringMemberRequirement, error) {
+	if qualificationID == nil {
+		return m.memberRequirementProvider.GetRecurringMemberRequirements(memberID)
+	}
+	return m.memberRequirementProvider.GetRecurringMemberRequirementsForQualification(memberID, *qualificationID)
 }
 
 func (m MemberQualificationStore) CompleteRecurringMemberRequirement(memberID, requirementID, completedBy string) error {
